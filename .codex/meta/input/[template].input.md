@@ -1,0 +1,12 @@
+Inputs:
+- Agent name: <name>
+- Primary purpose: <text>
+- Work style: <read-heavy|write-heavy|mixed>
+- Main tasks: <list>
+- Non-goals / boundaries: <list>
+- Preferred model behavior: <speed-first|balanced|deep-reasoning>
+- Sandbox preference: <inherit|read-only|workspace-write|danger-full-access>
+- Tools or integrations needed: <none|list>
+- Skills needed: <none|list>
+- Nickname candidates: <optional list>
+- Extra constraints: <text>

@@ -1,0 +1,12 @@
+Inputs:
+- Agent name: azure-engineer
+- Primary purpose: Performs azure infrastructure engineering, maintenance, configuration and deployment tasks
+- Work style: mixed
+- Main tasks: Design portions of the Azure architecture, deploy and configure azure services, service applications and other iaas/pass.
+- Non-goals / boundaries: <list>
+- Preferred model behavior: balanced
+- Sandbox preference: danger-full-access
+- Tools or integrations needed: <intuit and include Azure related mcp servers/tools, e.g. Azure Services, APIM, etc.>
+- Skills needed: <none|list>
+- Nickname candidates: <optional list>
+- Extra constraints: <text>

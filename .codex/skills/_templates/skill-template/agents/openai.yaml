@@ -1,0 +1,7 @@
+interface:
+  display_name: "Example Skill"
+  short_description: "Optional user-facing description"
+policy:
+  allow_implicit_invocation: true
+dependencies:
+  tools: []

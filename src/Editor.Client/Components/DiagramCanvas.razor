@@ -1,0 +1,100 @@
+@implements IAsyncDisposable
+@inject IJsPlumbAdapter Adapter
+
+<div @ref="_host" class="editor-canvas-host"></div>
+
+@code {
+    [Parameter, EditorRequired]
+    public DiagramEditorState State { get; set; } = default!;
+
+    private ElementReference _host;
+    private JsPlumbEventBridge? _bridge;
+    private DotNetObjectReference<JsPlumbEventBridge>? _bridgeReference;
+    private bool _initialized;
+    private bool _renderPending = true;
+
+    protected override void OnInitialized()
+    {
+        State.Changed += HandleStateChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _bridge = new JsPlumbEventBridge();
+            _bridge.NodeMoved += args => { State.MoveNode(args); return Task.CompletedTask; };
+            _bridge.EdgeCreated += args => { State.Connect(args); return Task.CompletedTask; };
+            _bridge.EdgeRelabeled += args => { State.RelabelEdge(args); return Task.CompletedTask; };
+            _bridge.EdgeDeleted += args => { State.DeleteEdge(args); return Task.CompletedTask; };
+            _bridge.WaypointInserted += args => { State.InsertWaypoint(args); return Task.CompletedTask; };
+            _bridge.WaypointMoved += args => { State.MoveWaypoint(args); return Task.CompletedTask; };
+            _bridge.WaypointRemoved += args => { State.RemoveWaypoint(args); return Task.CompletedTask; };
+            _bridge.GroupMembershipChanged += args => { State.UpdateGroupMembership(args); return Task.CompletedTask; };
+            _bridge.GroupBoundsChanged += args => { State.UpdateGroupBounds(args); return Task.CompletedTask; };
+            _bridge.GroupCollapseChanged += args => { State.UpdateGroupCollapse(args); return Task.CompletedTask; };
+            _bridge.SelectionChanged += args => { State.Select(args); return Task.CompletedTask; };
+            _bridge.ViewportChanged += args => { State.UpdateViewport(args); return Task.CompletedTask; };
+            _bridge.HotkeyPressed += HandleHotkeyAsync;
+
+            _bridgeReference = DotNetObjectReference.Create(_bridge);
+            await Adapter.InitializeAsync(_host, _bridgeReference);
+            _initialized = true;
+        }
+
+        if (_initialized && _renderPending)
+        {
+            _renderPending = false;
+            await Adapter.RenderDocumentAsync(State.Document);
+        }
+    }
+
+    public Task FitAsync() => Adapter.FitToDiagramAsync();
+
+    public Task CenterOnSelectionAsync()
+    {
+        var selected = State.SelectedNodeIds.ToArray();
+        return Adapter.CenterOnSelectionAsync(selected);
+    }
+
+    public Task DownloadSvgAsync(string fileName, string svgMarkup)
+        => Adapter.DownloadSvgAsync(fileName, svgMarkup);
+
+    public Task DownloadPngAsync(string fileName, string svgMarkup)
+        => Adapter.DownloadPngAsync(fileName, svgMarkup);
+
+    private void HandleStateChanged()
+    {
+        _renderPending = true;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleHotkeyAsync(HotkeyPressedEvent hotkey)
+        => hotkey.Command switch
+        {
+            "delete" => State.DeleteSelectionAsync(),
+            "undo" => State.UndoAsync(),
+            "redo" => State.RedoAsync(),
+            "copy" => State.CopySelectionAsync(),
+            "paste" => State.PasteAsync(),
+            "duplicate" => State.DuplicateSelectionAsync(),
+            "selectAll" => State.SelectAllAsync(),
+            "nudgeLeft" => State.NudgeSelectionAsync(-24, 0),
+            "nudgeRight" => State.NudgeSelectionAsync(24, 0),
+            "nudgeUp" => State.NudgeSelectionAsync(0, -24),
+            "nudgeDown" => State.NudgeSelectionAsync(0, 24),
+            _ => Task.CompletedTask
+        };
+
+    public async ValueTask DisposeAsync()
+    {
+        State.Changed -= HandleStateChanged;
+
+        if (_bridgeReference is not null)
+        {
+            _bridgeReference.Dispose();
+        }
+
+        await Adapter.DisposeAsync();
+    }
+}

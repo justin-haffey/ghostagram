@@ -1,0 +1,8 @@
+interface:
+  display_name: "Copilot Prompt Patterns"
+  short_description: "Write Copilot instructions and prompt specs."
+  default_prompt: "Use the Copilot prompt-patterns skill to draft instructions and prompt specs that match this Copilot package."
+policy:
+  allow_implicit_invocation: true
+dependencies:
+  tools: []

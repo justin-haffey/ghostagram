@@ -1,0 +1,545 @@
+@implements IAsyncDisposable
+@inject DiagramEditorState State
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<div class="editor-shell @(State.PresentationMode ? "is-presentation" : null)">
+    <header class="editor-topbar">
+        <div class="editor-brand">
+            <a class="editor-brand__link" href="/documents">Documents</a>
+            <div>
+                <div class="editor-brand__eyebrow">Technical Studio v1.5</div>
+                <div class="editor-brand__headline">
+                    <input class="editor-title-input" @bind="_documentTitle" @bind:event="oninput" />
+                    <button class="studio-button studio-button--small" @onclick="RenameAsync">Rename</button>
+                    <button class="studio-button studio-button--small" @onclick="ToggleFavoriteAsync">@(State.Document.IsFavorite ? "Unfavorite" : "Favorite")</button>
+                </div>
+                <p>@State.SyncStatus</p>
+            </div>
+        </div>
+
+        <div class="editor-toolbar">
+            <div class="toolbar-cluster">
+                <button class="studio-button studio-button--strong" @onclick="SaveAsync">Save</button>
+                <button class="studio-button" @onclick="CreateSnapshotAsync">Snapshot</button>
+                <input class="studio-inline-input" @bind="_snapshotName" @bind:event="oninput" placeholder="Snapshot name" />
+                <button class="studio-button" @onclick="UndoAsync" disabled="@(!State.CanUndo)">Undo</button>
+                <button class="studio-button" @onclick="RedoAsync" disabled="@(!State.CanRedo)">Redo</button>
+            </div>
+
+            <div class="toolbar-cluster">
+                <label class="studio-toggle">
+                    <input type="checkbox" checked="@State.ServerSyncEnabled" @onchange="ToggleSyncChanged" />
+                    <span>Server Sync</span>
+                </label>
+                <button class="studio-button" @onclick="PushAsync" disabled="@(!State.ServerSyncEnabled)">Push</button>
+                <button class="studio-button" @onclick="PullAsync" disabled="@(!State.ServerSyncEnabled)">Pull</button>
+                <button class="studio-button" @onclick="State.ToggleReviewMode">Review</button>
+                <button class="studio-button" @onclick="State.TogglePresentationMode">Presentation</button>
+            </div>
+
+            <div class="toolbar-cluster">
+                <button class="studio-button" @onclick="ExportJsonAsync">Export JSON</button>
+                <button class="studio-button" @onclick="ExportSvgAsync">SVG</button>
+                <button class="studio-button" @onclick="ExportPngAsync">PNG</button>
+                <label class="studio-button studio-button--file">
+                    <span>Import JSON</span>
+                    <InputFile OnChange="HandleImportAsync" class="visually-hidden" />
+                </label>
+            </div>
+
+            <div class="toolbar-cluster">
+                <select class="studio-select" @bind="_selectedLayout">
+                    @foreach (var layoutOption in State.Layouts)
+                    {
+                        <option value="@layoutOption.Kind">@layoutOption.DisplayName</option>
+                    }
+                </select>
+                <button class="studio-button" @onclick="ApplyLayoutAsync">Run Layout</button>
+                <button class="studio-button" @onclick="AddGroupAsync">Add Group</button>
+                <button class="studio-button" @onclick="FitAsync">Fit Diagram</button>
+                <button class="studio-button" @onclick="CenterAsync" disabled="@(State.SelectedNodeIds.Count == 0)">Center Selection</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="editor-workspace">
+        <aside class="stencil-rail">
+            <div class="panel-heading">
+                <span>Assets</span>
+                <small>@(State.FilteredStencilDefinitions.Count + State.FilteredLibraryItems.Count) ready</small>
+            </div>
+
+            <div class="tab-strip">
+                <button class="studio-button studio-button--small @(_activeLeftTab == "stencils" ? "is-active" : null)" @onclick='() => _activeLeftTab = "stencils"'>Stencils</button>
+                <button class="studio-button studio-button--small @(_activeLeftTab == "library" ? "is-active" : null)" @onclick='() => _activeLeftTab = "library"'>Library</button>
+            </div>
+
+            @if (_activeLeftTab == "stencils")
+            {
+                <label class="studio-field">
+                    <span>Search Stencils</span>
+                    <input value="@State.StencilSearch" @oninput="HandleStencilSearch" placeholder="Find flow, architecture, sequence..." />
+                </label>
+
+                @foreach (var category in State.FilteredStencilDefinitions.GroupBy(stencil => stencil.Category))
+                {
+                    <section class="stencil-group">
+                        <h2>@category.Key</h2>
+                        @foreach (var stencil in category)
+                        {
+                            <button class="stencil-card" @onclick="() => AddStencilAsync(stencil.Key)">
+                                <strong>@stencil.DisplayName</strong>
+                                <span>@stencil.Description</span>
+                            </button>
+                        }
+                    </section>
+                }
+            }
+            else
+            {
+                <label class="studio-field">
+                    <span>Search Library</span>
+                    <input value="@State.LibrarySearch" @oninput="HandleLibrarySearch" placeholder="Find snippets and component kits..." />
+                </label>
+
+                <section class="inspector-section">
+                    <h2>Save Selection</h2>
+                    <label class="studio-field">
+                        <span>Name</span>
+                        <input @bind="_libraryName" @bind:event="oninput" />
+                    </label>
+                    <label class="studio-field">
+                        <span>Description</span>
+                        <textarea @bind="_libraryDescription" @bind:event="oninput"></textarea>
+                    </label>
+                    <button class="studio-button" @onclick="SaveSelectionToLibraryAsync" disabled="@(!State.HasSelection)">Save to Library</button>
+                </section>
+
+                @foreach (var item in State.FilteredLibraryItems)
+                {
+                    <button class="stencil-card" @onclick="() => InsertLibraryAsync(item.Id)">
+                        <strong>@item.Name</strong>
+                        <span>@item.Description</span>
+                    </button>
+                }
+            }
+        </aside>
+
+        <main class="editor-stage">
+            <section class="canvas-card">
+                <DiagramCanvas @ref="_canvas" State="State" />
+                <MiniMap State="State" />
+            </section>
+        </main>
+
+        <aside class="inspector-panel">
+            <div class="panel-heading">
+                <span>Inspector</span>
+                <small>@SelectionSummary</small>
+            </div>
+
+            @if (State.SelectedNode is not null)
+            {
+                <section class="inspector-section">
+                    <h2>Node</h2>
+                    <label class="studio-field">
+                        <span>Label</span>
+                        <input value="@State.SelectedNode.Label" @onchange="HandleNodeLabelChanged" />
+                    </label>
+                    @foreach (var field in State.SelectedInspectorFields)
+                    {
+                        @RenderInspectorField(field)
+                    }
+                </section>
+            }
+            else if (State.SelectedEdge is not null)
+            {
+                <section class="inspector-section">
+                    <h2>Edge</h2>
+                    <label class="studio-field">
+                        <span>Label</span>
+                        <input value="@State.SelectedEdge.Label" @onchange="HandleEdgeLabelChanged" />
+                    </label>
+                    @if (State.CanEditSelectedEdgeWaypoints)
+                    {
+                        <div class="inspector-metric"><span>Connector</span><strong>@State.SelectedEdge.ConnectorKind</strong></div>
+                        <div class="inspector-metric"><span>Waypoints</span><strong>@State.SelectedEdge.Waypoints.Length</strong></div>
+                        <p class="inspector-muted">Double-click a selected segment to add a bend point, drag handles to refine the route, and press Delete to remove the active bend point.</p>
+                        <button class="studio-button studio-button--small" @onclick="State.ClearSelectedEdgeWaypointsAsync" disabled="@(State.SelectedEdge.Waypoints.Length == 0)">Clear Waypoints</button>
+                    }
+                    <button class="studio-button studio-button--danger" @onclick="DeleteEdgeAsync">Delete Edge</button>
+                </section>
+            }
+            else if (State.SelectedGroup is not null)
+            {
+                <section class="inspector-section">
+                    <h2>Group</h2>
+                    <div class="inspector-metric"><span>Label</span><strong>@State.SelectedGroup.Label</strong></div>
+                    <div class="inspector-metric"><span>Members</span><strong>@State.SelectedGroup.ChildNodeIds.Count</strong></div>
+                    <div class="inspector-metric"><span>Collapsed</span><strong>@State.SelectedGroup.Collapsed</strong></div>
+                </section>
+            }
+
+            @if (State.SelectedNodes.Count > 1)
+            {
+                <section class="inspector-section">
+                    <h2>Arrange Selection</h2>
+                    <div class="action-grid">
+                        <button class="studio-button studio-button--small" @onclick='() => State.AlignSelectionAsync("left")'>Align Left</button>
+                        <button class="studio-button studio-button--small" @onclick='() => State.AlignSelectionAsync("right")'>Align Right</button>
+                        <button class="studio-button studio-button--small" @onclick='() => State.AlignSelectionAsync("top")'>Align Top</button>
+                        <button class="studio-button studio-button--small" @onclick='() => State.AlignSelectionAsync("bottom")'>Align Bottom</button>
+                        <button class="studio-button studio-button--small" @onclick='() => State.DistributeSelectionAsync("horizontal")'>Distribute X</button>
+                        <button class="studio-button studio-button--small" @onclick='() => State.DistributeSelectionAsync("vertical")'>Distribute Y</button>
+                    </div>
+                </section>
+            }
+
+            @if (State.HasSelection)
+            {
+                <section class="inspector-section">
+                    <h2>Metadata</h2>
+                    <label class="studio-field">
+                        <span>Tags</span>
+                        <input value="@State.SelectionTagText" @onchange="HandleTagsChanged" />
+                    </label>
+                    <label class="studio-field">
+                        <span>Link</span>
+                        <input value="@State.SelectionLinkUri" @onchange="HandleLinkChanged" placeholder="https://..." />
+                    </label>
+                    <div class="action-grid">
+                        <button class="studio-button studio-button--small" @onclick="State.CopySelectionAsync">Copy</button>
+                        <button class="studio-button studio-button--small" @onclick="State.PasteAsync">Paste</button>
+                        <button class="studio-button studio-button--small" @onclick="State.DuplicateSelectionAsync">Duplicate</button>
+                        <button class="studio-button studio-button--small studio-button--danger" @onclick="State.DeleteSelectionAsync">Delete</button>
+                    </div>
+                </section>
+            }
+
+            <section class="inspector-section">
+                <h2>Layers</h2>
+                <label class="studio-field">
+                    <span>New Layer</span>
+                    <input @bind="_layerName" @bind:event="oninput" placeholder="Layer name" />
+                </label>
+                <button class="studio-button" @onclick="AddLayerAsync">Add Layer</button>
+
+                @foreach (var layer in State.Layers)
+                {
+                    <div class="layer-row">
+                        <button class="studio-button studio-button--small @(State.ActiveLayerId == layer.Id ? "is-active" : null)" @onclick="() => State.SetActiveLayer(layer.Id)">@layer.Name</button>
+                        <button class="studio-button studio-button--small" @onclick="() => State.ToggleLayerVisibilityAsync(layer.Id)">@(layer.IsVisible ? "Hide" : "Show")</button>
+                        <button class="studio-button studio-button--small" @onclick="() => State.ToggleLayerLockAsync(layer.Id)">@(layer.IsLocked ? "Unlock" : "Lock")</button>
+                    </div>
+                }
+
+                <div class="action-grid">
+                    <button class="studio-button studio-button--small" @onclick="State.BringSelectionForwardAsync">Bring Forward</button>
+                    <button class="studio-button studio-button--small" @onclick="State.SendSelectionBackwardAsync">Send Back</button>
+                </div>
+            </section>
+
+            <section class="inspector-section">
+                <h2>Snapshots</h2>
+                @foreach (var snapshot in State.Snapshots.Take(6))
+                {
+                    <div class="snapshot-row">
+                        <div>
+                            <strong>@snapshot.Name</strong>
+                            <small>@snapshot.CreatedUtc.LocalDateTime.ToString("g")</small>
+                        </div>
+                        <button class="studio-button studio-button--small" @onclick="() => RestoreSnapshotAsync(snapshot.SnapshotId)">Restore</button>
+                    </div>
+                }
+            </section>
+
+            <section class="inspector-section">
+                <h2>Validation</h2>
+                @if (State.ValidationIssues.Count == 0)
+                {
+                    <p class="inspector-muted">No validation issues detected.</p>
+                }
+                else
+                {
+                    @foreach (var issue in State.ValidationIssues.Take(6))
+                    {
+                        <div class="issue-row issue-@issue.Severity.ToString().ToLowerInvariant()">
+                            <strong>@issue.Code</strong>
+                            <span>@issue.Message</span>
+                        </div>
+                    }
+                }
+            </section>
+
+            @if (State.ReviewMode)
+            {
+                <section class="inspector-section">
+                    <h2>Review</h2>
+                    <label class="studio-field">
+                        <span>Comment Title</span>
+                        <input @bind="_commentTitle" @bind:event="oninput" />
+                    </label>
+                    <label class="studio-field">
+                        <span>Comment</span>
+                        <textarea @bind="_commentBody" @bind:event="oninput"></textarea>
+                    </label>
+                    <button class="studio-button" @onclick="AddCommentAsync">Add Comment</button>
+
+                    <label class="studio-field">
+                        <span>Annotation</span>
+                        <textarea @bind="_annotationText" @bind:event="oninput"></textarea>
+                    </label>
+                    <button class="studio-button" @onclick="AddAnnotationAsync">Pin Annotation</button>
+
+                    @foreach (var thread in State.RelevantComments)
+                    {
+                        <div class="review-card">
+                            <strong>@thread.Title</strong>
+                            <span>@thread.Comments.LastOrDefault()?.Message</span>
+                            <button class="studio-button studio-button--small" @onclick="() => ResolveCommentAsync(thread.Id)">Resolve</button>
+                        </div>
+                    }
+
+                    @foreach (var annotation in State.RelevantAnnotations)
+                    {
+                        <div class="review-card review-card--note">
+                            <strong>Annotation</strong>
+                            <span>@annotation.Text</span>
+                        </div>
+                    }
+                </section>
+            }
+        </aside>
+    </div>
+
+    <footer class="status-strip">
+        <span>@State.Document.TemplateKind</span>
+        <span>@State.Document.Nodes.Length nodes</span>
+        <span>@State.Document.Edges.Length edges</span>
+        <span>@State.Document.Groups.Length groups</span>
+        <span>@State.Layers.Count layers</span>
+        <span>@State.Document.CommentThreads.Length comments</span>
+        <span>@State.ValidationIssues.Count issues</span>
+        <span>@State.SyncStatus</span>
+    </footer>
+</div>
+
+@code {
+    [Parameter]
+    public string? DocumentId { get; set; }
+
+    private DiagramCanvas? _canvas;
+    private IJSObjectReference? _browserFileModule;
+    private string _activeLeftTab = "stencils";
+    private string _documentTitle = string.Empty;
+    private string _snapshotName = "Checkpoint";
+    private string _libraryName = "Reusable Snippet";
+    private string _libraryDescription = "Saved from the current selection.";
+    private string _layerName = "New Layer";
+    private string _commentTitle = "Review";
+    private string _commentBody = string.Empty;
+    private string _annotationText = string.Empty;
+    private LayoutKind _selectedLayout = LayoutKind.HierarchyTopDown;
+
+    private string SelectionSummary => State.SelectedNode is not null
+        ? "Node selected"
+        : State.SelectedEdge is not null
+            ? "Edge selected"
+            : State.SelectedGroup is not null
+                ? "Group selected"
+                : State.HasSelection
+                    ? "Multi-selection"
+                    : "Ready";
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.Changed += HandleStateChanged;
+        await State.InitializeAsync(DocumentId);
+        _documentTitle = State.Document.Metadata.Title;
+        _selectedLayout = ResolveSuggestedLayout(State.Document.TemplateKind);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await State.InitializeAsync(DocumentId);
+        _documentTitle = State.Document.Metadata.Title;
+    }
+
+    private RenderFragment RenderInspectorField(InspectorFieldDefinition field) => builder =>
+    {
+        var value = State.SelectedNode?.Properties.GetValueOrDefault(field.Key) ?? string.Empty;
+        var sequence = 0;
+        builder.OpenElement(sequence++, "label");
+        builder.AddAttribute(sequence++, "class", "studio-field");
+        builder.OpenElement(sequence++, "span");
+        builder.AddContent(sequence++, field.Label);
+        builder.CloseElement();
+
+        if (field.Kind == InspectorFieldKind.Select)
+        {
+            builder.OpenElement(sequence++, "select");
+            builder.AddAttribute(sequence++, "value", value);
+            builder.AddAttribute(sequence++, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args => HandlePropertyChanged(field.Key, args.Value?.ToString())));
+            foreach (var option in field.Options)
+            {
+                builder.OpenElement(sequence++, "option");
+                builder.AddAttribute(sequence++, "value", option);
+                builder.AddContent(sequence++, option);
+                builder.CloseElement();
+            }
+            builder.CloseElement();
+        }
+        else if (field.Kind == InspectorFieldKind.Multiline)
+        {
+            builder.OpenElement(sequence++, "textarea");
+            builder.AddAttribute(sequence++, "value", value);
+            builder.AddAttribute(sequence++, "placeholder", field.Placeholder);
+            builder.AddAttribute(sequence++, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args => HandlePropertyChanged(field.Key, args.Value?.ToString())));
+            builder.CloseElement();
+        }
+        else
+        {
+            builder.OpenElement(sequence++, "input");
+            builder.AddAttribute(sequence++, "value", value);
+            builder.AddAttribute(sequence++, "placeholder", field.Placeholder);
+            builder.AddAttribute(sequence++, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args => HandlePropertyChanged(field.Key, args.Value?.ToString())));
+            builder.CloseElement();
+        }
+
+        builder.CloseElement();
+    };
+
+    private async Task RenameAsync()
+    {
+        await State.RenameCurrentAsync(_documentTitle);
+    }
+
+    private async Task ToggleFavoriteAsync()
+    {
+        await State.SetFavoriteAsync(State.Document.DocumentId, !State.Document.IsFavorite);
+    }
+
+    private async Task SaveAsync()
+    {
+        await State.SaveAsync();
+    }
+
+    private async Task CreateSnapshotAsync()
+    {
+        await State.SaveSnapshotAsync(_snapshotName);
+    }
+
+    private Task UndoAsync() => State.UndoAsync();
+    private Task RedoAsync() => State.RedoAsync();
+    private Task PushAsync() => State.PushToServerAsync();
+    private Task PullAsync() => State.PullFromServerAsync();
+
+    private async Task ExportJsonAsync()
+    {
+        _browserFileModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/browser-file.js");
+        await _browserFileModule.InvokeVoidAsync("downloadText", BuildFileName("json"), State.ExportJson(), "application/json;charset=utf-8");
+    }
+
+    private async Task ExportSvgAsync()
+    {
+        if (_canvas is not null)
+        {
+            await _canvas.DownloadSvgAsync(BuildFileName("svg"), State.ExportSvg());
+        }
+    }
+
+    private async Task ExportPngAsync()
+    {
+        if (_canvas is not null)
+        {
+            await _canvas.DownloadPngAsync(BuildFileName("png"), State.ExportSvg());
+        }
+    }
+
+    private async Task HandleImportAsync(InputFileChangeEventArgs args)
+    {
+        await using var stream = args.File.OpenReadStream(5 * 1024 * 1024);
+        using var reader = new StreamReader(stream);
+        await State.ImportJsonAsync(await reader.ReadToEndAsync());
+        Navigation.NavigateTo($"/editor/{State.Document.DocumentId}");
+    }
+
+    private Task ApplyLayoutAsync() => State.ApplyLayoutAsync(_selectedLayout);
+    private Task AddGroupAsync() => State.AddGroupAsync();
+    private Task FitAsync() => _canvas?.FitAsync() ?? Task.CompletedTask;
+    private Task CenterAsync() => _canvas?.CenterOnSelectionAsync() ?? Task.CompletedTask;
+    private Task AddStencilAsync(string stencilKey) => State.AddNodeAsync(stencilKey);
+    private Task InsertLibraryAsync(string itemId) => State.InsertLibraryItemAsync(itemId);
+    private Task SaveSelectionToLibraryAsync() => State.SaveSelectionToLibraryAsync(_libraryName, _libraryDescription);
+    private Task AddLayerAsync() => State.AddLayerAsync(_layerName);
+    private Task RestoreSnapshotAsync(string snapshotId) => State.RestoreSnapshotAsync(snapshotId);
+    private Task AddCommentAsync() => State.AddCommentAsync(_commentTitle, _commentBody);
+    private Task AddAnnotationAsync() => State.AddAnnotationAsync(_annotationText);
+    private Task ResolveCommentAsync(string threadId) => State.ResolveCommentAsync(threadId);
+
+    private async Task HandleNodeLabelChanged(ChangeEventArgs args)
+        => await State.UpdateNodeLabelAsync(args.Value?.ToString() ?? string.Empty);
+
+    private Task HandleEdgeLabelChanged(ChangeEventArgs args)
+    {
+        if (State.SelectedEdge is not null)
+        {
+            State.RelabelEdge(new EdgeRelabeledEvent(State.SelectedEdge.Id, args.Value?.ToString() ?? string.Empty));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task DeleteEdgeAsync()
+    {
+        if (State.SelectedEdge is not null)
+        {
+            State.DeleteEdge(new EdgeDeletedEvent(State.SelectedEdge.Id));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandlePropertyChanged(string key, string? value) => State.UpdateNodePropertyAsync(key, value);
+    private Task HandleTagsChanged(ChangeEventArgs args) => State.UpdateSelectionTagsAsync(args.Value?.ToString() ?? string.Empty);
+    private Task HandleLinkChanged(ChangeEventArgs args) => State.UpdateSelectionLinkAsync(args.Value?.ToString());
+
+    private void HandleStencilSearch(ChangeEventArgs args) => State.SetStencilSearch(args.Value?.ToString() ?? string.Empty);
+    private void HandleLibrarySearch(ChangeEventArgs args) => State.SetLibrarySearch(args.Value?.ToString() ?? string.Empty);
+    private void ToggleSyncChanged(ChangeEventArgs args) => State.SetServerSyncEnabled(args.Value is bool enabled && enabled);
+
+    private void HandleStateChanged()
+    {
+        _documentTitle = State.Document.Metadata.Title;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private string BuildFileName(string extension)
+    {
+        var title = State.Document.Metadata.Title;
+        var safe = new string(title.Select(ch => char.IsLetterOrDigit(ch) ? char.ToLowerInvariant(ch) : '-').ToArray()).Trim('-');
+        return $"{(string.IsNullOrWhiteSpace(safe) ? "diagram-studio" : safe)}.{extension}";
+    }
+
+    private static LayoutKind ResolveSuggestedLayout(TemplateKind kind) => kind switch
+    {
+        TemplateKind.Flowchart or TemplateKind.OrgChart or TemplateKind.BpmnLite => LayoutKind.HierarchyTopDown,
+        TemplateKind.UmlClass or TemplateKind.DataFlow => LayoutKind.HierarchyLeftRight,
+        TemplateKind.UmlSequence or TemplateKind.Erd => LayoutKind.Grid,
+        TemplateKind.NetworkTopology or TemplateKind.C4Context => LayoutKind.Radial,
+        TemplateKind.MindMap => LayoutKind.MindMap,
+        TemplateKind.StateDependency => LayoutKind.Tree,
+        _ => LayoutKind.Freeform
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        State.Changed -= HandleStateChanged;
+
+        if (_browserFileModule is not null)
+        {
+            await _browserFileModule.DisposeAsync();
+        }
+    }
+}

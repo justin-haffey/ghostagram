@@ -1,0 +1,15 @@
+bin/
+obj/
+.vs/
+.idea/
+TestResults/
+playwright-report/
+tests/**/bin/
+tests/**/obj/
+src/**/bin/
+src/**/obj/
+src/Diagrams.Interop.JsPlumb/node_modules/
+vendor/
+
+.codebase-memory/
+

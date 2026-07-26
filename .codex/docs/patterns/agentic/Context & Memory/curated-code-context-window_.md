@@ -1,0 +1,59 @@
+---
+url: "https://agentic-patterns.com/patterns/curated-code-context-window/"
+title: "Curated Code Context Window - Awesome Agentic Patterns"
+---
+
+[Skip to content](https://agentic-patterns.com/patterns/curated-code-context-window/#problem)
+
+# Curated Code Context Window UPDATED
+
+## Problem
+
+Loading **all source files** or dumping entire repositories into the agent's context overwhelms the model, introduces noise, and slows inference. Coding agents need to focus on **only the most relevant modules** to efficiently reason about changes or generate new functionality.
+
+- Including every file biases the agent with irrelevant code; it "loses coherence" over large contexts.
+- Large contexts inflate token usage, slowing down multi-turn RL training.
+
+## Solution
+
+Maintain a **minimal, high-signal code context** (keeping the context "sterile") for the main coding agent by:
+
+**1\. Context Sterilization**
+\- Exclude unrelated modules (e.g., test utilities when working on a UI component).
+\- Automatically identify relevant files via a lightweight **search agent** that returns top-K matches for a function or class name.
+
+**2\. Helper Subagent for Code Discovery**
+\- Spawn a **SearchSubagent** (a small LLM or vector-search index) that takes a file path or query (e.g., "find definitions of `UserModel`") and returns a ranked list of file snippets.
+\- Only top-3 snippets (each ≤ 150 tokens) are injected into the main agent's context.
+
+**3\. Context Update Cycle**
+\- **Main Agent:** "I need to refactor `UserService`."
+\- **SearchSubagent:** "Found `user_service.py`, `models/user.py`, `utils/auth.py`."
+\- **Context Injection:** Only those three files (or their summaries) enter the main agent's window.
+
+## Example
+
+ToolContextSearchSubagentMainAgentToolContextSearchSubagentMainAgent"Find files defining UserModel"List of 3 file paths/snippetsInject these three code snippets onlyedit\_file(UserService)
+
+## How to use it
+
+- **Indexing Stage (Offline):** Build a simple **code index** (e.g., with `ripgrep` or a vector store) to map function/class names to file paths.
+- **Subagent Definition:** Define `SearchSubagent` as a function that queries the code index and uses a small LLM to filter and rank matches.
+- **Context Management Library:** Create a wrapper (e.g., `CuratedContextManager`) that automatically invokes `SearchSubagent` when the main agent asks for relevant code.
+
+## Trade-offs
+
+- **Pros:**
+- **Noise Reduction:** Keeps the context focused on pertinent code, improving reasoning clarity.
+- **Token Efficiency:** Dramatically reduces tokens consumed per step, boosting RL throughput.
+- **Context Anxiety Mitigation:** Helps prevent [context window anxiety](https://agentic-patterns.com/patterns/context-window-anxiety-management/) by keeping usage well below limits.
+- **Cons/Considerations:**
+- **Index Freshness:** If code changes frequently, the index must be updated to avoid stale results.
+- **Complexity:** Adds an extra component (SearchSubagent + index) to the training and inference pipeline.
+- **Model Adaptation Required:** Different models may have varying tolerance for curated vs. full context approaches.
+
+## References
+
+- "Context is sacred" principle from the Open Source Agent RL talk (May 2025).
+- Will Brown's commentary on "avoiding blowing up your context length" for long-horizon tasks.
+- [Thorsten Ball's "Raising An Agent - Episode 3"](https://www.nibzard.com/ampcode) \- Production-validated implementation of dedicated search agent pattern.

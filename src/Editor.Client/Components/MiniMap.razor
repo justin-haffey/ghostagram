@@ -1,0 +1,60 @@
+@using Diagrams.Core.Models
+
+@if (State.Document.Nodes.Length > 0 || State.Document.Groups.Length > 0)
+{
+    <div class="minimap-card">
+        <div class="minimap-card__header">
+            <span>Minimap</span>
+            <small>@Math.Round(State.Document.ViewportState.Zoom * 100)%</small>
+        </div>
+
+        <svg class="minimap-svg" viewBox="0 0 220 160" preserveAspectRatio="xMidYMid meet">
+            @foreach (var group in VisibleGroups)
+            {
+                <rect x="@ScaleX(group.Bounds.X)"
+                      y="@ScaleY(group.Bounds.Y)"
+                      width="@ScaleWidth(group.Bounds.Width)"
+                      height="@ScaleHeight(group.Bounds.Height)"
+                      rx="8"
+                      class="minimap-group" />
+            }
+
+            @foreach (var node in VisibleNodes)
+            {
+                <rect x="@ScaleX(node.Bounds.X)"
+                      y="@ScaleY(node.Bounds.Y)"
+                      width="@ScaleWidth(node.Bounds.Width)"
+                      height="@ScaleHeight(node.Bounds.Height)"
+                      rx="6"
+                      class="minimap-node" />
+            }
+
+            <rect x="@ScaleX(ViewportBounds.X)"
+                  y="@ScaleY(ViewportBounds.Y)"
+                  width="@ScaleWidth(ViewportBounds.Width)"
+                  height="@ScaleHeight(ViewportBounds.Height)"
+                  class="minimap-viewport" />
+        </svg>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public DiagramEditorState State { get; set; } = default!;
+
+    private double Width => Math.Max(1, State.Document.Canvas.Width);
+    private double Height => Math.Max(1, State.Document.Canvas.Height);
+    private IEnumerable<DiagramNode> VisibleNodes => State.Document.Nodes.Where(node => State.Document.ResolveLayer(node.LayerId).IsVisible);
+    private IEnumerable<DiagramGroup> VisibleGroups => State.Document.Groups.Where(group => State.Document.ResolveLayer(group.LayerId).IsVisible);
+    private DiagramBounds ViewportBounds => new(
+        State.Document.ViewportState.ScrollLeft / Math.Max(State.Document.ViewportState.Zoom, 0.1),
+        State.Document.ViewportState.ScrollTop / Math.Max(State.Document.ViewportState.Zoom, 0.1),
+        960 / Math.Max(State.Document.ViewportState.Zoom, 0.1),
+        620 / Math.Max(State.Document.ViewportState.Zoom, 0.1));
+
+    private static double Round(double value) => Math.Round(value, 2);
+    private double ScaleX(double x) => Round((x / Width) * 220);
+    private double ScaleY(double y) => Round((y / Height) * 160);
+    private double ScaleWidth(double width) => Round((width / Width) * 220);
+    private double ScaleHeight(double height) => Round((height / Height) * 160);
+}

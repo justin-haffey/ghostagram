@@ -1,0 +1,17 @@
+{
+  "name": "diagram-studio-jsplumb",
+  "version": "1.0.0",
+  "description": "Pinned jsPlumb runtime for Diagram Studio",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "sync:vendor": "node -e \"const fs=require('node:fs');const path=require('node:path');const src=path.join('node_modules','@jsplumb','browser-ui','js','jsplumb.browser-ui.es.js');const destDir=path.join('wwwroot','vendor','jsplumb');fs.mkdirSync(destDir,{recursive:true});fs.copyFileSync(src,path.join(destDir,'jsplumb.browser-ui.es.js'));\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "dependencies": {
+    "@jsplumb/browser-ui": "6.2.10"
+  }
+}

@@ -1,0 +1,232 @@
+.diagram-runtime-host {
+    height: 100%;
+    outline: none;
+    position: relative;
+}
+
+.diagram-viewport {
+    background:
+        linear-gradient(90deg, rgba(31, 130, 123, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(31, 130, 123, 0.08) 1px, transparent 1px),
+        radial-gradient(circle at top left, rgba(192, 122, 74, 0.08), transparent 28%),
+        linear-gradient(180deg, #f7f2e9 0%, #ede3d7 100%);
+    background-size: 24px 24px, 24px 24px, auto, auto;
+    border-radius: 1.6rem;
+    height: 100%;
+    overflow: auto;
+    position: relative;
+    width: 100%;
+}
+
+.diagram-stage {
+    height: 4000px;
+    position: relative;
+    width: 6000px;
+}
+
+.diagram-node,
+.diagram-group {
+    position: absolute;
+    user-select: none;
+}
+
+.diagram-node {
+    background: rgba(250, 249, 245, 0.94);
+    border: 2px solid rgba(49, 64, 82, 0.78);
+    border-radius: 1.3rem;
+    box-shadow: 0 18px 40px rgba(15, 23, 35, 0.12);
+    color: #101723;
+    padding: 0.85rem 0.95rem;
+}
+
+.diagram-node__title {
+    font-size: 1rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+}
+
+.diagram-node__meta {
+    color: #546072;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.74rem;
+    line-height: 1.5;
+}
+
+.diagram-node__tags {
+    color: #1f827b;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    margin-top: 0.55rem;
+    text-transform: uppercase;
+}
+
+.diagram-group {
+    background: rgba(31, 37, 48, 0.08);
+    border: 2px dashed rgba(31, 130, 123, 0.64);
+    border-radius: 1.6rem;
+    padding: 3.4rem 1rem 1rem;
+}
+
+.diagram-group__header {
+    align-items: center;
+    color: #1f2530;
+    display: flex;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.8rem;
+    justify-content: space-between;
+    left: 1rem;
+    position: absolute;
+    right: 1rem;
+    top: 0.9rem;
+}
+
+.diagram-group__toggle {
+    background: rgba(31, 130, 123, 0.12);
+    border: 1px solid rgba(31, 130, 123, 0.3);
+    border-radius: 999px;
+    color: #1f2530;
+    cursor: pointer;
+    height: 2rem;
+    width: 2rem;
+}
+
+.diagram-group__content {
+    min-height: calc(100% - 2rem);
+    position: relative;
+}
+
+.diagram-port {
+    background: #faf9f5;
+    border: 2px solid #1f827b;
+    border-radius: 50%;
+    height: 14px;
+    position: absolute;
+    width: 14px;
+}
+
+.diagram-port.role-bidirectional,
+.diagram-port.role-association,
+.diagram-port.role-composition,
+.diagram-port.role-aggregation,
+.diagram-port.role-inheritance {
+    border-radius: 4px;
+}
+
+.diagram-port.side-top {
+    left: calc(50% - 7px);
+    top: -9px;
+}
+
+.diagram-port.side-right {
+    right: -9px;
+    top: calc(50% - 7px);
+}
+
+.diagram-port.side-bottom {
+    bottom: -9px;
+    left: calc(50% - 7px);
+}
+
+.diagram-port.side-left {
+    left: -9px;
+    top: calc(50% - 7px);
+}
+
+.diagram-node.is-selected,
+.diagram-group.is-selected {
+    box-shadow: 0 0 0 4px rgba(44, 168, 160, 0.24), 0 18px 40px rgba(15, 23, 35, 0.12);
+}
+
+.diagram-node.is-locked,
+.diagram-group.is-locked {
+    opacity: 0.72;
+}
+
+.diagram-node.is-locked::after,
+.diagram-group.is-locked::after {
+    color: #546072;
+    content: "Locked";
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    position: absolute;
+    right: 0.85rem;
+    top: 0.85rem;
+}
+
+.diagram-marquee {
+    background: rgba(44, 168, 160, 0.12);
+    border: 1px dashed rgba(31, 130, 123, 0.9);
+    border-radius: 0.7rem;
+    pointer-events: none;
+    position: absolute;
+    z-index: 999;
+}
+
+.diagram-label-editor {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(31, 130, 123, 0.38);
+    border-radius: 999px;
+    box-shadow: 0 10px 28px rgba(15, 23, 35, 0.18);
+    color: #101723;
+    left: 0;
+    min-width: 220px;
+    padding: 0.55rem 0.85rem;
+    position: absolute;
+    top: 0;
+    z-index: 1200;
+}
+
+.jtk-default-label {
+    background: rgba(250, 249, 245, 0.96);
+    border: 1px solid rgba(67, 81, 98, 0.16);
+    border-radius: 999px;
+    box-shadow: 0 10px 24px rgba(15, 23, 35, 0.12);
+    color: #1f2530;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    padding: 0.35rem 0.6rem;
+}
+
+.edge-animation-flow path,
+.edge-animation-pulse path,
+.edge-animation-reverseflow path {
+    stroke-dasharray: 12 8;
+}
+
+.edge-animation-flow path {
+    animation: dash-flow 1.2s linear infinite;
+}
+
+.edge-animation-pulse path {
+    animation: dash-flow 1.8s ease-in-out infinite;
+}
+
+.edge-animation-reverseflow path {
+    animation: dash-reverse 1.2s linear infinite;
+}
+
+.jtk-connector.is-selected path {
+    stroke-width: 5px;
+}
+
+.jtk-connector.has-waypoints path {
+    stroke-linejoin: round;
+}
+
+@keyframes dash-flow {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: -40; }
+}
+
+@keyframes dash-reverse {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: 40; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edge-animation-flow path,
+    .edge-animation-pulse path,
+    .edge-animation-reverseflow path {
+        animation: none;
+    }
+}

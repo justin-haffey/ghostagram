@@ -1,0 +1,9 @@
+[agents]
+max_threads = 8
+max_depth = 3
+
+[model_providers.azure]
+name = "Azure OpenAI"
+base_url = "https://proj-codegen-resource.openai.azure.com/openai/v1"
+env_key = "AZURE_OPENAI_API_KEY"
+wire_api = "responses"

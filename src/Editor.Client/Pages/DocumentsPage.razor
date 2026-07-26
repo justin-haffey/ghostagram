@@ -1,0 +1,148 @@
+@page "/documents"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@inject DiagramEditorState State
+@inject NavigationManager Navigation
+
+<PageTitle>Diagram Studio Documents</PageTitle>
+
+<div class="documents-page">
+    <section class="documents-hero">
+        <div>
+            <div class="documents-hero__eyebrow">Workspace Catalog</div>
+            <h1>Documents, snapshots, and reusable building blocks.</h1>
+            <p>Start new diagrams, reopen recent work, favorite important flows, and jump straight into the editor.</p>
+        </div>
+
+        <div class="documents-hero__actions">
+            <select class="studio-select" @bind="_newTemplate">
+                @foreach (var template in State.TemplateDefinitions)
+                {
+                    <option value="@template.Kind">@template.DisplayName</option>
+                }
+            </select>
+            <button class="studio-button studio-button--strong" @onclick="CreateAsync">Create New Document</button>
+            <a class="studio-button" href="/">Back Home</a>
+        </div>
+    </section>
+
+    <section class="documents-grid">
+        <article class="documents-panel">
+            <div class="documents-panel__header">
+                <div>
+                    <h2>Recent Documents</h2>
+                    <p>@State.Documents.Count items</p>
+                </div>
+            </div>
+
+            @if (State.Documents.Count == 0)
+            {
+                <div class="documents-empty">
+                    <strong>No documents yet</strong>
+                    <span>Create your first diagram to populate the workspace.</span>
+                </div>
+            }
+            else
+            {
+                @foreach (var document in State.Documents.OrderByDescending(doc => doc.IsFavorite).ThenByDescending(doc => doc.UpdatedUtc))
+                {
+                    <div class="document-card">
+                        <div class="document-card__body">
+                            <div>
+                                <strong>@document.Title</strong>
+                                <span>@document.TemplateKind | @document.NodeCount nodes | @document.EdgeCount edges</span>
+                            </div>
+                            <small>@document.UpdatedUtc.LocalDateTime.ToString("g")</small>
+                        </div>
+
+                        <div class="document-card__actions">
+                            <button class="studio-button studio-button--small" @onclick="() => OpenAsync(document.DocumentId)">Open</button>
+                            <button class="studio-button studio-button--small" @onclick="() => ToggleFavoriteAsync(document)">@(document.IsFavorite ? "Unfavorite" : "Favorite")</button>
+                            <button class="studio-button studio-button--small" @onclick="() => DuplicateAsync(document.DocumentId)">Duplicate</button>
+                            <button class="studio-button studio-button--small studio-button--danger" @onclick="() => DeleteAsync(document.DocumentId)">Delete</button>
+                        </div>
+                    </div>
+                }
+            }
+        </article>
+
+        <article class="documents-panel">
+            <div class="documents-panel__header">
+                <div>
+                    <h2>Reusable Library</h2>
+                    <p>@State.LibraryItems.Count items</p>
+                </div>
+            </div>
+
+            @if (State.LibraryItems.Count == 0)
+            {
+                <div class="documents-empty">
+                    <strong>No reusable snippets yet</strong>
+                    <span>Save a selection from the editor to seed the shared library rail.</span>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in State.LibraryItems.Take(8))
+                {
+                    <div class="document-card">
+                        <div class="document-card__body">
+                            <div>
+                                <strong>@item.Name</strong>
+                                <span>@item.TemplateKind | @item.Fragment.Nodes.Length nodes</span>
+                            </div>
+                            <small>@item.CreatedUtc.LocalDateTime.ToString("g")</small>
+                        </div>
+                        <p class="document-card__description">@item.Description</p>
+                    </div>
+                }
+            }
+        </article>
+    </section>
+</div>
+
+@code {
+    private TemplateKind _newTemplate = TemplateKind.Flowchart;
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.Changed += HandleChanged;
+        await State.EnsureCatalogAsync();
+    }
+
+    private async Task CreateAsync()
+    {
+        await State.CreateNewAsync(_newTemplate);
+        Navigation.NavigateTo($"/editor/{State.Document.DocumentId}");
+    }
+
+    private Task OpenAsync(string documentId)
+    {
+        Navigation.NavigateTo($"/editor/{documentId}");
+        return Task.CompletedTask;
+    }
+
+    private async Task ToggleFavoriteAsync(DocumentSummary document)
+    {
+        await State.SetFavoriteAsync(document.DocumentId, !document.IsFavorite);
+    }
+
+    private async Task DuplicateAsync(string documentId)
+    {
+        await State.DuplicateDocumentAsync(documentId);
+    }
+
+    private async Task DeleteAsync(string documentId)
+    {
+        await State.DeleteDocumentAsync(documentId);
+    }
+
+    private void HandleChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        State.Changed -= HandleChanged;
+    }
+}
