@@ -9,6 +9,8 @@ public sealed class JsPlumbAdapter(IJSRuntime jsRuntime) : IJsPlumbAdapter
     private const string ModulePath = "/_content/Diagrams.Interop.JsPlumb/js/diagram-editor.js";
     private IJSObjectReference? _module;
 
+    /// <summary>Initializes the module against the supplied host and registers the .NET event bridge.</summary>
+    /// <remarks>Calling this more than once reuses the imported module; the JavaScript initializer owns runtime replacement.</remarks>
     public async Task InitializeAsync(
         ElementReference host,
         DotNetObjectReference<JsPlumbEventBridge> bridge,
@@ -53,6 +55,7 @@ public sealed class JsPlumbAdapter(IJSRuntime jsRuntime) : IJsPlumbAdapter
             }
             catch (JSDisconnectedException)
             {
+                // Blazor Server can tear down the circuit before JavaScript disposal is acknowledged.
             }
             finally
             {

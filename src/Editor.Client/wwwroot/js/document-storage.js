@@ -26,6 +26,7 @@ export async function saveDocument(documentId, documentJson, summaryJson) {
 
 export async function deleteDocument(documentId) {
     const database = await openDatabase();
+    // Snapshot cleanup shares the document transaction so a delete cannot leave orphaned snapshots.
     await runRequest(database, [documentStoreName, snapshotStoreName], "readwrite", stores => {
         stores.documents.delete(documentId);
         const snapshotIndex = stores.snapshots.index("byDocumentId");

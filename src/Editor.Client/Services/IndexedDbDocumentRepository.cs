@@ -23,6 +23,7 @@ public sealed class BrowserDocumentCatalogRepository(
 
     private IJSObjectReference? _module;
 
+    /// <summary>Reads document summaries from IndexedDB and orders them by most recent update.</summary>
     public async Task<IReadOnlyList<DocumentSummary>> ListDocumentsAsync(CancellationToken cancellationToken = default)
     {
         var payload = await InvokeAsync<string[]>("listDocuments", cancellationToken);
@@ -49,6 +50,7 @@ public sealed class BrowserDocumentCatalogRepository(
         var document = await GetDocumentAsync(documentId, cancellationToken);
         if (document is null)
         {
+            // Missing IDs are treated as a no-op so a stale catalog entry cannot create a new document.
             return;
         }
 
