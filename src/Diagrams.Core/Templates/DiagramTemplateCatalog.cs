@@ -42,132 +42,132 @@ public sealed class DiagramTemplateCatalog(
         switch (kind)
         {
             case TemplateKind.Flowchart:
-            {
-                var intake = builder.AddNode("process", "Intake");
-                var review = builder.AddNode("decision", "Review");
-                var approve = builder.AddNode("process", "Approve");
-                var revise = builder.AddNode("process", "Revise");
-                builder.AddEdge(intake, PortRole.Output, review, PortRole.Input, ConnectorKind.Flowchart, "submit", EdgeAnimationKind.Flow);
-                builder.AddEdge(review, PortRole.Output, approve, PortRole.Input, ConnectorKind.Flowchart, "yes", EdgeAnimationKind.Flow);
-                builder.AddEdge(review, PortRole.Dependency, revise, PortRole.Input, ConnectorKind.Flowchart, "needs work", EdgeAnimationKind.Pulse);
-                builder.AddGroup("Review Loop", new DiagramBounds(0, 0, 720, 320), new FreeformLayoutSpec(), approve.Node.Id, revise.Node.Id);
-                break;
-            }
+                {
+                    var intake = builder.AddNode("process", "Intake");
+                    var review = builder.AddNode("decision", "Review");
+                    var approve = builder.AddNode("process", "Approve");
+                    var revise = builder.AddNode("process", "Revise");
+                    builder.AddEdge(intake, PortRole.Output, review, PortRole.Input, ConnectorKind.Flowchart, "submit", EdgeAnimationKind.Flow);
+                    builder.AddEdge(review, PortRole.Output, approve, PortRole.Input, ConnectorKind.Flowchart, "yes", EdgeAnimationKind.Flow);
+                    builder.AddEdge(review, PortRole.Dependency, revise, PortRole.Input, ConnectorKind.Flowchart, "needs work", EdgeAnimationKind.Pulse);
+                    builder.AddGroup("Review Loop", new DiagramBounds(0, 0, 720, 320), new FreeformLayoutSpec(), approve.Node.Id, revise.Node.Id);
+                    break;
+                }
             case TemplateKind.OrgChart:
-            {
-                var ceo = builder.AddNode("actor", "CEO");
-                var ops = builder.AddNode("actor", "Operations");
-                var design = builder.AddNode("actor", "Design");
-                var engineering = builder.AddNode("actor", "Engineering");
-                builder.AddEdge(ceo, PortRole.Output, ops, PortRole.Input, ConnectorKind.Straight, "leads");
-                builder.AddEdge(ceo, PortRole.Output, design, PortRole.Input, ConnectorKind.Straight, "leads");
-                builder.AddEdge(ceo, PortRole.Output, engineering, PortRole.Input, ConnectorKind.Straight, "leads");
-                break;
-            }
+                {
+                    var ceo = builder.AddNode("actor", "CEO");
+                    var ops = builder.AddNode("actor", "Operations");
+                    var design = builder.AddNode("actor", "Design");
+                    var engineering = builder.AddNode("actor", "Engineering");
+                    builder.AddEdge(ceo, PortRole.Output, ops, PortRole.Input, ConnectorKind.Straight, "leads");
+                    builder.AddEdge(ceo, PortRole.Output, design, PortRole.Input, ConnectorKind.Straight, "leads");
+                    builder.AddEdge(ceo, PortRole.Output, engineering, PortRole.Input, ConnectorKind.Straight, "leads");
+                    break;
+                }
             case TemplateKind.UmlClass:
-            {
-                var client = builder.AddNode("service", "DiagramClient");
-                var state = builder.AddNode("service", "EditorState");
-                var adapter = builder.AddNode("service", "JsPlumbAdapter");
-                var store = builder.AddNode("service", "GraphStore");
-                builder.AddEdge(client, PortRole.Output, state, PortRole.Input, ConnectorKind.Bezier, "uses");
-                builder.AddEdge(state, PortRole.Dependency, adapter, PortRole.Input, ConnectorKind.Bezier, "depends on");
-                builder.AddEdge(state, PortRole.Event, store, PortRole.Input, ConnectorKind.Bezier, "syncs", EdgeAnimationKind.Flow, styleToken: "accent");
-                break;
-            }
+                {
+                    var client = builder.AddNode("service", "DiagramClient");
+                    var state = builder.AddNode("service", "EditorState");
+                    var adapter = builder.AddNode("service", "JsPlumbAdapter");
+                    var store = builder.AddNode("service", "GraphStore");
+                    builder.AddEdge(client, PortRole.Output, state, PortRole.Input, ConnectorKind.Bezier, "uses");
+                    builder.AddEdge(state, PortRole.Dependency, adapter, PortRole.Input, ConnectorKind.Bezier, "depends on");
+                    builder.AddEdge(state, PortRole.Event, store, PortRole.Input, ConnectorKind.Bezier, "syncs", EdgeAnimationKind.Flow, styleToken: "accent");
+                    break;
+                }
             case TemplateKind.UmlSequence:
-            {
-                var caller = builder.AddNode("lifeline", "Client");
-                var api = builder.AddNode("lifeline", "API");
-                var worker = builder.AddNode("lifeline", "Worker");
-                var store = builder.AddNode("lifeline", "Storage");
-                builder.AddEdge(caller, PortRole.Output, api, PortRole.Input, ConnectorKind.Straight, "request");
-                builder.AddEdge(api, PortRole.Output, worker, PortRole.Input, ConnectorKind.Straight, "dispatch");
-                builder.AddEdge(worker, PortRole.Output, store, PortRole.Input, ConnectorKind.Straight, "persist");
-                builder.AddEdge(store, PortRole.Output, api, PortRole.Input, ConnectorKind.Straight, "ack");
-                break;
-            }
+                {
+                    var caller = builder.AddNode("lifeline", "Client");
+                    var api = builder.AddNode("lifeline", "API");
+                    var worker = builder.AddNode("lifeline", "Worker");
+                    var store = builder.AddNode("lifeline", "Storage");
+                    builder.AddEdge(caller, PortRole.Output, api, PortRole.Input, ConnectorKind.Straight, "request");
+                    builder.AddEdge(api, PortRole.Output, worker, PortRole.Input, ConnectorKind.Straight, "dispatch");
+                    builder.AddEdge(worker, PortRole.Output, store, PortRole.Input, ConnectorKind.Straight, "persist");
+                    builder.AddEdge(store, PortRole.Output, api, PortRole.Input, ConnectorKind.Straight, "ack");
+                    break;
+                }
             case TemplateKind.Erd:
-            {
-                var customer = builder.AddNode("database", "Customer");
-                var order = builder.AddNode("database", "Order");
-                var invoice = builder.AddNode("database", "Invoice");
-                builder.AddEdge(customer, PortRole.Association, order, PortRole.Association, ConnectorKind.Straight, "1..n", styleToken: "copper");
-                builder.AddEdge(order, PortRole.Association, invoice, PortRole.Association, ConnectorKind.Straight, "1..1", styleToken: "copper");
-                break;
-            }
+                {
+                    var customer = builder.AddNode("database", "Customer");
+                    var order = builder.AddNode("database", "Order");
+                    var invoice = builder.AddNode("database", "Invoice");
+                    builder.AddEdge(customer, PortRole.Association, order, PortRole.Association, ConnectorKind.Straight, "1..n", styleToken: "copper");
+                    builder.AddEdge(order, PortRole.Association, invoice, PortRole.Association, ConnectorKind.Straight, "1..1", styleToken: "copper");
+                    break;
+                }
             case TemplateKind.C4Context:
-            {
-                var user = builder.AddNode("persona", "Operations User");
-                var system = builder.AddNode("container", "Diagram Studio");
-                var identity = builder.AddNode("service", "Identity");
-                var analytics = builder.AddNode("service", "Analytics");
-                builder.AddGroup("Platform Boundary", new DiagramBounds(0, 0, 980, 480), new FreeformLayoutSpec(), system.Node.Id, identity.Node.Id, analytics.Node.Id);
-                builder.AddEdge(user, PortRole.Output, system, PortRole.Input, ConnectorKind.Bezier, "uses");
-                builder.AddEdge(system, PortRole.Output, identity, PortRole.Input, ConnectorKind.Bezier, "authenticates");
-                builder.AddEdge(system, PortRole.Event, analytics, PortRole.Input, ConnectorKind.Bezier, "telemetry", EdgeAnimationKind.Flow, "accent");
-                break;
-            }
+                {
+                    var user = builder.AddNode("persona", "Operations User");
+                    var system = builder.AddNode("container", "Diagram Studio");
+                    var identity = builder.AddNode("service", "Identity");
+                    var analytics = builder.AddNode("service", "Analytics");
+                    builder.AddGroup("Platform Boundary", new DiagramBounds(0, 0, 980, 480), new FreeformLayoutSpec(), system.Node.Id, identity.Node.Id, analytics.Node.Id);
+                    builder.AddEdge(user, PortRole.Output, system, PortRole.Input, ConnectorKind.Bezier, "uses");
+                    builder.AddEdge(system, PortRole.Output, identity, PortRole.Input, ConnectorKind.Bezier, "authenticates");
+                    builder.AddEdge(system, PortRole.Event, analytics, PortRole.Input, ConnectorKind.Bezier, "telemetry", EdgeAnimationKind.Flow, "accent");
+                    break;
+                }
             case TemplateKind.BpmnLite:
-            {
-                var start = builder.AddNode("event", "Start");
-                var task = builder.AddNode("process", "Assess Request");
-                var gateway = builder.AddNode("gateway", "Approved?");
-                var end = builder.AddNode("event", "Complete");
-                var rework = builder.AddNode("process", "Request Rework");
-                builder.AddEdge(start, PortRole.Event, task, PortRole.Input, ConnectorKind.Flowchart, "begin");
-                builder.AddEdge(task, PortRole.Output, gateway, PortRole.Input, ConnectorKind.Flowchart, "submit");
-                builder.AddEdge(gateway, PortRole.Output, end, PortRole.Event, ConnectorKind.Flowchart, "yes");
-                builder.AddEdge(gateway, PortRole.Dependency, rework, PortRole.Input, ConnectorKind.Flowchart, "no");
-                break;
-            }
+                {
+                    var start = builder.AddNode("event", "Start");
+                    var task = builder.AddNode("process", "Assess Request");
+                    var gateway = builder.AddNode("gateway", "Approved?");
+                    var end = builder.AddNode("event", "Complete");
+                    var rework = builder.AddNode("process", "Request Rework");
+                    builder.AddEdge(start, PortRole.Event, task, PortRole.Input, ConnectorKind.Flowchart, "begin");
+                    builder.AddEdge(task, PortRole.Output, gateway, PortRole.Input, ConnectorKind.Flowchart, "submit");
+                    builder.AddEdge(gateway, PortRole.Output, end, PortRole.Event, ConnectorKind.Flowchart, "yes");
+                    builder.AddEdge(gateway, PortRole.Dependency, rework, PortRole.Input, ConnectorKind.Flowchart, "no");
+                    break;
+                }
             case TemplateKind.NetworkTopology:
-            {
-                var edge = builder.AddNode("device", "Edge Firewall");
-                var api = builder.AddNode("service", "API");
-                var workers = builder.AddNode("service", "Workers");
-                var db = builder.AddNode("database", "SQL");
-                builder.AddGroup("Core Zone", new DiagramBounds(0, 0, 880, 460), new FreeformLayoutSpec(), api.Node.Id, workers.Node.Id, db.Node.Id);
-                builder.AddEdge(edge, PortRole.Bidirectional, api, PortRole.Input, ConnectorKind.Bezier, "https", EdgeAnimationKind.Flow, "ink");
-                builder.AddEdge(api, PortRole.Output, workers, PortRole.Input, ConnectorKind.Bezier, "events", EdgeAnimationKind.Flow, "accent");
-                builder.AddEdge(workers, PortRole.Output, db, PortRole.Association, ConnectorKind.Bezier, "write", EdgeAnimationKind.Pulse, "copper");
-                break;
-            }
+                {
+                    var edge = builder.AddNode("device", "Edge Firewall");
+                    var api = builder.AddNode("service", "API");
+                    var workers = builder.AddNode("service", "Workers");
+                    var db = builder.AddNode("database", "SQL");
+                    builder.AddGroup("Core Zone", new DiagramBounds(0, 0, 880, 460), new FreeformLayoutSpec(), api.Node.Id, workers.Node.Id, db.Node.Id);
+                    builder.AddEdge(edge, PortRole.Bidirectional, api, PortRole.Input, ConnectorKind.Bezier, "https", EdgeAnimationKind.Flow, "ink");
+                    builder.AddEdge(api, PortRole.Output, workers, PortRole.Input, ConnectorKind.Bezier, "events", EdgeAnimationKind.Flow, "accent");
+                    builder.AddEdge(workers, PortRole.Output, db, PortRole.Association, ConnectorKind.Bezier, "write", EdgeAnimationKind.Pulse, "copper");
+                    break;
+                }
             case TemplateKind.MindMap:
-            {
-                var vision = builder.AddNode("event", "Vision");
-                var ui = builder.AddNode("process", "Experience");
-                var runtime = builder.AddNode("service", "Runtime");
-                var data = builder.AddNode("storage", "Persistence");
-                var ops = builder.AddNode("device", "Operations");
-                builder.AddEdge(vision, PortRole.Event, ui, PortRole.Input, ConnectorKind.StateMachine, "focus");
-                builder.AddEdge(vision, PortRole.Event, runtime, PortRole.Input, ConnectorKind.StateMachine, "platform");
-                builder.AddEdge(vision, PortRole.Event, data, PortRole.Input, ConnectorKind.StateMachine, "structure");
-                builder.AddEdge(vision, PortRole.Event, ops, PortRole.Input, ConnectorKind.StateMachine, "delivery");
-                break;
-            }
+                {
+                    var vision = builder.AddNode("event", "Vision");
+                    var ui = builder.AddNode("process", "Experience");
+                    var runtime = builder.AddNode("service", "Runtime");
+                    var data = builder.AddNode("storage", "Persistence");
+                    var ops = builder.AddNode("device", "Operations");
+                    builder.AddEdge(vision, PortRole.Event, ui, PortRole.Input, ConnectorKind.StateMachine, "focus");
+                    builder.AddEdge(vision, PortRole.Event, runtime, PortRole.Input, ConnectorKind.StateMachine, "platform");
+                    builder.AddEdge(vision, PortRole.Event, data, PortRole.Input, ConnectorKind.StateMachine, "structure");
+                    builder.AddEdge(vision, PortRole.Event, ops, PortRole.Input, ConnectorKind.StateMachine, "delivery");
+                    break;
+                }
             case TemplateKind.DataFlow:
-            {
-                var source = builder.AddNode("service", "Source");
-                var transform = builder.AddNode("process", "Transform");
-                var sink = builder.AddNode("storage", "Lakehouse");
-                var notify = builder.AddNode("event", "Alert");
-                builder.AddEdge(source, PortRole.Output, transform, PortRole.Input, ConnectorKind.Flowchart, "stream", EdgeAnimationKind.Flow, "accent");
-                builder.AddEdge(transform, PortRole.Output, sink, PortRole.Input, ConnectorKind.Flowchart, "persist", EdgeAnimationKind.Flow, "copper");
-                builder.AddEdge(transform, PortRole.Event, notify, PortRole.Event, ConnectorKind.Bezier, "status", EdgeAnimationKind.Pulse, "signal");
-                break;
-            }
+                {
+                    var source = builder.AddNode("service", "Source");
+                    var transform = builder.AddNode("process", "Transform");
+                    var sink = builder.AddNode("storage", "Lakehouse");
+                    var notify = builder.AddNode("event", "Alert");
+                    builder.AddEdge(source, PortRole.Output, transform, PortRole.Input, ConnectorKind.Flowchart, "stream", EdgeAnimationKind.Flow, "accent");
+                    builder.AddEdge(transform, PortRole.Output, sink, PortRole.Input, ConnectorKind.Flowchart, "persist", EdgeAnimationKind.Flow, "copper");
+                    builder.AddEdge(transform, PortRole.Event, notify, PortRole.Event, ConnectorKind.Bezier, "status", EdgeAnimationKind.Pulse, "signal");
+                    break;
+                }
             case TemplateKind.StateDependency:
-            {
-                var draft = builder.AddNode("event", "Draft");
-                var review = builder.AddNode("process", "Review");
-                var approved = builder.AddNode("event", "Approved");
-                var published = builder.AddNode("event", "Published");
-                builder.AddEdge(draft, PortRole.Event, review, PortRole.Input, ConnectorKind.StateMachine, "submit");
-                builder.AddEdge(review, PortRole.Output, approved, PortRole.Event, ConnectorKind.StateMachine, "accept");
-                builder.AddEdge(approved, PortRole.Event, published, PortRole.Event, ConnectorKind.StateMachine, "release");
-                break;
-            }
+                {
+                    var draft = builder.AddNode("event", "Draft");
+                    var review = builder.AddNode("process", "Review");
+                    var approved = builder.AddNode("event", "Approved");
+                    var published = builder.AddNode("event", "Published");
+                    builder.AddEdge(draft, PortRole.Event, review, PortRole.Input, ConnectorKind.StateMachine, "submit");
+                    builder.AddEdge(review, PortRole.Output, approved, PortRole.Event, ConnectorKind.StateMachine, "accept");
+                    builder.AddEdge(approved, PortRole.Event, published, PortRole.Event, ConnectorKind.StateMachine, "release");
+                    break;
+                }
         }
 
         var document = builder.Build();

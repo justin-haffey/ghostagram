@@ -1,526 +1,445 @@
 # High-Level Design Document: Diagram Studio Version 2
 
-| Field         | Value                                                                |
-| ------------- | -------------------------------------------------------------------- |
-| Status        | Approved - JH                                                        |
-| Version       | 2.0                                                                  |
-| Date          | 2026-07-26                                                           |
-| Scope         | Modern, canvas-first editor interface                                |
-| Primary stack | .NET 10, Blazor Web App with Interactive WebAssembly, jsPlumb 6.2.10 |
+| Field | Value |
+| --- | --- |
+| Status | Proposed — review required |
+| Version | 2.1 reliability architecture |
+| Date | 2026-07-29 |
+| Scope | Make editing responsive, diagnosable, and functionally reliable without abandoning local-first operation |
+| Stack | .NET 10, Blazor Interactive WebAssembly, IndexedDB, jsPlumb 6.2.10 |
 
 ## 1. Executive Summary
 
-Diagram Studio version 2 replaces the current fixed three-column editor with a canvas-first adaptive workspace. The canvas becomes the stable spatial anchor; tools appear through a compact command bar, a narrow activity rail, contextual drawers, floating canvas controls, and a compact status bar.
+This replaces the previous V2 design's UI-only scope with a reliability-first architecture. The current editor has good domain foundations — an immutable `DiagramDocument`, a command-capable graph store, local IndexedDB persistence, and a browser renderer — but its client facade performs too many responsibilities on the interaction path. A document change can synchronously validate the entire graph, capture a full history snapshot, schedule an unobserved save, notify every subscriber, request a complete jsPlumb rebuild, serialize the whole document, refresh the catalog, and optionally push the same payload to a server guarded by one global lock.
 
-The target preserves the current local-first application, immutable `DiagramDocument` model, `DiagramEditorState` workflows, IndexedDB document stores, optional server synchronization, and jsPlumb rendering boundary. It does not redesign domain behavior or persistence. Workspace-only preferences such as pinned panels and panel widths are stored separately from diagram content.
+V2 introduces a **single-writer document session**, explicit typed commands and outcomes, independently scoped UI state, coalesced render deltas, write-behind persistence, and per-document synchronization. Commands remain local-first and deterministic; the browser renderer is a projection, never the source of truth. Full rendering is a recovery/initialization operation, not the normal response to an edit.
 
-At a 1440 by 900 desktop viewport, the default no-drawer state targets at least 80 percent of viewport area for the canvas region. The current implementation permanently allocates 280 pixels to assets, 320 pixels to the inspector, 32 pixels to horizontal gaps and padding, a multi-row top toolbar, a footer, and a separate minimap row. Version 2 removes those permanent costs while keeping every existing workflow reachable.
+The design preserves the current document schema and editor capabilities. It does not authorize code changes, a backend product, real-time collaboration, or a schema migration.
 
-This document and its linked ADRs are review candidates. They do not authorize implementation.
+## 2. Evidence and Problem Statement
 
-## 2. Objectives
+The following observations are from the current source and Codebase Memory graph, not inferred from the user's report alone:
 
-### 2.1 Primary Objectives
+| Evidence | Reliability or performance consequence |
+| --- | --- |
+| The four partial `DiagramEditorState` files own editing, catalog, workflow, selection, validation, history, autosave, and sync state. `NotifyChanged` has high fan-in. | Unrelated changes share one invalidation and failure boundary. |
+| Every accepted mutation calls `UpdateDerivedState`, which validates the complete document, records full before/after snapshots, and raises one broad `Changed` event. | Work scales with document size even for a small visual move. |
+| `DiagramCanvas` normally answers `Changed` with `RenderDocumentAsync`. | Most command paths rebuild the canvas rather than update the changed element. |
+| `renderDocument` resets jsPlumb, clears the stage, recreates groups/nodes/endpoints/connections, then repaints everything. `applyPatch` delegates to that same operation. | Repeated interaction can create long main-thread tasks and visual instability. |
+| A save serializes the complete document, writes it to IndexedDB, refreshes the full catalog, and may push to the server. Debounced saves are fire-and-forget and only cancellation is handled. | Save failure is not a first-class result; catalog and network work are coupled to editing. |
+| The file sync store uses one `SemaphoreSlim` for every document and whole-file writes. Conflicts are returned but the client only changes status text. | Independent documents block each other; conflicts cannot be resolved safely. |
 
-- Make the diagram canvas the dominant visual and interaction surface.
-- Reduce persistent editor chrome to a 52-pixel command bar, 44-pixel activity rail, and 24-pixel status bar.
-- Replace fixed sidebars with contextual, resizable, pinnable drawers that overlay the canvas by default.
-- Move common selection actions close to the selected object without hiding full inspector workflows.
-- Preserve all current editor capabilities and the version 2 `DiagramDocument` schema.
-- Provide complete keyboard access, visible focus, reduced-motion behavior, and WCAG 2.2 AA color-contrast targets.
-- Adapt without stacking large panels above and below the canvas on narrower viewports.
+The current architecture snapshot says the adapter module is missing and browser tests were unavailable. Those statements are stale: the module and a drag-regression E2E test are now checked in. This design does not treat their presence as evidence that every workflow is currently correct; it requires observable operation outcomes and browser-level coverage.
 
-### 2.2 Non-Goals for This Release
+## 3. Objectives
 
-- Real-time collaboration, user identity, authorization, or multi-tenancy.
-- A new diagram schema, explicit document migration pipeline, or event-sourced persistence.
-- Replacing Blazor, jsPlumb, IndexedDB, or the optional sync API.
-- Changing layout, validation, routing, import, export, review, snapshot, or library semantics.
-- Mobile-first authoring below 768 pixels. Small screens receive a safe read/navigation experience and modal editing surfaces, not parity with desktop precision editing.
-- Performance refactoring of full-document rendering or synchronous validation, except where required to avoid UI regressions.
+### 3.1 Primary Objectives
 
-## 3. Principal Use Cases
+- Keep pointer, keyboard, selection, and viewport interaction responsive under normal editing load.
+- Make each user command either succeed with a versioned result or fail with an actionable, observable outcome.
+- Ensure one ordered writer owns a document session, while independent documents remain independent.
+- Render only the affected browser objects when possible and coalesce visual work to animation frames.
+- Decouple persistence and optional synchronization from the interactive command path without losing local durability semantics.
+- Bound memory, queues, retries, and background work; cancellation must be safe and diagnosable.
+- Preserve `DiagramDocument` schema version 2 and the current local-first privacy default.
 
-### 3.1 Build a Diagram with Maximum Canvas Space
+### 3.2 Non-Goals
 
-The maker opens a document into an edge-to-edge canvas, opens Assets from the activity rail, searches or browses stencils, inserts an item, and dismisses the drawer without changing the viewport. Frequently used canvas commands remain available in a small floating control cluster.
-
-### 3.2 Inspect and Refine a Selection
-
-Selecting a node, edge, or group reveals a compact contextual action bar. The maker can perform common operations immediately or open the Inspector drawer for structured properties, metadata, layers, and advanced routing controls. The drawer may be pinned on wide displays.
-
-### 3.3 Find and Execute a Secondary Command
-
-The maker invokes the command palette from the command bar or `Ctrl+K`, searches commands such as export, snapshot, review, layout, or server sync, and executes a command without expanding permanent toolbar rows.
-
-### 3.4 Focus, Review, and Present
-
-Focus mode dismisses drawers and nonessential overlays while preserving an explicit exit control. Review mode adds review-specific actions without permanently expanding the inspector. Presentation mode removes editing chrome from layout instead of making it merely translucent.
+- Real-time multi-user collaboration, presence, shared cursors, or automatic semantic merges.
+- Replacing Blazor, IndexedDB, jsPlumb, or the existing domain vocabulary.
+- Changing diagram meaning, templates, export formats, or permission policy.
+- Promising a hosted/multi-tenant synchronization service. The existing server remains a prototype adapter.
+- Refactoring every current feature before a measured vertical slice proves the new pipeline.
 
 ## 4. Architecture Overview
 
 ```mermaid
 flowchart LR
-    User["Diagram maker"]
-    Shell["V2 adaptive editor shell"]
-    Commands["Command registry and surfaces"]
-    Workspace["Ephemeral workspace state"]
-    Editor["DiagramEditorState"]
-    Canvas["DiagramCanvas and jsPlumb adapter"]
-    Documents[("IndexedDB diagram data")]
-    Preferences[("IndexedDB workspace preferences")]
-    Sync["Optional sync API"]
-
-    User --> Shell
-    Shell --> Commands
-    Shell --> Workspace
-    Commands --> Editor
-    Shell --> Canvas
-    Editor --> Canvas
-    Editor --> Documents
-    Workspace --> Preferences
-    Editor -. optional .-> Sync
+    User --> UI[Blazor feature components]
+    UI --> UIStore[UI stores: selection, viewport, panels]
+    UI --> Gateway[Document command gateway]
+    Gateway --> Session[Single-writer document session]
+    Session --> Domain[Domain commands and rules]
+    Session --> Events[Versioned document change events]
+    Events --> Projection[Read-model projector]
+    Events --> Render[Frame-coalesced renderer]
+    Events --> Durable[Write-behind persistence worker]
+    Durable --> IDB[(IndexedDB)]
+    Durable -. optional outbox .-> Sync[Per-document sync adapter]
+    Render <--> Js[jsPlumb runtime]
+    Js --> Bridge[Validated browser event bridge]
+    Bridge --> Gateway
 ```
-
-The new shell is a presentation and interaction layer around existing application services. `DiagramEditorState` remains the authoritative browser facade for document and workflow state. A separate `EditorWorkspaceState` owns transient UI concerns and cannot mutate `DiagramDocument`.
 
 ### 4.1 Architectural Principles
 
-- Canvas first: persistent chrome must justify every pixel it consumes.
-- Context over inventory: show tools when they are relevant, while keeping them discoverable.
-- One command, many surfaces: toolbar, palette, contextual actions, menus, and shortcuts invoke the same command definitions.
-- Separate durable content from workspace preference.
-- Progressive enhancement: the editor remains operable if a preference cannot be restored.
-- Accessibility is a structural contract, not a finishing pass.
-- Preserve local-first behavior and current trust boundaries.
+1. **Single writer, many readers.** Only a `DocumentSession` changes an active document. Components consume immutable projections and cannot mutate the aggregate.
+2. **Commands, not facade methods.** A typed command is the common path for toolbar, hotkey, bridge, palette, and automation calls. Queries never mutate.
+3. **Change sets, not global invalidation.** Every accepted command emits a classified `DocumentChangeSet`; subscribers choose what they need.
+4. **Renderer as projection.** The JavaScript runtime owns DOM/jsPlumb resources but cannot silently become durable state. Browser events are input proposals, not edits.
+5. **Fast path versus durable path.** Interaction commits in memory first; persistence observes a revision stream and reports its own state.
+6. **Backpressure is a product behavior.** Queues are bounded and overflow has a defined visible outcome, never uncontrolled task creation.
+7. **Progressive migration.** New services wrap the stable domain model. The old state facade is an adapter removed only when feature parity is proven.
 
-### 4.2 Context and Trust Boundaries
+### 4.2 Trust Boundaries
 
-- Diagram content remains inside the browser unless the user exports it or enables server sync.
-- Workspace preferences remain browser-local and are never included in diagram export or sync.
-- Imported JSON remains untrusted input and continues through the existing serializer and validation boundary.
-- The jsPlumb module remains a browser rendering and interaction boundary, not a data authority.
-- The optional sync server remains unauthenticated prototype infrastructure; version 2 does not broaden its exposure.
+- IndexedDB is the default durable local store. Document content leaves the browser only through export or explicitly enabled sync.
+- JSON import, server payloads, and browser-bridge payloads are untrusted input. They are size-limited and validated before creating a command.
+- `diagram-editor.js` is a rendering adapter. It must not write the authoritative document or make uncorrelated callback retries.
+- The optional sync API remains unauthenticated prototype infrastructure and is disabled by default. This design adds no claim of shared-deployment safety.
 
 ## 5. Major Components
 
-### 5.1 Adaptive Editor Shell
+### 5.1 Feature Components and UI Stores
 
-The shell uses four persistent regions:
+`DocumentCatalog`, `EditorWorkspace`, `Inspector`, `Review`, and canvas controls read dedicated projections. `EditorUiStore` holds selection, active tool/panel, viewport, notification state, and transient input state; it is not persisted as diagram data. High-frequency viewport and drag previews stay browser/UI-local until a committed command boundary.
 
-- a 52-pixel top command bar;
-- a 44-pixel left activity rail;
-- a canvas region that receives all remaining space; and
-- a 24-pixel status bar.
+Components subscribe to a selector or projection, not a global `Changed` event. A selection update cannot cause the catalog to re-render, and a catalog refresh cannot recreate a canvas.
 
-Assets, Inspector, Layers, History, Validation, and Review are drawer modes. Only one drawer is open per side. Drawers overlay the canvas by default and may be pinned when the viewport is at least 1280 pixels wide. Pinned widths are resizable from 280 to 420 pixels.
+### 5.2 Document Command Gateway and Session
 
-```mermaid
-flowchart TB
-    Top["52px command bar"]
-    Rail["44px activity rail"]
-    Canvas["Flexible canvas region"]
-    Drawer["Contextual overlay or pinned drawer"]
-    Status["24px status bar"]
-    Top --> Canvas
-    Rail --> Canvas
-    Drawer -. overlays or reduces .-> Canvas
-    Canvas --> Status
-```
-
-### 5.2 Command System
-
-A UI command registry describes command identifier, label, icon, category, shortcut, availability, checked state, and invocation delegate. It wraps existing `DiagramEditorState` methods; it does not duplicate workflow logic.
-
-Primary save, undo, redo, document navigation, and command-palette access stay in the command bar. Selection actions appear contextually. Secondary document, export, layout, review, presentation, snapshot, and sync actions live in menus and the searchable palette.
+`IDocumentCommandGateway.ExecuteAsync` accepts `DocumentCommandEnvelope` with document ID, command ID, correlation ID, expected revision where required, origin, and cancellation token. A registry maps the command type to an application handler. Each active `DocumentSession` has a bounded FIFO mailbox and one asynchronous consumer; it applies domain commands against a snapshot and produces an immutable `CommandResult`.
 
 ```mermaid
-flowchart LR
-    Registry["Command registry"]
-    Top["Top bar"]
-    Palette["Command palette"]
-    Context["Selection actions"]
-    Menu["Overflow menus"]
-    State["DiagramEditorState methods"]
-    Registry --> Top
-    Registry --> Palette
-    Registry --> Context
-    Registry --> Menu
-    Registry --> State
+sequenceDiagram
+    participant UI
+    participant Gateway
+    participant Session
+    participant Domain
+    participant Bus as Change stream
+    UI->>Gateway: MoveNode(command, expected revision)
+    Gateway->>Session: enqueue in document mailbox
+    Session->>Domain: validate and apply
+    Domain-->>Session: snapshot plus change set
+    Session->>Bus: publish revision N+1
+    Session-->>UI: CommandResult accepted
+    Bus-->>UI: selected projections update
 ```
 
-### 5.3 Contextual Drawer Host
+The session is the replacement for the broad mutable facade. It owns active snapshot, revision, command serialization, undo checkpoint policy, and disposal. It does **not** own rendering, catalog projection, IndexedDB calls, HTTP, or Razor component lifetime.
 
-The drawer host renders one mode at a time, preserves focus origin, supports Escape to close, and exposes pin and resize controls on wide screens. Existing inspector sections are regrouped by task instead of rendered as one continuously scrolling panel.
+### 5.3 Domain Command Handlers and Result Contract
 
-```mermaid
-stateDiagram-v2
-    [*] --> Closed
-    Closed --> Overlay: rail action or selection
-    Overlay --> Closed: Escape or dismiss
-    Overlay --> Pinned: pin on wide viewport
-    Pinned --> Overlay: unpin
-    Pinned --> Closed: close
-    Pinned --> Overlay: viewport narrows
+`Diagrams.Core` remains platform-neutral. Each supported edit is an `IDocumentCommand` with a handler that returns either a new snapshot plus semantic change set or a structured rejection. Direct `Func<DiagramDocument, DiagramDocument>` mutations and UI-specific workflows migrate behind this boundary.
+
+```csharp
+public sealed record CommandResult(
+    string CorrelationId,
+    CommandDisposition Disposition,
+    long Revision,
+    DocumentChangeSet? Change,
+    EditorProblem? Problem);
 ```
 
-### 5.4 Canvas Overlay Layer
+`CommandDisposition` is `Accepted`, `Rejected`, `Cancelled`, or `Deferred`. `EditorProblem` includes a stable code, safe message, retryability, and affected command ID. Expected failures (invalid port, locked layer, stale revision, unavailable renderer) are results, not console-only exceptions.
 
-The canvas overlay layer contains zoom/fit controls, the minimap, transient notifications, contextual selection actions, and focus-mode exit. Overlays are anchored to canvas edges and do not reserve grid rows. They must avoid the active drawer and remain reachable at 200 percent browser zoom.
+### 5.4 Change Stream and Read-Model Projections
 
-```mermaid
-flowchart TB
-    Canvas["jsPlumb canvas"]
-    Zoom["Zoom and fit controls"]
-    MiniMap["Collapsible minimap"]
-    Selection["Contextual selection bar"]
-    Toast["Status notifications"]
-    Canvas --- Zoom
-    Canvas --- MiniMap
-    Canvas --- Selection
-    Canvas --- Toast
-```
+`DocumentChangeSet` classifies additions, removals, property changes, bounds changes, edge topology changes, selection changes, viewport changes, validation impact, and full-rebuild barriers. A small in-process event stream publishes revisions in order. Projectors maintain catalog summaries, validation summaries, inspector models, minimap data, command availability, and sync/persistence status.
 
-### 5.5 Workspace Preference Store
+Projection work has explicit priority:
 
-`EditorWorkspaceState` owns active drawer, pin state, drawer width, minimap visibility, focus mode, density, and last command-palette query for the current session. A browser preference repository persists only stable preferences. Failure to load or save preferences falls back to defaults and never blocks document editing.
+- **Immediate:** command result, selection, local visual move, status.
+- **Coalesced:** renderer patch and minimap at the next animation frame.
+- **Deferred:** validation not needed to reject a command, catalog sorting, snapshot cleanup, sync.
 
-```mermaid
-flowchart LR
-    Shell["Adaptive shell"]
-    State["EditorWorkspaceState"]
-    Repository["Browser workspace preference repository"]
-    Store[("IndexedDB workspace-preferences")]
-    Shell <--> State
-    State --> Repository
-    Repository --> Store
-```
+No projection may call back into the session synchronously. This prevents notification loops and makes latency traceable.
 
-### 5.6 Existing Domain and Persistence Components
+### 5.5 Renderer Protocol and Frame Scheduler
 
-`DiagramEditorState`, `Diagrams.Core`, `BrowserDocumentCatalogRepository`, `HttpDocumentSyncService`, and `JsPlumbAdapter` retain their current responsibilities. The checked-in `diagram-editor.js` module is present in current source; therefore, the missing-module gap recorded in the 2026-07-25 architecture snapshot is no longer a current design premise.
+`IDiagramRenderer` exposes `InitializeAsync`, `ApplyAsync(RenderDelta)`, `ReplaceAsync(RenderSnapshot)`, `SetViewportAsync`, and `DisposeAsync`. `RenderDelta` is explicit: upsert/remove nodes, ports, groups, edges; update bounds/styles/labels; selection; viewport; and `RequiresReplace`.
 
-```mermaid
-flowchart LR
-    Shell["V2 shell"]
-    Editor["DiagramEditorState"]
-    Core["Diagrams.Core"]
-    Adapter["JsPlumbAdapter"]
-    IDB[("Existing IndexedDB stores")]
-    Shell --> Editor
-    Editor --> Core
-    Editor --> Adapter
-    Editor --> IDB
-```
+The scheduler retains only the newest compatible delta before `requestAnimationFrame`; it merges changes by element ID, preserves ordering barriers, and reports the rendered revision. A full replace is required only for initialization, recovery after renderer rejection, unsupported structural change, or an explicit resync. It must never be triggered by a plain selection, viewport, or successful node-bound update.
+
+The JS bridge validates IDs, coordinates, and shape before enqueuing a command. Drag and scroll proposals are sampled at most once per animation frame; drag-stop commits one `MoveNode`/`MoveGroup` command. Bridge errors are returned to .NET with correlation and revision information and surfaced in the development diagnostics panel.
+
+### 5.6 Persistence, History, and Recovery
+
+`IDocumentRepository` writes a versioned `DocumentRecord` and compact summary record in one IndexedDB transaction. `DocumentPersistenceWorker` subscribes to accepted revisions, coalesces only superseded unsaved revisions of the same document, and has a bounded queue. It never refreshes the full catalog after every save; the catalog projector consumes the same change set.
+
+Save state is explicit: `Clean`, `Saving`, `Dirty`, `RetryScheduled`, `Failed`, or `StorageUnavailable`. A failed write leaves the in-memory document marked dirty and offers retry/export; it never reports a false successful save. A tab visibility change and orderly disposal request a flush with a bounded time budget.
+
+Undo/redo stores typed inverse commands or compact checkpoints with configurable limits (count and estimated bytes). It may reconstruct from a checkpoint, but cannot retain an unbounded chain of full-document pairs. Schema migration is still deferred; unknown versions fail closed with an export-preserving diagnostic.
+
+### 5.7 Optional Synchronization
+
+`IDocumentSyncAdapter` is fed by a durable per-document outbox only after local persistence succeeds. It sends a document revision and idempotency key, limits concurrent documents, backs off with jitter, and cannot block editing. Server-side prototype storage replaces the global gate with keyed document locks and atomic temporary-write/replace. It validates document ID format before constructing a path.
+
+A revision mismatch produces `Conflict` with enough metadata to show local versus remote choices. Automatic merge is out of scope. The UI must offer explicit keep-local, pull-remote, export-both, or defer actions; no background retry overwrites either version.
 
 ## 6. Processing Pipeline
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Surface as Command surface
-    participant Registry as Command registry
-    participant Editor as DiagramEditorState
-    participant Canvas as DiagramCanvas
-
-    User->>Surface: invoke command
-    Surface->>Registry: command identifier
-    Registry->>Registry: evaluate availability
-    Registry->>Editor: invoke existing workflow
-    Editor-->>Canvas: Changed event
-    Canvas->>Canvas: render current document
-    Editor-->>Surface: updated availability and status
+```text
+input proposal
+  -> normalize, size-check, and authorize locally
+  -> enqueue in one document session
+  -> apply domain command atomically
+  -> publish immutable change set and result
+  -> update immediate projections
+  -> coalesce renderer and deferred projections
+  -> persist accepted revision
+  -> optionally enqueue durable sync
 ```
 
-### 6.1 Idempotency and Consistency
+### 6.1 Consistency and Idempotency
 
-Command surfaces do not mutate UI or document state independently. They route to one command definition and one existing state workflow. Drawer changes are independent of document revision. Restoring preferences must not open a drawer whose mode is unavailable.
+Each command has a correlation ID. Replaying an already accepted command ID returns the recorded result for the session lifetime; requests that require a matching revision reject stale input. A persisted revision becomes the commit point for local durability. Renderer acknowledgement is tracked separately and cannot advance document durability. The outbox key is `{documentId, localRevision}` and its delivery is idempotent at the server boundary.
 
 ### 6.2 Backpressure and Scheduling
 
-Workspace preference writes are debounced and last-write-wins. Canvas interactions remain higher priority than preference persistence. Existing 350-millisecond document autosave behavior is unchanged. Panel animations use transforms and opacity and respect `prefers-reduced-motion`.
+| Work | Policy | On overload |
+| --- | --- | --- |
+| Interactive command mailbox | Bounded, FIFO, one writer/document | Disable only the affected action and show “editor is catching up”; do not drop committed commands. |
+| Pointer/viewport proposals | Latest per animation frame | Drop superseded previews, retain final commit. |
+| Render deltas | One coalesced frame batch | Escalate to one full replace only after a detected renderer desynchronization. |
+| Persistence | Latest unsaved revision per document | Preserve dirty state and retry; do not lose revision silently. |
+| Sync outbox | Bounded per document and global concurrency | Pause sync with visible state; editing remains local. |
 
 ## 7. API and Contract Design
 
-### 7.1 Public Interfaces
+### 7.1 Internal Interfaces
 
-- `IEditorCommand`: metadata, availability, checked state, and asynchronous invocation.
-- `IEditorCommandRegistry`: command lookup, enumeration, search, and change notification.
-- `EditorWorkspaceState`: active panels, focus mode, density, minimap state, and viewport adaptation.
-- `IWorkspacePreferenceRepository`: load and save a versioned browser-local preference record.
+| Contract | Responsibility |
+| --- | --- |
+| `IDocumentCommandGateway` | Execute typed commands and return `CommandResult`. |
+| `IDocumentSessionManager` | Open, lease, and dispose per-document single-writer sessions. |
+| `IDocumentChangeStream` | Publish ordered immutable change sets. |
+| `IDiagramRenderer` | Apply renderer deltas and report rendered revision/failure. |
+| `IDocumentRepository` | Transactional local load/save/list and migration detection. |
+| `IDocumentSyncAdapter` | Optional pull/push/conflict operations; no UI ownership. |
+| `IEditorDiagnostics` | Correlated timings, queue depth, errors, and state transitions. |
 
-These are internal client contracts, not network APIs.
+### 7.2 Compatibility
 
-### 7.2 Versioning and Compatibility
+`DiagramDocument.SchemaVersion` remains 2. Existing `documents`, `snapshots`, and `library` data is read through an adapter and migrated to new IndexedDB stores lazily only after a verified copy. Until a migration feature is approved, V2 may run in compatibility mode over existing records. Network response contracts use explicit status codes for malformed input, conflict, and dependency failure while retaining a client adapter for the old prototype endpoint during rollout.
 
-`DiagramDocument.SchemaVersion` remains `2`. Existing IndexedDB `documents`, `snapshots`, and `library` stores remain unchanged. Workspace preferences use their own schema version and store. Unknown preference fields are ignored; an unsupported preference version resets to safe defaults without altering documents.
+### 7.3 Error Contract
 
-### 7.3 Validation and Error Contract
-
-- Commands expose disabled reasons when prerequisites are unmet.
-- Drawer and palette failures render nonblocking in-app feedback and keep the canvas usable.
-- Preference failures are logged at warning level and fall back to defaults.
-- Existing validation issues remain document-domain results and are surfaced through the Validation drawer and status indicator.
-- Destructive commands require the same confirmation behavior regardless of invocation surface.
+| Condition | Result | Required behavior |
+| --- | --- | --- |
+| Invalid or locked edit | `Rejected` / stable domain code | Keep snapshot and renderer unchanged; identify the cause. |
+| Stale command | `Rejected` / `stale-revision` | Refresh projection and let user retry intentionally. |
+| Renderer failure | `Deferred` / `renderer-desync` | Attempt one controlled replace; preserve document and diagnostics. |
+| IndexedDB failure | accepted edit plus `StorageUnavailable` | Keep dirty in memory, offer retry/export; never claim saved. |
+| Remote conflict | `Conflict` | Stop automatic push and require an explicit resolution choice. |
 
 ## 8. Data Flows
 
-### 8.1 Document Editing Flow
-
-Selection and commands continue through `DiagramEditorState`, immutable domain transformations, validation, canvas rerender, and debounced document persistence. Version 2 changes only where commands are presented.
-
-### 8.2 Workspace Preference Flow
+### 8.1 Normal Edit
 
 ```mermaid
-sequenceDiagram
-    participant Shell
-    participant Workspace as EditorWorkspaceState
-    participant Repo as Preference repository
-    participant IDB as IndexedDB
-    Shell->>Workspace: pin drawer or change width
-    Workspace-->>Shell: immediate UI update
-    Workspace->>Workspace: debounce
-    Workspace->>Repo: save versioned preferences
-    Repo->>IDB: put workspace record
+flowchart LR
+    Input[Pointer, hotkey, menu] --> Command[Typed command]
+    Command --> Session[Document session]
+    Session --> Change[Revisioned change set]
+    Change --> Frame[Renderer frame scheduler]
+    Change --> Save[Persistence worker]
+    Frame --> Canvas[jsPlumb]
+    Save --> Local[(IndexedDB)]
 ```
 
-### 8.3 Command Discovery Flow
+### 8.2 Renderer Recovery
 
-The palette queries command metadata locally, filters by label, category, aliases, and shortcut, excludes unavailable contextual commands unless explicitly requested, and invokes the selected command through the registry.
+```text
+delta rejected or rendered revision gap
+  -> renderer marks desynchronized
+  -> scheduler stops incremental application for that revision
+  -> replace from immutable session snapshot once
+  -> acknowledge rendered revision or report visible renderer failure
+```
+
+### 8.3 Sync Conflict
+
+```text
+persisted local revision -> outbox -> push with idempotency key
+  -> accepted: mark delivered
+  -> conflict: freeze that document's outbox and show local/remote choices
+  -> unavailable: back off; local editing and saving continue
+```
 
 ## 9. Security and Privacy
 
-### 9.1 Default Deployment Posture
-
-Local-first behavior is preserved. Workspace preferences contain layout choices only and must not contain diagram labels, metadata, links, comments, or content.
-
-### 9.2 Hosted or Shared Deployment
-
-The existing unauthenticated sync API remains a prototype constraint. Version 2 must not imply that server sync is private or multi-user safe. Sync remains disabled by default.
-
-### 9.3 Content Protection
-
-Imported labels and metadata are rendered as text, not trusted HTML. Command search indexes command metadata, never document content. Export and clipboard actions remain explicit user gestures.
-
-### 9.4 Untrusted Content and Prompt Injection
-
-No model or prompt system is in scope. Imported diagram JSON remains untrusted structured content and follows existing deserialization and validation paths.
+- Continue local-first, export- and opt-in-sync-only behavior.
+- Reject path traversal and invalid IDs at every server storage boundary; never log document content, SVG, credentials, or imported JSON.
+- Bound input payloads, command queue size, rendered elements, and upload/download operations before allocating expensive resources.
+- Treat import documents and browser callback payloads as data. They cannot select commands, alter policy, or bypass validation.
+- Authentication, authorization, encryption-at-rest, and multi-tenancy are prerequisites for a future shared sync deployment, not features of this design.
 
 ## 10. Reliability and Recovery
 
-- If preference initialization fails, render the default shell immediately.
-- If a drawer component fails, retain canvas interaction and provide retry/close controls.
-- Never write workspace preferences into a diagram snapshot or export.
-- Keep existing document autosave, snapshots, undo/redo, and sync conflict behavior unchanged.
-- Focus mode always provides a visible keyboard- and pointer-operable exit.
+| Failure | Required behavior | Recovery signal |
+| --- | --- | --- |
+| Renderer initialization/replacement fails | Document session stays usable; canvas shows recoverable error and retry. | Renderer state and correlation ID. |
+| Command handler throws | Session contains failure, returns safe problem, and continues when invariant is intact. | Structured diagnostic and test failure. |
+| Persistence is slow/unavailable | Continue editing up to documented memory bound; show Dirty/Failed state and allow export. | Save state, queue depth, last durable revision. |
+| Browser reload/crash | Load latest committed local revision; unsaved in-memory edits are not represented as durable. | Last saved timestamp/revision. |
+| Sync failure/conflict | Never block or overwrite local edit; pause only the affected document's outbox. | Per-document sync state. |
 
-### Graceful Shutdown
-
-On component disposal, unsubscribe from state events, cancel pending preference writes, dispose JavaScript references, and release focus-management subscriptions. Document save semantics remain owned by `DiagramEditorState`.
+On orderly shutdown, stop accepting new commands, finish or cancel the active command, request one bounded persistence flush, dispose renderer resources, and retain a truthful dirty marker if the flush cannot finish.
 
 ## 11. Observability
 
-### Logging
+The client emits structured, content-free events keyed by correlation ID, document ID hash, command type, origin, revision, queue wait, apply duration, projection duration, render duration, persistence duration, result code, and retry count. Development builds expose a diagnostics drawer; production telemetry requires separate approval.
 
-Log command invocation failures, unavailable-command attempts, drawer render failures, preference migration/reset, and preference persistence failures without diagram content.
-
-### Metrics
-
-In local development and automated tests, capture canvas-area ratio, drawer open/close duration, command search latency, focus-mode transitions, and initial interactive render timing. Product telemetry is not added by this design.
-
-### Health Checks
-
-The existing `/healthz` server check remains unchanged. Client readiness is verified through a deterministic editor-ready marker that requires the shell and canvas adapter to initialize successfully.
+Required metrics: command p50/p95/p99, dropped preview count, renderer full-replace count, render lag in revisions, persistence lag, queue depth, IndexedDB errors, sync backlog/conflicts, and unhandled bridge/session exceptions. `/healthz` remains host-only; a client-ready marker requires successful session load plus renderer initialization.
 
 ## 12. Performance Targets
 
-| Measure                                 | Proposed target                                          |
-| --------------------------------------- | -------------------------------------------------------- |
-| Default canvas region at 1440 by 900    | At least 80 percent of viewport area                     |
-| Focus-mode canvas region at 1440 by 900 | At least 92 percent of viewport area                     |
-| Persistent chrome                       | 52px top, 44px rail, 24px status                         |
-| Drawer transition                       | 150ms or less; no animation under reduced motion         |
-| Command palette filtering               | Under 50ms for the built-in command set                  |
-| Interaction response                    | Visual acknowledgment within 100ms                       |
-| Layout stability                        | No canvas reinitialization for overlay drawer open/close |
+| Scenario | Target | Measurement condition |
+| --- | --- | --- |
+| Pointer preview | next animation frame, no more than 16.7ms scheduling delay at 60Hz | 250 nodes / 400 edges reference diagram |
+| Accepted simple command | p95 under 50ms to result | excluding persistence and remote sync |
+| Rendered simple move | p95 under 100ms to visual acknowledgement | 250 nodes / 400 edges |
+| Full replace | p95 under 1s and explicitly counted | 250 nodes / 400 edges; not normal edit path |
+| Local durable save | p95 under 500ms | 1 MB representative document |
+| Command queue | under 32 pending under normal interaction | reference browser/device documented with test run |
+| Memory | bounded history and no unbounded tasks/snapshots | 30-minute mixed-edit endurance test |
 
-Targets require baseline measurement on reference hardware before approval. They are acceptance thresholds, not claims about current performance.
+These are engineering acceptance thresholds, not current performance claims.
 
 ## 13. Configuration Model
 
-Version 2 introduces client-local defaults:
+```yaml
+editor:
+  commandMailboxCapacity: 128
+  renderFrameBudgetMs: 12
+  persistenceDebounceMs: 500
+  maxHistoryEntries: 100
+  maxHistoryBytes: 16777216
+  sync:
+    enabledByDefault: false
+    maxConcurrentDocuments: 2
+    retryLimit: 5
+```
 
-| Setting      | Default           | Constraint                             |
-| ------------ | ----------------- | -------------------------------------- |
-| Drawer mode  | Overlay           | Pinning allowed at 1280px and wider    |
-| Drawer width | 336px             | 280px minimum, 420px maximum           |
-| Minimap      | Collapsed         | User can expand                        |
-| UI density   | Comfortable       | Compact is optional                    |
-| Motion       | System preference | Reduced motion overrides transitions   |
-| Focus mode   | Off               | Never restored across browser restarts |
+Values are bounded and validated at startup. Deployment-wide limits are not user-editable; per-document UI preferences never affect command execution, storage policy, or sync security.
 
-### Per-Scope Overrides
+## 14. Deployment and Migration
 
-Stable visual preferences are browser-profile scoped. Active drawer, command query, and focus mode are session-only. No preference is document scoped in version 2.
+V2 remains an AppHost-served Interactive WebAssembly application. No new server is needed for the first vertical slice. The browser persistence migration is additive: introduce new stores and a migration marker, copy one document transactionally, validate it, then retain the original until rollback horizon ends. Do not delete old data automatically.
 
-## 14. Deployment
-
-### 14.1 Runtime Topology
-
-The current AppHost-served Interactive WebAssembly topology is unchanged. No new server, worker, database, or external service is introduced.
-
-### 14.2 Packaging and Upgrade
-
-The shell, command registry, workspace state, and preference repository ship with `Editor.Client`. Existing documents open without migration. The new preference store is created lazily and can be safely deleted.
+Roll out behind a client feature flag by document/session. The legacy facade and full renderer remain an escape hatch until command parity, persisted-data compatibility, and endurance tests pass. A renderer or migration failure must fall back without modifying the original record.
 
 ## 15. Suggested Solution Structure
 
 ```text
-src/Editor.Client/
-  Components/
-    Workspace/
-      AdaptiveEditorShell.razor
-      ActivityRail.razor
-      CommandBar.razor
-      DrawerHost.razor
-      CanvasOverlayLayer.razor
-      StatusBar.razor
-    Commands/
-      CommandPalette.razor
-      ContextualCommandBar.razor
-    Drawers/
-      AssetsDrawer.razor
-      InspectorDrawer.razor
-      LayersDrawer.razor
-      HistoryDrawer.razor
-      ValidationDrawer.razor
-      ReviewDrawer.razor
-  Services/
-    EditorCommandRegistry.cs
-    EditorWorkspaceState.cs
-    BrowserWorkspacePreferenceRepository.cs
-  Models/
-    EditorWorkspacePreferences.cs
+src/
+  Diagrams.Core/                 # model, domain commands, validation rules, change-set types
+  Diagrams.Application/          # sessions, command gateway, projectors, history policy
+  Editor.Client/
+    Features/                    # catalog, editor, inspector, review UI components
+    State/                       # UI stores and selectors only
+    Persistence/                 # IndexedDB repository, persistence worker, migration adapter
+    Rendering/                   # renderer protocol, frame scheduler, JS bridge adapter
+    Sync/                        # optional outbox and prototype HTTP adapter
+  Diagrams.Interop.JsPlumb/      # isolated jsPlumb resource ownership and delta operations
+  AppHost/                       # composition and optional sync endpoint
+tests/
+  Diagrams.Core.Tests/
+  Diagrams.Application.Tests/
+  Editor.Client.Integration.Tests/
+  Editor.E2E.Tests/
 ```
 
-This is a planning structure, not an instruction to create every file. Feature planning may consolidate components where cohesion and testability remain clear.
+The proposed `Diagrams.Application` layer is the dependency rule: UI, IndexedDB, jsPlumb, and HTTP depend inward on application/domain contracts; application code does not reference Razor, JS interop, or HTTP types.
 
 ## 16. Testing Strategy
 
-### Unit Tests
+### Unit
 
-- Command metadata, availability, routing, aliases, and keyboard shortcuts.
-- Workspace state transitions, responsive pinning rules, and default recovery.
-- Preference serialization, version fallback, bounds clamping, and content exclusion.
+- Command handler acceptance/rejection, stale revision, inverse/checkpoint undo, and change-set classification.
+- Session ordering, cancellation, idempotent replay, bounded mailbox behavior, and no event-loop reentry.
+- Delta merge/barrier rules, renderer recovery decision, and UI selector isolation.
+- Persistence coalescing, failure state, migration rollback, outbox idempotency, and conflict decisions.
 
-### Integration Tests
+### Integration
 
-- Existing `DiagramEditorState` commands produce identical document outcomes through the registry.
-- Preference repository failure does not block document loading or editing.
-- Canvas instance remains mounted when overlay drawers open and close.
+- IndexedDB transaction behavior with representative documents and injected failures.
+- JS bridge contract tests: every .NET renderer method maps to one documented exported function with matching payload shape.
+- Prototype server keyed locking, atomic write/replace, bad ID rejection, and HTTP conflict status.
 
-### End-to-End Tests
+### End-to-End
 
-- Measure canvas-area thresholds at 1440 by 900 and 1280 by 720.
-- Create a document, insert a stencil, edit properties, undo, redo, snapshot, export, review, and reload.
-- Operate primary workflows by keyboard only, including focus return after drawers and dialogs.
-- Verify 200 percent zoom, reduced motion, high contrast, focus mode, and responsive drawers.
-- Verify editor-ready initialization includes the checked-in jsPlumb adapter module.
+1. Create, move, connect, relabel, undo/redo, reload, and confirm a durable revision.
+2. Drag and scroll continuously while opening inspector/catalog; verify no full canvas rebuild for visual-only or move deltas.
+3. Force renderer rejection, IndexedDB failure, offline sync, and revision conflict; verify truthful status and recovery.
+4. Execute every supported command from its toolbar/menu/hotkey/bridge path and assert the same `CommandResult`/document outcome.
 
-### Load and Resilience Tests
+### Load and Resilience
 
-- Exercise command search with an expanded synthetic registry.
-- Repeatedly open, pin, resize, and close drawers while dragging and selecting nodes.
-- Simulate unavailable IndexedDB preference storage and confirm editing remains available.
+Run 30-minute mixed-edit endurance and reference-diagram benchmarks; collect performance distributions, memory trend, renderer replacement count, and save/sync backlog. Cancellation and browser reload are mandatory fault-injection cases.
 
 ## 17. Risks and Mitigations
 
-| Risk                                                    | Impact                                   | Mitigation                                                                                   |
-| ------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Hidden tools reduce discoverability                     | Users cannot find advanced workflows     | Labeled rail tooltips, searchable palette, onboarding hints, and stable categories           |
-| Overlay drawers obscure selected content                | Editing feels disruptive                 | Preserve viewport, avoid selection anchor, allow pin/resize, and provide quick dismiss       |
-| One command appears on multiple surfaces inconsistently | Incorrect availability or behavior       | Central command registry with shared tests                                                   |
-| UI preferences leak into diagram data                   | Export and sync compatibility breaks     | Separate state and store; schema/content exclusion tests                                     |
-| Responsive changes reinitialize jsPlumb                 | Lost viewport or interaction glitches    | Keep canvas mounted and change only surrounding layout                                       |
-| Current broad state facade increases coupling           | Shell becomes hard to test               | Wrap existing workflows; do not add workspace concerns to`DiagramEditorState`              |
-| Accessibility regresses under dense UI                  | Keyboard or low-vision users are blocked | Semantic landmarks, roving focus where appropriate, automated checks, and manual keyboard QA |
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| Command/session rewrite regresses working flows | High | Strangler adapter, command-parity matrix, feature flag, and E2E baseline before removing legacy facade. |
+| Delta renderer gets out of sync | High | Revision acknowledgement, barriers, one controlled full replacement, and regression tests. |
+| Write-behind loses edits on abrupt close | Medium | Truthful dirty state, short debounce, visibility flush, manual save/export, and no false saved status. |
+| Increased layers become ceremony | Medium | Keep contracts narrow; vertical-slice first; delete the legacy path only when evidence justifies it. |
+| Prototype sync is mistaken for collaborative storage | High | Disabled-by-default adapter, clear UI wording, no automatic merge, and future security ADR prerequisite. |
+| Large documents still exceed browser budgets | Medium | Measured limits, feature degradation rules, virtualized non-canvas lists, and explicit full-render threshold. |
 
 ## 18. Delivery Phases
 
-### Phase 1: Canvas-First Shell
+### Phase 1: Establish the reliable command path
 
-Create the adaptive regions, activity rail, overlay drawer host, floating minimap and canvas controls, compact status bar, and visual tokens. Preserve existing commands through temporary adapters.
+Introduce `DocumentSession`, typed result/change-set contracts, structured diagnostics, and adapters around a small vertical slice: move node, connect edge, delete selection, undo/redo. Preserve existing facade as fallback.
 
-### Phase 2: Unified Commands and Accessibility
+### Phase 2: Incremental rendering and responsive projections
 
-Introduce the command registry, palette, contextual action surface, focus management, keyboard navigation, reduced motion, responsive behavior, and full workflow parity.
+Implement `RenderDelta`, frame scheduler, bridge validation, selector-based UI stores, and renderer desynchronization recovery. Prove no full rebuild for the selected vertical-slice operations.
 
-### Phase 3: Preference Persistence and Hardening
+### Phase 3: Durable local persistence and bounded history
 
-Add separate versioned workspace preferences, resilience behavior, area/performance measurements, cross-browser checks, and migration removal of the old fixed shell.
+Add persistence worker/state, transactional local records, history limits/checkpoints, migration safety, and resilience tests. Remove catalog refresh from every save.
 
-Each phase requires a separately reviewed implementation plan. These phases do not authorize delivery.
+### Phase 4: Optional sync hardening
+
+Add outbox, per-document server locking, atomic files, explicit conflicts, and offline tests. This phase remains prototype-only until a separately accepted identity/deployment decision exists.
 
 ## 19. Architecture Decisions
 
-### ADR-001: Canvas-First Adaptive Editor Shell
+The earlier V2 shell and workspace-preference ADR artifacts are absent from the current worktree. This design does not recreate, restore, or change those unrelated records. If they are restored by their owner, their presentation-only principles can be reviewed for compatibility with this design.
 
-Adopt a stable, canvas-first shell with compact persistent chrome, overlay-first contextual drawers, floating canvas controls, and a unified command model.
-
-See [ADR-001](../02-ADR/ADR-001-canvas-first-adaptive-editor-shell.md).
-
-### ADR-002: Separate Workspace Preferences from Diagram Data
-
-Store versioned UI-only preferences through a separate browser persistence contract, never in `DiagramDocument`, document snapshots, exports, or sync payloads.
-
-See [ADR-002](../02-ADR/ADR-002-separate-workspace-preferences-from-diagram-data.md).
+- [ADR-003](../02-ADR/ADR-003-single-writer-document-session.md): adopt per-document sessions, typed commands, change sets, and result contracts.
+- [ADR-004](../02-ADR/ADR-004-frame-coalesced-renderer-protocol.md): replace normal full rebuilds with revisioned render deltas and controlled recovery.
+- [ADR-005](../02-ADR/ADR-005-write-behind-local-persistence-and-sync-outbox.md): decouple durable local storage and optional sync from interaction while making failures visible.
 
 ## 20. Acceptance Criteria for Version 2
 
-- At 1440 by 900 with drawers closed, automated measurement reports at least 80 percent of viewport area assigned to the canvas region.
-- At the same viewport in focus mode, at least 92 percent is assigned to the canvas region.
-- Persistent chrome does not exceed the specified 52-pixel top, 44-pixel rail, and 24-pixel status dimensions.
-- Assets and Inspector default to overlay drawers; pinning is available only at 1280 pixels and wider.
-- Opening or closing an overlay drawer does not recreate the `DiagramCanvas` or reset its viewport.
-- Every existing version 1.5 editor workflow is reachable through a primary control, contextual surface, menu, drawer, shortcut, or command palette.
-- Primary save, undo, redo, selection delete, fit, and drawer operations are keyboard operable with visible focus.
-- Focus returns to the invoking control when a drawer, menu, or palette closes.
-- The editor remains usable at 200 percent browser zoom and honors reduced-motion preferences.
-- Existing diagram, snapshot, library, import/export, validation, review, layout, and sync tests remain behaviorally valid.
-- Workspace preferences are absent from diagram JSON, snapshots, exports, and sync payloads.
-- Preference storage failure does not prevent document load, edit, save, or export.
-- The jsPlumb application module initializes in browser verification and the editor exposes a deterministic ready marker.
+1. A reference diagram can execute the Phase 1 commands with ordered, correlated `CommandResult` values and no direct UI-to-aggregate mutation.
+2. Node movement, selection, and viewport updates do not invoke a full jsPlumb replace in normal operation; E2E records renderer operation counts.
+3. Renderer, persistence, and sync failure states are visible, safe, and independently testable; no fire-and-forget fault is silently discarded.
+4. Local persistence has a clear commit point, bounded backlog, and recovery behavior proven with injected IndexedDB failures.
+5. Undo/redo memory is bounded and command parity remains intact for migrated operations.
+6. Sync conflict never overwrites either version automatically and independent documents do not serialize behind one global server lock.
+7. All new unit, integration, E2E, endurance, format, and existing regression gates pass with recorded benchmark evidence.
 
 ## 21. Immediate Next Steps
 
-1. Review and accept, revise, or reject this design and both proposed ADRs.
-2. Capture current canvas-area and interaction baselines at the acceptance viewports.
-3. Produce a governed phase plan and feature plans after design approval.
-4. Create interface wireframes and accessibility annotations within the approved shell constraints.
-5. Define the exact command inventory and map every existing toolbar/inspector action to one command or drawer location.
+1. Review this design and ADRs; approval is required before implementation planning.
+2. Capture a reproducible baseline: command latency, full-render count, JS errors, save failure behavior, and heap trend on a reference diagram.
+3. Create a phase plan and a command-parity inventory, naming one vertical slice and its legacy fallback.
+4. Define `DocumentChangeSet` and renderer payload contracts before moving components or rewriting JavaScript.
 
 ## 22. Reference Material
 
-- [Current architecture snapshot](../00-CONCEPT/CURRENT-ARCHITECTURE.md)
-- [ADR-001: Canvas-first adaptive editor shell](../02-ADR/ADR-001-canvas-first-adaptive-editor-shell.md)
-- [ADR-002: Separate workspace preferences from diagram data](../02-ADR/ADR-002-separate-workspace-preferences-from-diagram-data.md)
-- Current UI evidence: `src/Editor.Client/Components/EditorShell.razor`
-- Current layout evidence: `src/Editor.Client/wwwroot/editor.css`
-- Current browser adapter evidence: `src/Diagrams.Interop.JsPlumb/wwwroot/js/diagram-editor.js`
-- Codebase Memory project: `C-Users-justin-Source-samples-ghostworx-diagram-ghostworx-node`
+- [Current architecture snapshot](../00-CONCEPT/CURRENT-ARCHITECTURE.md) — useful historical context; its missing-module and browser-test notes are superseded by current source.
+- Earlier V2 shell/preference ADRs were reviewed historically but are currently absent from the worktree; see the decision note in section 19.
+- Current evidence: `src/Editor.Client/Services/DiagramEditorState*.cs`, `src/Editor.Client/Components/DiagramCanvas.razor`, `src/Diagrams.Interop.JsPlumb/JsPlumbAdapter.cs`, `src/Diagrams.Interop.JsPlumb/wwwroot/js/diagram-editor.js`, and `src/AppHost/Services/ServerDocumentSyncStore.cs`.
+- Codebase Memory project: `C-Users-justin-Source-samples-ghostworx-diagram-ghostworx-node`.
 
 ## 23. Conclusion
 
-Version 2 modernizes Diagram Studio by treating canvas space as the primary product resource. Compact persistent chrome, contextual drawers, unified commands, floating controls, and separate workspace preferences improve focus without disturbing the working local-first domain and persistence architecture. The design is deliberately evolutionary: it changes the interaction shell while protecting diagram compatibility and existing workflow behavior.
+Diagram Studio should evolve as a local-first, modular client application with one ordered document writer and explicit projection boundaries, not as a larger all-purpose editor state object. This design targets the observed causes of sluggishness and unreliable behavior while preserving compatible document semantics. It is a review candidate only; it grants no implementation, deployment, or release approval.
 
-## Filing checklist
+## Filing Checklist
 
-- [X] Status is Proposed; no implementation approval is implied.
-- [X] Every regular file in `.swe/00-CONCEPT/` was read.
-- [X] Current source and the Codebase Memory graph were used to verify material claims.
-- [X] Existing design and ADR directories were checked before writing.
-- [X] Major components have Mermaid diagrams.
-- [X] Trust boundaries, reliability, performance, testing, risks, and acceptance criteria are explicit.
-- [X] ADR links use repository-relative forward-slash paths.
-- [X] Architecture snapshot drift is identified.
-- [X] No application source or immutable template was modified.
+- [x] Saved in the canonical `.swe/01-DESIGN/DESIGN.md` location.
+- [x] Every regular concept artifact was read.
+- [x] Current code and Codebase Memory graph informed material claims.
+- [x] Existing design and ADRs were inspected before revision.
+- [x] Trust boundaries, reliability, performance, deployment, tests, risks, and acceptance criteria are explicit.
+- [x] New material decisions are linked to proposed ADRs.
+- [x] No application source, infrastructure, external state, or immutable skill template was changed.

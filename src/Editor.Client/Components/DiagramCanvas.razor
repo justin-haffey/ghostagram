@@ -7,11 +7,15 @@
     [Parameter, EditorRequired]
     public DiagramEditorState State { get; set; } = default!;
 
+    [Parameter]
+    public EventCallback<CanvasInitializationState> InitializationChanged { get; set; }
+
     private ElementReference _host;
     private JsPlumbEventBridge? _bridge;
     private DotNetObjectReference<JsPlumbEventBridge>? _bridgeReference;
     private bool _initialized;
     private bool _renderPending = true;
+    private bool _browserVisualUpdateInProgress;
 
     protected override void OnInitialized()
     {
@@ -23,7 +27,7 @@
         if (firstRender)
         {
             _bridge = new JsPlumbEventBridge();
-            _bridge.NodeMoved += args => { State.MoveNode(args); return Task.CompletedTask; };
+            _bridge.NodeMoved += args => HandleBrowserVisualUpdate(() => State.MoveNode(args));
             _bridge.EdgeCreated += args => { State.Connect(args); return Task.CompletedTask; };
             _bridge.EdgeRelabeled += args => { State.RelabelEdge(args); return Task.CompletedTask; };
             _bridge.EdgeDeleted += args => { State.DeleteEdge(args); return Task.CompletedTask; };
@@ -31,17 +35,27 @@
             _bridge.WaypointMoved += args => { State.MoveWaypoint(args); return Task.CompletedTask; };
             _bridge.WaypointRemoved += args => { State.RemoveWaypoint(args); return Task.CompletedTask; };
             _bridge.GroupMembershipChanged += args => { State.UpdateGroupMembership(args); return Task.CompletedTask; };
-            _bridge.GroupBoundsChanged += args => { State.UpdateGroupBounds(args); return Task.CompletedTask; };
+            _bridge.GroupBoundsChanged += args => HandleBrowserVisualUpdate(() => State.UpdateGroupBounds(args));
             _bridge.GroupCollapseChanged += args => { State.UpdateGroupCollapse(args); return Task.CompletedTask; };
-            _bridge.SelectionChanged += args => { State.Select(args); return Task.CompletedTask; };
-            _bridge.ViewportChanged += args => { State.UpdateViewport(args); return Task.CompletedTask; };
+            _bridge.SelectionChanged += args => HandleBrowserVisualUpdate(() => State.Select(args));
+            _bridge.ViewportChanged += HandleViewportChangedAsync;
             _bridge.HotkeyPressed += HandleHotkeyAsync;
 
             _bridgeReference = DotNetObjectReference.Create(_bridge);
-            await Adapter.InitializeAsync(_host, _bridgeReference);
-            _initialized = true;
+            try
+            {
+                await Adapter.InitializeAsync(_host, _bridgeReference);
+                _initialized = true;
+                await InitializationChanged.InvokeAsync(CanvasInitializationState.Ready);
+            }
+            catch
+            {
+                await InitializationChanged.InvokeAsync(CanvasInitializationState.Failed);
+            }
         }
 
+        // Keep document rendering behind adapter initialization; otherwise a state change
+        // during the first render can issue commands against a canvas that has no endpoints.
         if (_initialized && _renderPending)
         {
             _renderPending = false;
@@ -65,8 +79,33 @@
 
     private void HandleStateChanged()
     {
+        if (_browserVisualUpdateInProgress)
+        {
+            return;
+        }
+
         _renderPending = true;
         _ = InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleViewportChangedAsync(ViewportChangedEvent changed)
+        => HandleBrowserVisualUpdate(() => State.UpdateViewport(changed));
+
+    private Task HandleBrowserVisualUpdate(Action update)
+    {
+        // Dragging, selecting, and scrolling have already changed the live jsPlumb
+        // surface. Persist those events without rebuilding the surface in response.
+        _browserVisualUpdateInProgress = true;
+        try
+        {
+            update();
+        }
+        finally
+        {
+            _browserVisualUpdateInProgress = false;
+        }
+
+        return Task.CompletedTask;
     }
 
     private Task HandleHotkeyAsync(HotkeyPressedEvent hotkey)
@@ -90,6 +129,8 @@
     {
         State.Changed -= HandleStateChanged;
 
+        // The bridge is owned by this component and must outlive JS callbacks until the
+        // adapter has been torn down, so release the managed reference before disposal.
         if (_bridgeReference is not null)
         {
             _bridgeReference.Dispose();

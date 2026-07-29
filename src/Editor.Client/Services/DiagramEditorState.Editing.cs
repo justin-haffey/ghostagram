@@ -71,19 +71,48 @@ public sealed partial class DiagramEditorState
     }
 
     public void MoveNode(NodeMovedEvent moved)
-        => Apply(new MoveNodeCommand(moved.NodeId, SnapBounds(moved.Bounds)), save: false);
+    {
+        var node = Document.FindNode(moved.NodeId);
+        var bounds = SnapBounds(moved.Bounds);
+        if (node is null || node.Bounds == bounds)
+        {
+            return;
+        }
+
+        Apply(new MoveNodeCommand(moved.NodeId, bounds), save: false);
+    }
 
     public void UpdateGroupMembership(GroupMembershipChangedEvent moved)
         => Apply(new SetNodeGroupCommand(moved.NodeId, moved.GroupId), save: false);
 
     public void UpdateGroupBounds(GroupBoundsChangedEvent changed)
-        => Apply(new SetGroupBoundsCommand(changed.GroupId, SnapBounds(changed.Bounds)), save: false);
+    {
+        var group = Document.FindGroup(changed.GroupId);
+        var bounds = SnapBounds(changed.Bounds);
+        if (group is null || group.Bounds == bounds)
+        {
+            return;
+        }
+
+        Apply(new SetGroupBoundsCommand(changed.GroupId, bounds), save: false);
+    }
 
     public void UpdateGroupCollapse(GroupCollapseChangedEvent changed)
         => Apply(new SetGroupCollapsedCommand(changed.GroupId, changed.Collapsed), save: false);
 
     public void UpdateViewport(ViewportChangedEvent changed)
-        => Apply(new SetViewportCommand(changed.ViewportState), save: false, trackHistory: false);
+    {
+        var current = Document.ViewportState;
+        var updated = changed.ViewportState;
+        if (Math.Abs(current.Zoom - updated.Zoom) < 0.001
+            && Math.Abs(current.ScrollLeft - updated.ScrollLeft) < 0.5
+            && Math.Abs(current.ScrollTop - updated.ScrollTop) < 0.5)
+        {
+            return;
+        }
+
+        Apply(new SetViewportCommand(updated), save: false, trackHistory: false);
+    }
 
     public void Connect(EdgeCreatedEvent created)
     {

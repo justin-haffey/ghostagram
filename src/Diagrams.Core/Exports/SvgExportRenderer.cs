@@ -41,12 +41,12 @@ public sealed class SvgExportRenderer
             var path = routedPoints.Length > 1
                 ? BuildPolylinePath(routedPoints)
                 : edge.ConnectorKind switch
-            {
-                ConnectorKind.Bezier => $"""M {Format(source.CenterX)} {Format(source.CenterY)} C {Format(source.CenterX + 120)} {Format(source.CenterY)}, {Format(target.CenterX - 120)} {Format(target.CenterY)}, {Format(target.CenterX)} {Format(target.CenterY)}""",
-                ConnectorKind.StateMachine => $"""M {Format(source.CenterX)} {Format(source.CenterY)} C {Format(source.CenterX + 120)} {Format(source.CenterY - 80)}, {Format(target.CenterX - 120)} {Format(target.CenterY + 80)}, {Format(target.CenterX)} {Format(target.CenterY)}""",
-                ConnectorKind.Flowchart => $"""M {Format(source.CenterX)} {Format(source.CenterY)} L {Format((source.CenterX + target.CenterX) / 2)} {Format(source.CenterY)} L {Format((source.CenterX + target.CenterX) / 2)} {Format(target.CenterY)} L {Format(target.CenterX)} {Format(target.CenterY)}""",
-                _ => $"""M {Format(source.CenterX)} {Format(source.CenterY)} L {Format(target.CenterX)} {Format(target.CenterY)}"""
-            };
+                {
+                    ConnectorKind.Bezier => $"""M {Format(source.CenterX)} {Format(source.CenterY)} C {Format(source.CenterX + 120)} {Format(source.CenterY)}, {Format(target.CenterX - 120)} {Format(target.CenterY)}, {Format(target.CenterX)} {Format(target.CenterY)}""",
+                    ConnectorKind.StateMachine => $"""M {Format(source.CenterX)} {Format(source.CenterY)} C {Format(source.CenterX + 120)} {Format(source.CenterY - 80)}, {Format(target.CenterX - 120)} {Format(target.CenterY + 80)}, {Format(target.CenterX)} {Format(target.CenterY)}""",
+                    ConnectorKind.Flowchart => $"""M {Format(source.CenterX)} {Format(source.CenterY)} L {Format((source.CenterX + target.CenterX) / 2)} {Format(source.CenterY)} L {Format((source.CenterX + target.CenterX) / 2)} {Format(target.CenterY)} L {Format(target.CenterX)} {Format(target.CenterY)}""",
+                    _ => $"""M {Format(source.CenterX)} {Format(source.CenterY)} L {Format(target.CenterX)} {Format(target.CenterY)}"""
+                };
 
             builder.Append($"""<path d="{path}" fill="none" stroke="{style.Edge}" stroke-width="3" """);
             var targetMarker = ResolveMarker(edge.Markers.Target);

@@ -23,5 +23,6 @@ builder.Services.AddScoped<IDocumentSyncService, HttpDocumentSyncService>();
 builder.Services.AddScoped<ICommandHistory, DocumentCommandHistory>();
 builder.Services.AddScoped<IJsPlumbAdapter, JsPlumbAdapter>();
 builder.Services.AddScoped<DiagramEditorState>();
+builder.Services.AddScoped<EditorShellUiState>();
 
 await builder.Build().RunAsync();

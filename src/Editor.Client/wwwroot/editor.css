@@ -622,3 +622,343 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* FEATURE-01 viewport shell contract. These overrides deliberately follow the
+   legacy shell rules so the viewport geometry is the computed layout. */
+.editor-shell {
+    --editor-command-bar-height: 52px;
+    --editor-activity-rail-width: 72px;
+    --editor-status-bar-height: 24px;
+    --editor-shell-gap: 0px;
+    --editor-focus-ring: 0 0 0 3px rgba(31, 130, 123, 0.38);
+    --editor-elevation: 0 8px 24px rgba(38, 51, 65, 0.14);
+    --editor-motion-duration: 150ms;
+    box-sizing: border-box;
+    gap: var(--editor-shell-gap);
+    grid-template-rows: var(--editor-command-bar-height) minmax(0, 1fr) var(--editor-status-bar-height);
+    height: 100dvh;
+    min-height: 0;
+    padding: 0;
+}
+
+.editor-shell *,
+.editor-shell *::before,
+.editor-shell *::after {
+    box-sizing: border-box;
+}
+
+.editor-topbar {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto;
+    border-radius: 0;
+    height: var(--editor-command-bar-height);
+    min-height: 0;
+    overflow: visible;
+    position: relative;
+    z-index: 10;
+    padding: 4px 8px;
+    white-space: nowrap;
+}
+
+.editor-brand,
+.editor-toolbar,
+.toolbar-cluster {
+    flex-wrap: nowrap;
+}
+
+.editor-brand {
+    align-self: stretch;
+    height: 44px;
+    max-height: 44px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.editor-brand__headline {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.editor-title-input {
+    min-width: 0;
+    width: clamp(140px, 22vw, 280px);
+}
+
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+    min-width: max-content;
+}
+
+.command-overflow {
+    position: relative;
+}
+
+.command-overflow summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.command-overflow summary::-webkit-details-marker {
+    display: none;
+}
+
+.command-overflow summary,
+.command-overflow__content {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(67, 81, 98, 0.2);
+    border-radius: 0.7rem;
+    color: var(--studio-text);
+    padding: 0.55rem 0.7rem;
+}
+
+.command-overflow__content {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 220px;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 20;
+}
+
+.editor-workspace {
+    display: grid;
+    gap: 0;
+    grid-template-columns: var(--editor-activity-rail-width) minmax(0, 1fr);
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.stencil-rail {
+    border-radius: 0;
+    min-width: var(--editor-activity-rail-width);
+    overflow: auto;
+    padding: 6px;
+}
+
+.editor-stage {
+    min-height: 0;
+    position: relative;
+}
+
+.canvas-card {
+    border-radius: 0;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+}
+
+.inspector-panel {
+    border-radius: 0;
+    bottom: 0;
+    left: auto;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: none;
+    transition: transform var(--editor-motion-duration) ease;
+    width: 320px;
+    z-index: 1;
+}
+
+.status-strip {
+    border-radius: 0;
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+    height: var(--editor-status-bar-height);
+    overflow: hidden;
+    padding: 3px 8px;
+}
+
+.studio-button:focus-visible,
+.editor-brand__link:focus-visible,
+.editor-title-input:focus-visible,
+.studio-inline-input:focus-visible {
+    box-shadow: var(--editor-focus-ring);
+    outline: none;
+}
+
+@media (max-width: 1279px) {
+    .editor-workspace {
+        grid-template-columns: var(--editor-activity-rail-width) minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 1200px) {
+    .editor-topbar {
+        align-items: center;
+        flex-direction: row;
+    }
+
+    .stencil-rail {
+        height: 100%;
+        max-height: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .inspector-panel {
+        transition-duration: 0ms;
+    }
+}
+
+/* FEATURE-03: navigation controls float inside the existing canvas slot. */
+.canvas-card {
+    display: block;
+    position: relative;
+}
+
+.editor-canvas-host {
+    height: 100%;
+}
+
+.canvas-overlay-layer {
+    bottom: 12px;
+    display: grid;
+    gap: 8px;
+    pointer-events: none;
+    position: absolute;
+    right: 12px;
+    z-index: 2;
+}
+
+.canvas-overlay-layer > * {
+    pointer-events: auto;
+}
+
+.canvas-overlay-controls {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.canvas-overlay-layer .minimap-card {
+    margin: 0;
+}
+
+.canvas-initialization-error {
+    background: rgba(130, 35, 25, 0.95);
+    bottom: 12px;
+    color: white;
+    left: 12px;
+    padding: 8px;
+    position: absolute;
+    z-index: 3;
+}
+
+/* FEATURE-02: one memory-only overlay drawer at a time. */
+.activity-rail {
+    display: grid;
+    gap: 4px;
+}
+
+.activity-rail__button {
+    background: transparent;
+    border: 0;
+    color: var(--studio-text-soft);
+    cursor: pointer;
+    font: 0.68rem/1.15 "IBM Plex Mono", monospace;
+    min-height: 38px;
+    overflow: hidden;
+    padding: 3px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .editor-topbar {
+        grid-template-columns: minmax(150px, 1fr) auto;
+        padding-inline: 4px;
+    }
+
+    .editor-brand {
+        gap: 4px;
+    }
+
+    .editor-brand__link {
+        padding-inline: 0.55rem;
+    }
+
+    .editor-title-input {
+        width: clamp(90px, 16vw, 150px);
+    }
+
+    .editor-toolbar {
+        gap: 3px;
+    }
+
+    .command-overflow summary,
+    .editor-toolbar > .studio-button {
+        font-size: 0.78rem;
+        padding-inline: 0.55rem;
+    }
+}
+
+.drawer-host,
+.inspector-panel {
+    background: rgba(250, 249, 245, 0.96);
+    box-shadow: var(--editor-elevation);
+    max-width: min(420px, calc(100vw - var(--editor-activity-rail-width)));
+    overflow: auto;
+    padding: 1rem;
+}
+
+.drawer-host--assets {
+    bottom: 0;
+    display: none;
+    left: var(--editor-activity-rail-width);
+    position: absolute;
+    top: 0;
+    width: min(360px, calc(100vw - var(--editor-activity-rail-width)));
+    z-index: 3;
+}
+
+.editor-workspace[data-active-drawer="assets"] .drawer-host--assets,
+.editor-workspace[data-active-drawer="library"] .drawer-host--assets {
+    display: block;
+}
+
+.inspector-panel {
+    display: none;
+    z-index: 3;
+}
+
+.editor-workspace[data-active-drawer="inspector"] .inspector-panel,
+.editor-workspace[data-active-drawer="layers"] .inspector-panel,
+.editor-workspace[data-active-drawer="snapshots"] .inspector-panel,
+.editor-workspace[data-active-drawer="validation"] .inspector-panel,
+.editor-workspace[data-active-drawer="review"] .inspector-panel {
+    display: block;
+}
+
+.drawer-section {
+    display: none;
+}
+
+.editor-workspace[data-active-drawer="inspector"] .drawer-section--inspector,
+.editor-workspace[data-active-drawer="layers"] .drawer-section--layers,
+.editor-workspace[data-active-drawer="snapshots"] .drawer-section--snapshots,
+.editor-workspace[data-active-drawer="validation"] .drawer-section--validation,
+.editor-workspace[data-active-drawer="review"] .drawer-section--review {
+    display: block;
+}
+
+.drawer-host__close {
+    background: transparent;
+    border: 0;
+    color: var(--studio-accent-strong);
+    cursor: pointer;
+    float: right;
+    font: inherit;
+}
+
+@media (max-width: 1279px) {
+    .drawer-host,
+    .inspector-panel {
+        max-width: min(420px, calc(100vw - var(--editor-activity-rail-width)));
+    }
+}

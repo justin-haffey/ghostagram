@@ -1,78 +1,97 @@
 @implements IAsyncDisposable
 @inject DiagramEditorState State
+@inject EditorShellUiState ShellUi
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
-<div class="editor-shell @(State.PresentationMode ? "is-presentation" : null)">
-    <header class="editor-topbar">
+<div class="editor-shell @(State.PresentationMode ? "is-presentation" : null)" data-testid="editor-shell" data-shell-layout="@(ShellUi.UsesCompactLayout ? "compact" : "default")" data-editor-ready="@(_shellReady && _canvasInitialization == CanvasInitializationState.Ready ? "true" : "false")" @onkeydown="HandleShellKeyDown">
+    <header class="editor-topbar" role="banner" data-testid="editor-command-bar">
         <div class="editor-brand">
             <a class="editor-brand__link" href="/documents">Documents</a>
-            <div>
-                <div class="editor-brand__eyebrow">Technical Studio v1.5</div>
-                <div class="editor-brand__headline">
-                    <input class="editor-title-input" @bind="_documentTitle" @bind:event="oninput" />
-                    <button class="studio-button studio-button--small" @onclick="RenameAsync">Rename</button>
-                    <button class="studio-button studio-button--small" @onclick="ToggleFavoriteAsync">@(State.Document.IsFavorite ? "Unfavorite" : "Favorite")</button>
-                </div>
-                <p>@State.SyncStatus</p>
+            <div class="editor-brand__headline">
+                <label class="visually-hidden" for="editor-document-title">Diagram title</label>
+                <input id="editor-document-title" class="editor-title-input" data-command-id="document-title" @bind="_documentTitle" @bind:event="oninput" />
             </div>
         </div>
 
         <div class="editor-toolbar">
-            <div class="toolbar-cluster">
-                <button class="studio-button studio-button--strong" @onclick="SaveAsync">Save</button>
-                <button class="studio-button" @onclick="CreateSnapshotAsync">Snapshot</button>
-                <input class="studio-inline-input" @bind="_snapshotName" @bind:event="oninput" placeholder="Snapshot name" />
-                <button class="studio-button" @onclick="UndoAsync" disabled="@(!State.CanUndo)">Undo</button>
-                <button class="studio-button" @onclick="RedoAsync" disabled="@(!State.CanRedo)">Redo</button>
-            </div>
+            <button class="studio-button studio-button--strong" data-command-id="save" @onclick="SaveAsync">Save</button>
+            <details class="command-overflow" name="editor-command-overflow" data-command-group="history">
+                <summary>History</summary>
+                <div class="command-overflow__content">
+                <button class="studio-button" data-command-id="snapshot" @onclick="CreateSnapshotAsync">Snapshot</button>
+                <input class="studio-inline-input" data-command-id="snapshot-name" @bind="_snapshotName" @bind:event="oninput" placeholder="Snapshot name" />
+                <button class="studio-button" data-command-id="undo" @onclick="UndoAsync" disabled="@(!State.CanUndo)">Undo</button>
+                <button class="studio-button" data-command-id="redo" @onclick="RedoAsync" disabled="@(!State.CanRedo)">Redo</button>
+                </div>
+            </details>
 
-            <div class="toolbar-cluster">
+            <details class="command-overflow" name="editor-command-overflow" data-command-group="session">
+                <summary>Session</summary>
+                <div class="command-overflow__content">
                 <label class="studio-toggle">
-                    <input type="checkbox" checked="@State.ServerSyncEnabled" @onchange="ToggleSyncChanged" />
+                    <input type="checkbox" data-command-id="sync-toggle" checked="@State.ServerSyncEnabled" @onchange="ToggleSyncChanged" />
                     <span>Server Sync</span>
                 </label>
-                <button class="studio-button" @onclick="PushAsync" disabled="@(!State.ServerSyncEnabled)">Push</button>
-                <button class="studio-button" @onclick="PullAsync" disabled="@(!State.ServerSyncEnabled)">Pull</button>
-                <button class="studio-button" @onclick="State.ToggleReviewMode">Review</button>
-                <button class="studio-button" @onclick="State.TogglePresentationMode">Presentation</button>
-            </div>
+                <button class="studio-button" data-command-id="push" @onclick="PushAsync" disabled="@(!State.ServerSyncEnabled)">Push</button>
+                <button class="studio-button" data-command-id="pull" @onclick="PullAsync" disabled="@(!State.ServerSyncEnabled)">Pull</button>
+                <button class="studio-button" data-command-id="toggle-review-mode" @onclick="State.ToggleReviewMode">Toggle Review Mode</button>
+                <button class="studio-button" data-command-id="presentation" @onclick="State.TogglePresentationMode">Presentation</button>
+                </div>
+            </details>
 
-            <div class="toolbar-cluster">
-                <button class="studio-button" @onclick="ExportJsonAsync">Export JSON</button>
-                <button class="studio-button" @onclick="ExportSvgAsync">SVG</button>
-                <button class="studio-button" @onclick="ExportPngAsync">PNG</button>
+            <details class="command-overflow" name="editor-command-overflow" data-command-group="file">
+                <summary>File</summary>
+                <div class="command-overflow__content">
+                <button class="studio-button" data-command-id="rename" @onclick="RenameAsync">Rename</button>
+                <button class="studio-button" data-command-id="favorite" @onclick="ToggleFavoriteAsync">@(State.Document.IsFavorite ? "Unfavorite" : "Favorite")</button>
+                <button class="studio-button" data-command-id="export-json" @onclick="ExportJsonAsync">Export JSON</button>
+                <button class="studio-button" data-command-id="export-svg" @onclick="ExportSvgAsync">SVG</button>
+                <button class="studio-button" data-command-id="export-png" @onclick="ExportPngAsync">PNG</button>
                 <label class="studio-button studio-button--file">
                     <span>Import JSON</span>
-                    <InputFile OnChange="HandleImportAsync" class="visually-hidden" />
+                    <InputFile OnChange="HandleImportAsync" class="visually-hidden" data-command-id="import-json" />
                 </label>
-            </div>
+                </div>
+            </details>
 
-            <div class="toolbar-cluster">
-                <select class="studio-select" @bind="_selectedLayout">
+            <details class="command-overflow" name="editor-command-overflow" data-command-group="arrange">
+                <summary>Arrange</summary>
+                <div class="command-overflow__content">
+                <select class="studio-select" data-command-id="layout-selector" @bind="_selectedLayout">
                     @foreach (var layoutOption in State.Layouts)
                     {
                         <option value="@layoutOption.Kind">@layoutOption.DisplayName</option>
                     }
                 </select>
-                <button class="studio-button" @onclick="ApplyLayoutAsync">Run Layout</button>
-                <button class="studio-button" @onclick="AddGroupAsync">Add Group</button>
-                <button class="studio-button" @onclick="FitAsync">Fit Diagram</button>
-                <button class="studio-button" @onclick="CenterAsync" disabled="@(State.SelectedNodeIds.Count == 0)">Center Selection</button>
-            </div>
+                <button class="studio-button" data-command-id="run-layout" @onclick="ApplyLayoutAsync">Run Layout</button>
+                <button class="studio-button" data-command-id="add-group" @onclick="AddGroupAsync">Add Group</button>
+                </div>
+            </details>
         </div>
     </header>
 
-    <div class="editor-workspace">
-        <aside class="stencil-rail">
+    <div class="editor-workspace" data-testid="editor-viewport" data-active-drawer="@(ShellUi.ActiveDrawer?.ToString().ToLowerInvariant() ?? "none")">
+        <aside class="stencil-rail" aria-label="Activity rail" data-testid="editor-activity-rail">
+            <nav class="activity-rail" aria-label="Editor tools">
+                <button class="activity-rail__button" data-drawer-trigger="assets" aria-label="Assets" @onclick="() => ToggleDrawerAsync(EditorDrawerMode.Assets)">Assets</button>
+                <button class="activity-rail__button" data-drawer-trigger="library" aria-label="Library" @onclick="() => ToggleDrawerAsync(EditorDrawerMode.Library)">Library</button>
+                <button class="activity-rail__button" data-drawer-trigger="inspector" aria-label="Inspector" @onclick="() => ToggleDrawerAsync(EditorDrawerMode.Inspector)">Inspect</button>
+                <button class="activity-rail__button" data-drawer-trigger="layers" aria-label="Layers" @onclick="() => ToggleDrawerAsync(EditorDrawerMode.Layers)">Layers</button>
+                <button class="activity-rail__button" data-drawer-trigger="snapshots" aria-label="Snapshots" @onclick="() => ToggleDrawerAsync(EditorDrawerMode.Snapshots)">Snaps</button>
+                <button class="activity-rail__button" data-drawer-trigger="validation" aria-label="Validation" @onclick="() => ToggleDrawerAsync(EditorDrawerMode.Validation)">Check</button>
+                <button class="activity-rail__button" data-drawer-trigger="review" aria-label="Review" @onclick="() => ToggleDrawerAsync(EditorDrawerMode.Review)">Review</button>
+            </nav>
+            <section class="drawer-host drawer-host--assets" aria-label="Assets and library" @onkeydown="HandleDrawerKeyDown" tabindex="-1">
+                <button class="drawer-host__close" aria-label="Close drawer" @onclick="CloseDrawerAsync">Close</button>
             <div class="panel-heading">
-                <span>Assets</span>
+                <span>@(ShellUi.ActiveDrawer == EditorDrawerMode.Library ? "Library" : "Assets")</span>
                 <small>@(State.FilteredStencilDefinitions.Count + State.FilteredLibraryItems.Count) ready</small>
             </div>
 
             <div class="tab-strip">
-                <button class="studio-button studio-button--small @(_activeLeftTab == "stencils" ? "is-active" : null)" @onclick='() => _activeLeftTab = "stencils"'>Stencils</button>
-                <button class="studio-button studio-button--small @(_activeLeftTab == "library" ? "is-active" : null)" @onclick='() => _activeLeftTab = "library"'>Library</button>
+                <button class="studio-button studio-button--small @(_activeLeftTab == "stencils" ? "is-active" : null)" @onclick='() => OpenDrawerAsync(EditorDrawerMode.Assets)'>Stencils</button>
+                <button class="studio-button studio-button--small @(_activeLeftTab == "library" ? "is-active" : null)" @onclick='() => OpenDrawerAsync(EditorDrawerMode.Library)'>Library</button>
             </div>
 
             @if (_activeLeftTab == "stencils")
@@ -124,24 +143,36 @@
                     </button>
                 }
             }
+            </section>
         </aside>
 
-        <main class="editor-stage">
-            <section class="canvas-card">
-                <DiagramCanvas @ref="_canvas" State="State" />
-                <MiniMap State="State" />
+        <main class="editor-stage" aria-label="Diagram workspace">
+            <section class="canvas-card" data-testid="editor-canvas-region">
+                <DiagramCanvas @ref="_canvas" State="State" InitializationChanged="HandleCanvasInitializationChanged" />
+                <div class="canvas-overlay-layer" aria-label="Canvas navigation controls">
+                    <div class="canvas-overlay-controls">
+                        <button class="studio-button studio-button--small" data-command-id="fit-diagram" @onclick="FitAsync">Fit Diagram</button>
+                        <button class="studio-button studio-button--small" data-command-id="center-selection" @onclick="CenterAsync" disabled="@(State.SelectedNodeIds.Count == 0)">Center Selection</button>
+                    </div>
+                    <MiniMap State="State" />
+                </div>
+                @if (_canvasInitialization == CanvasInitializationState.Failed)
+                {
+                    <div class="canvas-initialization-error" role="alert">Canvas initialization failed. Reload the editor to retry.</div>
+                }
             </section>
         </main>
 
-        <aside class="inspector-panel">
+        <aside class="inspector-panel" aria-label="Contextual drawer" @onkeydown="HandleDrawerKeyDown" tabindex="-1">
+            <button class="drawer-host__close" aria-label="Close drawer" @onclick="CloseDrawerAsync">Close</button>
             <div class="panel-heading">
-                <span>Inspector</span>
+                <span>@(ShellUi.ActiveDrawer?.ToString() ?? "Inspector")</span>
                 <small>@SelectionSummary</small>
             </div>
 
             @if (State.SelectedNode is not null)
             {
-                <section class="inspector-section">
+                <section class="inspector-section drawer-section drawer-section--inspector">
                     <h2>Node</h2>
                     <label class="studio-field">
                         <span>Label</span>
@@ -155,7 +186,7 @@
             }
             else if (State.SelectedEdge is not null)
             {
-                <section class="inspector-section">
+                <section class="inspector-section drawer-section drawer-section--inspector">
                     <h2>Edge</h2>
                     <label class="studio-field">
                         <span>Label</span>
@@ -173,7 +204,7 @@
             }
             else if (State.SelectedGroup is not null)
             {
-                <section class="inspector-section">
+                <section class="inspector-section drawer-section drawer-section--inspector">
                     <h2>Group</h2>
                     <div class="inspector-metric"><span>Label</span><strong>@State.SelectedGroup.Label</strong></div>
                     <div class="inspector-metric"><span>Members</span><strong>@State.SelectedGroup.ChildNodeIds.Count</strong></div>
@@ -183,7 +214,7 @@
 
             @if (State.SelectedNodes.Count > 1)
             {
-                <section class="inspector-section">
+                <section class="inspector-section drawer-section drawer-section--inspector">
                     <h2>Arrange Selection</h2>
                     <div class="action-grid">
                         <button class="studio-button studio-button--small" @onclick='() => State.AlignSelectionAsync("left")'>Align Left</button>
@@ -198,7 +229,7 @@
 
             @if (State.HasSelection)
             {
-                <section class="inspector-section">
+                <section class="inspector-section drawer-section drawer-section--inspector">
                     <h2>Metadata</h2>
                     <label class="studio-field">
                         <span>Tags</span>
@@ -217,7 +248,7 @@
                 </section>
             }
 
-            <section class="inspector-section">
+            <section class="inspector-section drawer-section drawer-section--layers">
                 <h2>Layers</h2>
                 <label class="studio-field">
                     <span>New Layer</span>
@@ -240,7 +271,7 @@
                 </div>
             </section>
 
-            <section class="inspector-section">
+            <section class="inspector-section drawer-section drawer-section--snapshots">
                 <h2>Snapshots</h2>
                 @foreach (var snapshot in State.Snapshots.Take(6))
                 {
@@ -254,7 +285,7 @@
                 }
             </section>
 
-            <section class="inspector-section">
+            <section class="inspector-section drawer-section drawer-section--validation">
                 <h2>Validation</h2>
                 @if (State.ValidationIssues.Count == 0)
                 {
@@ -272,9 +303,7 @@
                 }
             </section>
 
-            @if (State.ReviewMode)
-            {
-                <section class="inspector-section">
+            <section class="inspector-section drawer-section drawer-section--review">
                     <h2>Review</h2>
                     <label class="studio-field">
                         <span>Comment Title</span>
@@ -308,12 +337,11 @@
                             <span>@annotation.Text</span>
                         </div>
                     }
-                </section>
-            }
+            </section>
         </aside>
     </div>
 
-    <footer class="status-strip">
+    <footer class="status-strip" role="status" data-testid="editor-status-bar">
         <span>@State.Document.TemplateKind</span>
         <span>@State.Document.Nodes.Length nodes</span>
         <span>@State.Document.Edges.Length edges</span>
@@ -331,6 +359,15 @@
 
     private DiagramCanvas? _canvas;
     private IJSObjectReference? _browserFileModule;
+    private IJSObjectReference? _viewportModule;
+    private DotNetObjectReference<EditorShell>? _viewportReference;
+    private long? _viewportRegistration;
+    private bool _disposed;
+    private string? _drawerFocusOrigin;
+    private bool _shellReady;
+    private CanvasInitializationState _canvasInitialization = CanvasInitializationState.Pending;
+    private bool _hasInitializedDocument;
+    private string? _initializedDocumentId;
     private string _activeLeftTab = "stencils";
     private string _documentTitle = string.Empty;
     private string _snapshotName = "Checkpoint";
@@ -352,18 +389,68 @@
                     ? "Multi-selection"
                     : "Ready";
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         State.Changed += HandleStateChanged;
-        await State.InitializeAsync(DocumentId);
-        _documentTitle = State.Document.Metadata.Title;
-        _selectedLayout = ResolveSuggestedLayout(State.Document.TemplateKind);
+        ShellUi.Changed += HandleShellUiChanged;
     }
 
     protected override async Task OnParametersSetAsync()
     {
+        var requestedDocumentId = string.IsNullOrWhiteSpace(DocumentId) ? null : DocumentId;
+        if (_hasInitializedDocument
+            && string.Equals(_initializedDocumentId, requestedDocumentId, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         await State.InitializeAsync(DocumentId);
+        _hasInitializedDocument = true;
+        _initializedDocumentId = requestedDocumentId;
         _documentTitle = State.Document.Metadata.Title;
+        _selectedLayout = ResolveSuggestedLayout(State.Document.TemplateKind);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var viewportModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/editor-shell-viewport.js");
+        if (_disposed)
+        {
+            await viewportModule.DisposeAsync();
+            return;
+        }
+
+        // Register only after the first interactive render so resize callbacks have a live
+        // shell target; the registration token makes late disposal idempotent.
+        var viewportReference = DotNetObjectReference.Create(this);
+        var viewportRegistration = await viewportModule.InvokeAsync<long>("start", viewportReference);
+        if (_disposed)
+        {
+            await viewportModule.InvokeVoidAsync("stop", viewportRegistration);
+            viewportReference.Dispose();
+            await viewportModule.DisposeAsync();
+            return;
+        }
+
+        _viewportModule = viewportModule;
+        _viewportReference = viewportReference;
+        _viewportRegistration = viewportRegistration;
+        _shellReady = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public void UpdateViewportWidth(int viewportWidth) => ShellUi.SetViewportWidth(viewportWidth);
+
+    private Task HandleCanvasInitializationChanged(CanvasInitializationState state)
+    {
+        _canvasInitialization = state;
+        return InvokeAsync(StateHasChanged);
     }
 
     private RenderFragment RenderInspectorField(InspectorFieldDefinition field) => builder =>
@@ -515,6 +602,61 @@
         _ = InvokeAsync(StateHasChanged);
     }
 
+    private void HandleShellUiChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private async Task ToggleDrawerAsync(EditorDrawerMode mode)
+    {
+        var wasClosed = ShellUi.ActiveDrawer is null;
+        var isOpen = ShellUi.ToggleDrawer(mode);
+        if (isOpen)
+        {
+            if (wasClosed)
+            {
+                _drawerFocusOrigin = GetDrawerTriggerKey(mode);
+            }
+
+            _activeLeftTab = mode == EditorDrawerMode.Library ? "library" : "stencils";
+            return;
+        }
+
+        await FocusDrawerTriggerAsync(mode);
+    }
+
+    private Task OpenDrawerAsync(EditorDrawerMode mode)
+    {
+        _activeLeftTab = mode == EditorDrawerMode.Library ? "library" : "stencils";
+        ShellUi.TryOpenDrawer(mode.ToString());
+        return Task.CompletedTask;
+    }
+
+    private async Task CloseDrawerAsync()
+    {
+        var activeDrawer = ShellUi.ActiveDrawer;
+        var focusOrigin = _drawerFocusOrigin ?? (activeDrawer is null ? null : GetDrawerTriggerKey(activeDrawer.Value));
+        ShellUi.CloseDrawer();
+        _drawerFocusOrigin = null;
+        if (focusOrigin is not null)
+        {
+            await FocusDrawerTriggerAsync(focusOrigin);
+        }
+    }
+
+    private Task HandleDrawerKeyDown(KeyboardEventArgs args)
+        => args.Key == "Escape" ? CloseDrawerAsync() : Task.CompletedTask;
+
+    private Task HandleShellKeyDown(KeyboardEventArgs args)
+        => args.Key == "Escape" && ShellUi.ActiveDrawer is not null
+            ? CloseDrawerAsync()
+            : Task.CompletedTask;
+
+    private Task FocusDrawerTriggerAsync(EditorDrawerMode mode)
+        => FocusDrawerTriggerAsync(GetDrawerTriggerKey(mode));
+
+    private Task FocusDrawerTriggerAsync(string mode)
+        => _viewportModule?.InvokeVoidAsync("focusDrawerTrigger", mode).AsTask() ?? Task.CompletedTask;
+
+    private static string GetDrawerTriggerKey(EditorDrawerMode mode) => mode.ToString().ToLowerInvariant();
+
     private string BuildFileName(string extension)
     {
         var title = State.Document.Metadata.Title;
@@ -535,11 +677,33 @@
 
     public async ValueTask DisposeAsync()
     {
+        // Mark disposed before awaiting JS cleanup: an in-flight first-render continuation
+        // can then stop its own registration instead of publishing stale shell state.
+        _disposed = true;
         State.Changed -= HandleStateChanged;
+        ShellUi.Changed -= HandleShellUiChanged;
 
         if (_browserFileModule is not null)
         {
             await _browserFileModule.DisposeAsync();
         }
+
+        var viewportModule = _viewportModule;
+        var viewportRegistration = _viewportRegistration;
+        _viewportModule = null;
+        _viewportRegistration = null;
+
+        if (viewportModule is not null)
+        {
+            if (viewportRegistration is not null)
+            {
+                await viewportModule.InvokeVoidAsync("stop", viewportRegistration.Value);
+            }
+
+            await viewportModule.DisposeAsync();
+        }
+
+        _viewportReference?.Dispose();
+        _viewportReference = null;
     }
 }

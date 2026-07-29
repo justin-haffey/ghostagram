@@ -41,6 +41,7 @@ export function initialize(host, bridge) {
         root,
         stage,
         suppressConnectionEvents: false,
+        suppressDragEvents: false,
         suppressViewportEvent: false,
         viewport,
         zoom: 1
@@ -54,6 +55,8 @@ export function renderDocument(documentModel) {
     const runtime = requireRuntime();
     runtime.document = documentModel;
     runtime.suppressConnectionEvents = true;
+    runtime.suppressDragEvents = true;
+    runtime.host.dataset.renderCount = String((Number(runtime.host.dataset.renderCount) || 0) + 1);
 
     try {
         runtime.instance.reset();
@@ -175,6 +178,7 @@ export function renderDocument(documentModel) {
         setViewport(documentModel.viewportState ?? { zoom: 1, scrollLeft: 0, scrollTop: 0 });
     } finally {
         runtime.suppressConnectionEvents = false;
+        runtime.suppressDragEvents = false;
     }
 }
 
@@ -294,28 +298,44 @@ function bindRuntimeEvents(runtime) {
     }, { passive: true });
 
     runtime.instance.bind("drag:stop", payload => {
+        if (runtime.suppressDragEvents) {
+            return;
+        }
+
+        const gridSize = positiveNumber(runtime.document?.canvas?.gridSize, 1);
+        let movedElement = false;
         for (const item of payload?.elements ?? []) {
             const element = item.el;
             const position = item.pos ?? {};
             if (element?.dataset.nodeId) {
+                const bounds = snapDraggedBounds(element, position, gridSize);
+                updateRuntimeBounds(runtime, "nodes", element.dataset.nodeId, bounds);
                 invokeBridge(
                     runtime,
                     "OnNodeMoved",
                     element.dataset.nodeId,
-                    numberOr(position.x, element.offsetLeft),
-                    numberOr(position.y, element.offsetTop),
-                    element.offsetWidth,
-                    element.offsetHeight);
+                    bounds.x,
+                    bounds.y,
+                    bounds.width,
+                    bounds.height);
+                movedElement = true;
             } else if (element?.dataset.groupId) {
+                const bounds = snapDraggedBounds(element, position, gridSize);
+                updateRuntimeBounds(runtime, "groups", element.dataset.groupId, bounds);
                 invokeBridge(
                     runtime,
                     "OnGroupBoundsChanged",
                     element.dataset.groupId,
-                    numberOr(position.x, element.offsetLeft),
-                    numberOr(position.y, element.offsetTop),
-                    element.offsetWidth,
-                    element.offsetHeight);
+                    bounds.x,
+                    bounds.y,
+                    bounds.width,
+                    bounds.height);
+                movedElement = true;
             }
+        }
+
+        if (movedElement) {
+            runtime.instance.repaintEverything();
         }
     });
 
@@ -646,6 +666,26 @@ function resolveLayer(layers, layerId) {
 function retainExisting(current, availableIds) {
     const available = new Set(availableIds);
     return new Set(Array.from(current).filter(id => available.has(id)));
+}
+
+function snapDraggedBounds(element, position, gridSize) {
+    const x = Math.round(numberOr(position.x, element.offsetLeft) / gridSize) * gridSize;
+    const y = Math.round(numberOr(position.y, element.offsetTop) / gridSize) * gridSize;
+    element.style.left = `${x}px`;
+    element.style.top = `${y}px`;
+    return {
+        x,
+        y,
+        width: element.offsetWidth,
+        height: element.offsetHeight
+    };
+}
+
+function updateRuntimeBounds(runtime, collectionName, id, bounds) {
+    const item = (runtime.document?.[collectionName] ?? []).find(candidate => candidate.id === id);
+    if (item) {
+        item.bounds = bounds;
+    }
 }
 
 function endpointPortId(endpoint) {
