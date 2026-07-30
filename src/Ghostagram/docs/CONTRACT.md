@@ -114,7 +114,7 @@ Common commit events map directly to an atomic host update:
 | `edge.waypointsRequested` | `edge.upsert` with updated waypoints. |
 | `edge.detachRequested` | `edge.remove`. |
 
-The browser harness in `demo.html` demonstrates these mappings without requiring a .NET host.
+The browser harness in `src/Ghostagram/demo/demo.html` demonstrates these mappings without requiring a .NET host.
 
 ## Overlay descriptors
 

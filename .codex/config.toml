@@ -32,6 +32,14 @@ config_file = "agents/swe/documentation/code-commentor.toml"
 description = "Use this agent for fast, implementation-focused C#/.NET, Razor, and JavaScript work when the goal is to generate or modify project code quickly and pragmatically."
 config_file = "agents/swe/developers/csharp-developer.toml"
 
+[agents.diagram_developer]
+description = "Use this agent for Ghostagram implementation and collaborative diagram editing through the checked-in Ghostagram plugin skills."
+config_file = "agents/swe/developers/diagram-developer.toml"
+
+[agents.diagram_developer2]
+description = "Use this agent for Ghostagram implementation and direct contract-governed MCP diagram editing without Ghostagram plugin skills."
+config_file = "agents/swe/developers/diagram-developer2.toml"
+
 [agents.azure_db_developer]
 description = "Use this agent for Azure SQL and Azure Cosmos DB data design, schema and container modeling, database scripting, and database-focused implementation guidance."
 config_file = "agents/swe/database/azure-db-developer.toml"

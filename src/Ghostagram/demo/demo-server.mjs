@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = resolve(fileURLToPath(new URL(".", import.meta.url)));
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const rootPrefix = `${root}${sep}`;
 const portArg = process.argv.find(argument => argument.startsWith("--port="));
 const port = Number(portArg?.slice("--port=".length) ?? 8088);
@@ -34,7 +34,7 @@ createServer(async (request, response) => {
   }
 
   const pathname = decodeURIComponent(new URL(request.url ?? "/", "http://localhost").pathname);
-  const relativePath = pathname === "/" ? "demo.html" : pathname.slice(1);
+  const relativePath = pathname === "/" ? "demo/demo.html" : pathname.slice(1);
   const filePath = resolve(root, relativePath);
 
   if (filePath !== root && !filePath.startsWith(rootPrefix)) {

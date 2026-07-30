@@ -100,7 +100,7 @@ cmd.exe /d /c npm.cmd test
 
 from this folder.
 
-Run the indexed large-graph delta and lasso-selection benchmark with `cmd.exe /d /c npm.cmd run benchmark`. The standalone `demo.html` is the browser harness for drag, selection, connection-request, label, zoom, and delta-render verification when a browser surface is available.
+Run the indexed large-graph delta and lasso-selection benchmark with `cmd.exe /d /c npm.cmd run benchmark`. The standalone `demo/demo.html` is the browser harness for drag, selection, connection-request, label, zoom, and delta-render verification when a browser surface is available.
 
 ## Run the browser harness
 
