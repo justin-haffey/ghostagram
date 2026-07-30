@@ -1,0 +1,20 @@
+@namespace Ghostagram.Blazor
+@using Ghostagram.Core
+
+@code {
+    [CascadingParameter] private DiagramCompositionContext Context { get; set; } = default!;
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+    [Parameter, EditorRequired] public string SourcePortId { get; set; } = default!;
+    [Parameter, EditorRequired] public string TargetPortId { get; set; } = default!;
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string Connector { get; set; } = "flowchart";
+    [Parameter] public string? Type { get; set; }
+    [Parameter] public DiagramFlowchartOptions? ConnectorOptions { get; set; }
+    [Parameter] public DiagramEdgeStyle? Style { get; set; }
+    [Parameter] public object? Animation { get; set; }
+    [Parameter] public bool Detachable { get; set; } = true;
+    [Parameter] public bool Reconnectable { get; set; } = true;
+
+    protected override void OnInitialized() =>
+        Context.Add(new DiagramEdge(Id, SourcePortId, TargetPortId, Label, Connector, Type, ConnectorOptions: ConnectorOptions, Style: Style, Animation: Animation, Detachable: Detachable, Reconnectable: Reconnectable));
+}

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ghostagram": {
+      "type": "http",
+      "url": "http://127.0.0.1:5273/mcp",
+      "enabled": true,
+      "required": false,
+      "startup_timeout_sec": 20.0,
+      "tool_timeout_sec": 60.0
+    }
+  }
+}

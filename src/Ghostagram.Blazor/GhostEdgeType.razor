@@ -1,0 +1,14 @@
+@namespace Ghostagram.Blazor
+@using Ghostagram.Core
+
+@code {
+    [CascadingParameter] private DiagramCompositionContext Context { get; set; } = default!;
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+    [Parameter] public string Connector { get; set; } = "flowchart";
+    [Parameter] public DiagramEdgeStyle? Style { get; set; }
+    [Parameter] public object? Animation { get; set; }
+    [Parameter] public bool? Detachable { get; set; }
+    [Parameter] public bool? Reconnectable { get; set; }
+
+    protected override void OnInitialized() => Context.Add(new DiagramEdgeType(Id, Connector, Style, Animation: Animation, Detachable: Detachable, Reconnectable: Reconnectable));
+}

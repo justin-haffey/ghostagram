@@ -1,0 +1,40 @@
+{
+  "name": "ghostagram",
+  "version": "1.0.0",
+  "description": "Codex workflows for creating, inspecting, editing, laying out, and exporting collaborative Ghostagram diagrams through MCP.",
+  "author": {
+    "name": "Ghostworx"
+  },
+  "keywords": [
+    "ghostagram",
+    "diagramming",
+    "mcp",
+    "codex",
+    "collaboration"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Ghostagram",
+    "shortDescription": "Edit live diagrams through MCP",
+    "longDescription": "Seven focused skills manage revision-safe collaborative Ghostagram sessions: open, create, inspect, edit, lay out, export, and close.",
+    "developerName": "Ghostworx",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use $ghostagram-open-session to join an existing collaborative diagram.",
+      "Use $ghostagram-create-diagram to create and open a new diagram.",
+      "Use $ghostagram-sync-diagram to inspect or synchronize diagram state.",
+      "Use $ghostagram-apply-operations to make a revision-safe diagram change.",
+      "Use $ghostagram-layout-diagram to preview or commit deterministic layout.",
+      "Use $ghostagram-export-svg to export a revision-pinned SVG.",
+      "Use $ghostagram-close-session to close the current collaboration session."
+    ],
+    "brandColor": "#0F766E",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png"
+  }
+}

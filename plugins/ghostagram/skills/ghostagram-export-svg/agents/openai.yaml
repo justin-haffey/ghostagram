@@ -1,0 +1,15 @@
+interface:
+  display_name: "Export Ghostagram SVG"
+  short_description: "Export an exact live diagram revision"
+  default_prompt: "Use $ghostagram-export-svg to export the current verified diagram revision as SVG."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "ghostagram"
+      description: "Ghostagram collaborative diagram MCP server"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:5273/mcp"

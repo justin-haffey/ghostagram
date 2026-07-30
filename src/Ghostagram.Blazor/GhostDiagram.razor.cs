@@ -1,0 +1,113 @@
+using System.Text.Json;
+using Ghostagram.Contracts;
+using Ghostagram.Core;
+using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+
+namespace Ghostagram.Blazor;
+
+/// <summary>
+/// Razor control that owns one Ghostagram browser instance. The supplied C# document remains authoritative.
+/// Browser events are proposals delivered through <see cref="EventReceived"/>.
+/// </summary>
+public partial class GhostDiagram
+{
+    private ElementReference _host;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<GhostDiagram>? _self;
+    private string? _instanceId;
+    private bool _initialized;
+    private long _renderedRevision;
+
+    [Inject] private IJSRuntime Js { get; set; } = default!;
+    [Parameter] public DiagramDocument? Document { get; set; }
+    [Parameter] public string? DocumentId { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public long Revision { get; set; }
+    [Parameter] public GhostDiagramOptions Options { get; set; } = new();
+    [Parameter] public EventCallback<GhostagramEvent> EventReceived { get; set; }
+    [Parameter] public string AriaLabel { get; set; } = "Ghostagram diagram";
+    private DiagramCompositionContext? _composition;
+    private DiagramDocument CurrentDocument => Document ?? _composition?.Build() ?? throw new InvalidOperationException("GhostDiagram requires a Document or declarative DocumentId with ChildContent.");
+
+    protected string CssClass => $"ghostagram-diagram {Options.CssClass}".Trim();
+    protected string HostStyle => $"width:100%;height:{Options.Height};min-height:160px;";
+
+    protected override void OnInitialized()
+    {
+        if (Document is not null && (DocumentId is not null || ChildContent is not null))
+            throw new InvalidOperationException("GhostDiagram supports either controlled Document mode or declarative DocumentId + ChildContent mode, not both.");
+        if (Document is not null) return;
+        if (string.IsNullOrWhiteSpace(DocumentId) || ChildContent is null)
+            throw new InvalidOperationException("Declarative GhostDiagram mode requires both DocumentId and ChildContent.");
+        _composition = new DiagramCompositionContext(DocumentId);
+        _composition.InitializeRoot();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _initialized) return;
+        _module = await Js.InvokeAsync<IJSObjectReference>("import", "./_content/Ghostagram.Blazor/ghostagram/ghostagram.js");
+        _self = DotNetObjectReference.Create(this);
+        var hello = await _module.InvokeAsync<GhostagramHello>("create", _host, Options.ToInteropOptions(_self));
+        _instanceId = hello.InstanceId;
+        _initialized = true;
+        await ReplaceAsync(CurrentDocument, Revision);
+    }
+
+    /// <summary>Replaces the visual state with an authoritative document at the given revision.</summary>
+    public async Task<GhostagramResult> ReplaceAsync(DiagramDocument document, long revision, CancellationToken cancellationToken = default)
+    {
+        var module = RequireModule();
+        Document = document;
+        Revision = revision;
+        var request = new { requestId = Guid.NewGuid().ToString("N"), documentId = document.DocumentId, revision, model = document };
+        var result = await module.InvokeAsync<GhostagramResult>("replace", cancellationToken, _instanceId, request);
+        ThrowIfFailed(result);
+        _renderedRevision = result.RenderedRevision;
+        return result;
+    }
+
+    /// <summary>Applies one atomic, revision-checked operation batch.</summary>
+    public async Task<GhostagramResult> ApplyAsync(long baseRevision, long revision, IEnumerable<GhostagramOperation> operations, CancellationToken cancellationToken = default)
+    {
+        var request = new { requestId = Guid.NewGuid().ToString("N"), documentId = CurrentDocument.DocumentId, baseRevision, revision, ops = operations };
+        var result = await RequireModule().InvokeAsync<GhostagramResult>("apply", cancellationToken, _instanceId, request);
+        ThrowIfFailed(result);
+        _renderedRevision = result.RenderedRevision;
+        return result;
+    }
+
+    public Task<GhostagramResult> FitAsync(double padding = 32, CancellationToken cancellationToken = default) =>
+        ApplyAsync(_renderedRevision, _renderedRevision + 1, [DiagramOperations.Fit(padding)], cancellationToken);
+
+    public Task<GhostagramInspection> InspectAsync(CancellationToken cancellationToken = default) =>
+        RequireModule().InvokeAsync<GhostagramInspection>("inspect", cancellationToken, _instanceId).AsTask();
+
+    public Task<string> ExportSvgAsync(CancellationToken cancellationToken = default) =>
+        RequireModule().InvokeAsync<string>("exportSvg", cancellationToken, _instanceId).AsTask();
+
+    [JSInvokable]
+    public async Task OnGhostagramEvent(GhostagramEvent envelope)
+    {
+        if (EventReceived.HasDelegate) await EventReceived.InvokeAsync(envelope);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null && _instanceId is not null)
+        {
+            try { await _module.InvokeVoidAsync("dispose", _instanceId); }
+            catch (JSDisconnectedException) { }
+        }
+        _self?.Dispose();
+        if (_module is not null) await _module.DisposeAsync();
+    }
+
+    private IJSObjectReference RequireModule() => _initialized && _module is not null && _instanceId is not null
+        ? _module : throw new InvalidOperationException("GhostDiagram is not initialized. Invoke methods after first render.");
+    private static void ThrowIfFailed(GhostagramResult result)
+    {
+        if (!result.Ok) throw new InvalidOperationException($"Ghostagram {result.Problem?.Code ?? "UNKNOWN"}: {result.Problem?.Message ?? "The browser operation failed."}");
+    }
+}

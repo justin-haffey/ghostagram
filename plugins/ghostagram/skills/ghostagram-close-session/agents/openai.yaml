@@ -1,0 +1,15 @@
+interface:
+  display_name: "Close Ghostagram Session"
+  short_description: "Close one collaboration session safely"
+  default_prompt: "Use $ghostagram-close-session to close the current Ghostagram session without deleting its diagram."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "ghostagram"
+      description: "Ghostagram collaborative diagram MCP server"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:5273/mcp"

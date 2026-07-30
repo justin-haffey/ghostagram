@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    <StaticWebAssetBasePath>Ghostagram.Blazor</StaticWebAssetBasePath>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Ghostagram.Core\Ghostagram.Core.csproj" />
+    <Content Include="..\Ghostagram\ghostagram.js" Link="wwwroot\ghostagram\ghostagram.js" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\Ghostagram\runtime\**\*.js" Link="wwwroot\ghostagram\runtime\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

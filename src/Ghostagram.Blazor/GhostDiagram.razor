@@ -1,0 +1,8 @@
+@namespace Ghostagram.Blazor
+@implements IAsyncDisposable
+
+<div @ref="_host" class="@CssClass" style="@HostStyle" aria-label="@AriaLabel"></div>
+@if (_composition is not null)
+{
+    <CascadingValue Value="_composition" IsFixed="true">@ChildContent</CascadingValue>
+}

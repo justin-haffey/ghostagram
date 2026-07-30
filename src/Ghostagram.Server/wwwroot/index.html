@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ghostagram layout laboratory</title>
+  <link rel="stylesheet" href="./layout-harness.css">
+</head>
+<body>
+  <header>
+    <div class="controls">
+      <strong>Ghostagram layout laboratory</strong>
+      <label>Direction
+        <select id="direction"><option>right</option><option>down</option><option>left</option><option>up</option></select>
+      </label>
+      <label>Seed <input id="seed" type="number" value="42" step="1"></label>
+      <label>Sweeps <input id="sweeps" type="number" value="12" min="0" max="24"></label>
+      <button id="preview">Preview</button>
+      <button id="commit" class="primary">Commit</button>
+      <button id="fit">Fit</button>
+    </div>
+    <div id="status">Initializing deterministic layout document…</div>
+  </header>
+  <main id="canvas"></main>
+  <script type="module" src="./layout-harness.js"></script>
+</body>
+</html>

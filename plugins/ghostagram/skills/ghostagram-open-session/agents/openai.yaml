@@ -1,0 +1,15 @@
+interface:
+  display_name: "Open Ghostagram Session"
+  short_description: "Join an existing live diagram session"
+  default_prompt: "Use $ghostagram-open-session to join an existing Ghostagram diagram session."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "ghostagram"
+      description: "Ghostagram collaborative diagram MCP server"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:5273/mcp"

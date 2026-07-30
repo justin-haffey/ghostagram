@@ -1,0 +1,15 @@
+interface:
+  display_name: "Layout Ghostagram Diagram"
+  short_description: "Preview or commit deterministic layout"
+  default_prompt: "Use $ghostagram-layout-diagram to arrange the current diagram deterministically."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "ghostagram"
+      description: "Ghostagram collaborative diagram MCP server"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:5273/mcp"

@@ -1,0 +1,15 @@
+interface:
+  display_name: "Sync Ghostagram Diagram"
+  short_description: "Inspect snapshots and revision changes"
+  default_prompt: "Use $ghostagram-sync-diagram to inspect and synchronize the current diagram state."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "ghostagram"
+      description: "Ghostagram collaborative diagram MCP server"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:5273/mcp"

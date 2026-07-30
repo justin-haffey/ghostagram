@@ -1,0 +1,25 @@
+@namespace Ghostagram.Blazor
+@using Ghostagram.Core
+
+<CascadingValue Value="_nestedContext" IsFixed="true">@ChildContent</CascadingValue>
+
+@code {
+    [CascadingParameter] private DiagramCompositionContext Context { get; set; } = default!;
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public double X { get; set; }
+    [Parameter] public double Y { get; set; }
+    [Parameter] public double Width { get; set; } = 320;
+    [Parameter] public double Height { get; set; } = 220;
+    [Parameter] public bool Collapsed { get; set; }
+    [Parameter] public bool Resizable { get; set; } = true;
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private DiagramCompositionContext _nestedContext = default!;
+
+    protected override void OnInitialized()
+    {
+        Context.Add(new DiagramGroup(Id, X, Y, Width, Height, Label, Context.GroupId, Collapsed, Resizable, Icon: Icon));
+        _nestedContext = Context.InGroup(Id);
+    }
+}

@@ -1,0 +1,15 @@
+interface:
+  display_name: "Create Ghostagram Diagram"
+  short_description: "Create and open a collaborative diagram"
+  default_prompt: "Use $ghostagram-create-diagram to create and open a new Ghostagram diagram."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "ghostagram"
+      description: "Ghostagram collaborative diagram MCP server"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:5273/mcp"

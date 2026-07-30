@@ -1,0 +1,15 @@
+interface:
+  display_name: "Apply Ghostagram Operations"
+  short_description: "Edit a live diagram revision safely"
+  default_prompt: "Use $ghostagram-apply-operations to make a revision-safe edit to the current diagram."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "ghostagram"
+      description: "Ghostagram collaborative diagram MCP server"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:5273/mcp"
