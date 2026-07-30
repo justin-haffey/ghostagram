@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ghostplumb browser harness</title>
+  <style>
+    body { margin: 0; font: 14px system-ui, sans-serif; background: #e2e8f0; color: #0f172a; }
+    header { height: 72px; box-sizing: border-box; display: grid; grid-template-rows: 30px 22px; gap: 4px; padding: 6px 1rem; background: #fff; border-bottom: 1px solid #cbd5e1; }
+    .toolbar-controls { display: flex; gap: .75rem; align-items: center; min-width: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: thin; }
+    .toolbar-controls strong { flex: 0 0 auto; }
+    .toolbar-status { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; align-items: center; color: #475569; min-width: 0; }
+    #flow-status, #events { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #events { min-width: 0; text-align: right; }
+    #canvas { width: 100vw; height: calc(100vh - 72px); background: #f8fafc; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="toolbar-controls">
+      <strong>Ghostplumb harness</strong>
+      <button id="move">Apply delta</button>
+      <button id="fit">Fit</button>
+      <button id="center">Center</button>
+      <button id="rotate">Rotate Start</button>
+      <button id="waypoint">Add waypoint</button>
+      <button id="toggle-group">Toggle Review group</button>
+      <button id="toggle-edge-policy">Protect handoff</button>
+      <button id="toggle-start-port">Disable Start port</button>
+       <button id="toggle-start-policy">Allow alternate</button>
+       <button id="toggle-flow">Pause flow</button>
+       <button id="export-svg">Export SVG</button>
+       <button id="undo" disabled>Undo</button>
+       <button id="redo" disabled>Redo</button>
+    </div>
+    <div class="toolbar-status">
+      <span id="flow-status">flow: checking</span>
+      <span id="events">waiting</span>
+    </div>
+  </header>
+  <main id="canvas" aria-label="Ghostplumb test canvas"></main>
+  <script type="module">
+    import * as ghostplumb from "./ghostplumb.js";
+    const events = document.querySelector("#events");
+    const flowStatus = document.querySelector("#flow-status");
+    ghostplumb.registerEndpoint("ring", element => {
+      element.style.borderRadius = "50%";
+      element.style.borderWidth = "3px";
+      element.style.boxShadow = "0 0 0 2px rgba(14, 116, 144, .18)";
+    });
+    ghostplumb.registerOverlay("status-dot", ({ element, overlay, emit }) => {
+      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dot.setAttribute("r", "7"); dot.setAttribute("fill", overlay.state === "ready" ? "#16a34a" : "#f59e0b"); dot.setAttribute("stroke", "#fff"); dot.setAttribute("stroke-width", "2");
+      dot.addEventListener("click", () => emit("click", { state: overlay.state }));
+      element.replaceChildren(dot); element.style.pointerEvents = "all"; element.style.cursor = "pointer";
+    });
+    const hello = ghostplumb.create(document.querySelector("#canvas"), {
+      protocolVersion: 1,
+      gridSize: 1,
+      wheelZoom: true,
+      respectReducedMotion: false,
+      eventSink: onGhostplumbEvent
+    });
+    let revision = 1;
+    let edgeSequence = 1;
+    let startPolicyRestricted = true;
+    const model = {
+      edgeTypes: [{
+        id: "workflow-flow",
+        connector: "flowchart",
+        connectorOptions: { stub: 36, cornerRadius: 10 },
+        style: { stroke: "#0f766e", strokeWidth: 2.5, lineCap: "round", lineJoin: "round" },
+        animation: { type: "flow", speed: 1.2, dash: "8 6", direction: "forward" }
+      }],
+      nodes: [
+        { id: "start", label: "Start", x: 120, y: 120, width: 120, height: 58 },
+        { id: "review", label: "Review", icon: "mdi:clipboard-check-outline", x: 460, y: 260, width: 120, height: 58, groupId: "review-task" },
+        { id: "archive", label: "Archive", x: 760, y: 120, width: 120, height: 58 },
+        { id: "alternate", label: "Alternate", x: 760, y: 300, width: 120, height: 58 }
+      ],
+      ports: [
+        { id: "start-out", nodeId: "start", direction: "source", scope: "review", connectionPolicy: { allowPortIds: ["review-in"] }, anchor: "right", endpoint: { type: "dot", size: 16, fill: "#fef3c7", stroke: "#92400e", strokeWidth: 2 } },
+        { id: "review-in", nodeId: "review", direction: "target", scope: "review", anchor: "left", endpoint: { type: "rectangle", size: 14, fill: "#ecfeff", stroke: "#0f766e", strokeWidth: 2 } },
+        { id: "review-out", nodeId: "review", direction: "source", scope: "review", anchor: "right", endpoint: { type: "dot", size: 14, fill: "#ecfeff", stroke: "#0f766e", strokeWidth: 2 } },
+        { id: "review-top-out", nodeId: "review", direction: "source", scope: "review", anchor: [.5, 0], endpoint: { type: "dot", size: 14, fill: "#dcfce7", stroke: "#15803d", strokeWidth: 2 } },
+        { id: "review-bottom-out", nodeId: "review", direction: "source", scope: "review", anchor: [.5, 1], endpoint: { type: "dot", size: 14, fill: "#fce7f3", stroke: "#be185d", strokeWidth: 2 } },
+        { id: "archive-in", nodeId: "archive", direction: "target", scope: "review", anchor: "left", endpoint: { type: "ring", size: 16, fill: "#f0fdfa", stroke: "#0e7490" } },
+        { id: "alternate-in", nodeId: "alternate", direction: "target", scope: "review", anchor: "left", endpoint: { type: "dot", size: 14, fill: "#f0fdfa", stroke: "#0e7490" } }
+      ],
+      edges: [
+        { id: "handoff", sourcePortId: "start-out", targetPortId: "review-in", type: "workflow-flow", overlays: [{ type: "label", label: "handoff", location: .25, offsetY: -10 }, { type: "status-dot", location: .72, state: "ready" }, { type: "plain-arrow", location: 0 }, { type: "arrow" }] },
+        { id: "review-next", sourcePortId: "review-out", targetPortId: "alternate-in", connector: "straight", overlays: [{ type: "label", label: "next", location: .5, offsetY: -10 }, { type: "arrow" }] },
+        { id: "review-top-next", sourcePortId: "review-top-out", targetPortId: "alternate-in", connector: "bezier", overlays: [{ type: "label", label: "top", location: .5, offsetY: -10 }, { type: "arrow" }] },
+        { id: "review-bottom-next", sourcePortId: "review-bottom-out", targetPortId: "alternate-in", connector: "flowchart", connectorOptions: { cornerRadius: 10 }, overlays: [{ type: "label", label: "bottom", location: .5, offsetY: 12 }, { type: "arrow" }] }
+      ],
+      groups: [
+        { id: "review-stage", label: "Review stage", icon: "mdi:folder-outline", x: 400, y: 200, width: 240, height: 160, collapsed: false },
+        { id: "review-task", label: "Review task", parentGroupId: "review-stage", x: 440, y: 240, width: 160, height: 100, collapsed: false }
+      ]
+    };
+    ghostplumb.replace(hello.instanceId, { requestId: "initial", documentId: "harness", revision, model });
+    const history = [structuredClone(model)];
+    let historyIndex = 0;
+    const documentOperation = operation => /^(node|port|edgeType|edge|group)\./.test(operation.type);
+    function updateFlowStatus() {
+      requestAnimationFrame(() => {
+        const path = document.querySelector("[data-edge-id='handoff']");
+        const computed = path && getComputedStyle(path);
+        const status = computed?.animationName && computed.animationName !== "none" ? computed.animationPlayState : "not running";
+        flowStatus.textContent = `flow: ${status}`;
+        window.ghostplumbFlowDiagnostic = computed ? { animationName: computed.animationName, animationPlayState: computed.animationPlayState, strokeDasharray: computed.strokeDasharray } : null;
+      });
+    }
+    updateFlowStatus();
+    function syncHistoryControls() {
+      document.querySelector("#undo").disabled = historyIndex === 0;
+      document.querySelector("#redo").disabled = historyIndex === history.length - 1;
+    }
+    function checkpointHistory() {
+      history.splice(historyIndex + 1);
+      history.push(structuredClone(model));
+      historyIndex = history.length - 1;
+      syncHistoryControls();
+    }
+    function restoreHistory(index, requestId) {
+      if (index < 0 || index >= history.length || index === historyIndex) return false;
+      const snapshot = structuredClone(history[index]);
+      const result = ghostplumb.replace(hello.instanceId, { requestId, documentId: "harness", revision: revision + 1, model: snapshot });
+      if (!result.ok) { events.textContent = `${result.problem.code}: ${result.problem.message}`; return false; }
+      for (const key of Object.keys(model)) delete model[key];
+      Object.assign(model, snapshot);
+      revision += 1;
+      historyIndex = index;
+      updateFlowStatus();
+      syncHistoryControls();
+      return true;
+    }
+    function commit(ops, requestId) {
+      const result = ghostplumb.apply(hello.instanceId, { requestId, documentId: "harness", baseRevision: revision, revision: revision + 1, ops });
+      if (result.ok) { revision += 1; updateFlowStatus(); if (ops.some(documentOperation)) checkpointHistory(); }
+      else events.textContent = `${result.problem.code}: ${result.problem.message}`;
+    }
+    function onGhostplumbEvent(event) {
+      events.textContent = `${event.type}: ${JSON.stringify(event.payload)}`;
+      if (event.type === "history.undoRequested") { restoreHistory(historyIndex - 1, `undo-${event.eventId}`); return; }
+      if (event.type === "history.redoRequested") { restoreHistory(historyIndex + 1, `redo-${event.eventId}`); return; }
+      if (event.type === "selection.changed") {
+        commit([{ type: "selection.replace", value: { ids: event.payload.ids } }], `selection-${event.eventId}`);
+      }
+      if (event.type === "selection.deleteRequested") {
+        const edgeIds = new Set(event.payload.edgeIds), nodeIds = new Set(event.payload.nodeIds), groupIds = new Set(event.payload.groupIds);
+        model.edges = model.edges.filter(edge => !edgeIds.has(edge.id));
+        model.ports = model.ports.filter(port => !nodeIds.has(port.nodeId));
+        model.nodes = model.nodes.filter(node => !nodeIds.has(node.id));
+        model.groups = model.groups.filter(group => !groupIds.has(group.id));
+        const ops = [
+          ...event.payload.edgeIds.map(id => ({ type: "edge.remove", id })),
+          ...event.payload.nodeIds.map(id => ({ type: "node.remove", id })),
+          ...event.payload.groupIds.map(id => ({ type: "group.remove", id })),
+          { type: "selection.replace", value: { ids: [] } }
+        ];
+        commit(ops, `delete-${event.eventId}`);
+      }
+      if (event.type === "node.move.commit") {
+        const index = model.nodes.findIndex(node => node.id === event.payload.nodeId);
+        if (index >= 0) {
+          const next = { ...model.nodes[index], x: event.payload.x, y: event.payload.y, groupId: event.payload.groupId };
+          model.nodes[index] = next;
+          commit([{ type: "node.upsert", value: next }], `drag-${event.eventId}`);
+        }
+      }
+      if (event.type === "node.resize.commit") {
+        const index = model.nodes.findIndex(node => node.id === event.payload.nodeId);
+        if (index >= 0) {
+          const next = { ...model.nodes[index], width: event.payload.width, height: event.payload.height };
+          model.nodes[index] = next;
+          commit([{ type: "node.upsert", value: next }], `node-resize-${event.eventId}`);
+        }
+      }
+      if (event.type === "node.rotate.commit") {
+        const index = model.nodes.findIndex(node => node.id === event.payload.nodeId);
+        if (index >= 0) {
+          const next = { ...model.nodes[index], rotation: event.payload.rotation };
+          model.nodes[index] = next;
+          commit([{ type: "node.upsert", value: next }], `node-rotate-${event.eventId}`);
+        }
+      }
+      if (event.type === "node.label.commit") {
+        const index = model.nodes.findIndex(node => node.id === event.payload.nodeId);
+        if (index >= 0) {
+          const next = { ...model.nodes[index], label: event.payload.label };
+          model.nodes[index] = next;
+          commit([{ type: "node.upsert", value: next }], `node-label-${event.eventId}`);
+        }
+      }
+      if (event.type === "group.label.commit") {
+        const index = model.groups.findIndex(group => group.id === event.payload.groupId);
+        if (index >= 0) {
+          const next = { ...model.groups[index], label: event.payload.label };
+          model.groups[index] = next;
+          commit([{ type: "group.upsert", value: next }], `group-label-${event.eventId}`);
+        }
+      }
+      if (event.type === "edge.label.commit") {
+        const index = model.edges.findIndex(edge => edge.id === event.payload.edgeId);
+        if (index >= 0) {
+          const next = { ...model.edges[index], label: event.payload.label };
+          model.edges[index] = next;
+          commit([{ type: "edge.upsert", value: next }], `edge-label-${event.eventId}`);
+        }
+      }
+      if (event.type === "edge.labelPosition.commit") {
+        const index = model.edges.findIndex(edge => edge.id === event.payload.edgeId);
+        if (index >= 0) {
+          const next = { ...model.edges[index], labelOffsetX: event.payload.labelOffsetX, labelOffsetY: event.payload.labelOffsetY };
+          model.edges[index] = next;
+          commit([{ type: "edge.upsert", value: next }], `edge-label-position-${event.eventId}`);
+        }
+      }
+      if (event.type === "nodes.move.commit") {
+        const ops = [];
+        for (const moved of event.payload.nodes) {
+          const index = model.nodes.findIndex(node => node.id === moved.id);
+          if (index < 0) continue;
+          const next = { ...model.nodes[index], x: moved.x, y: moved.y, groupId: moved.groupId };
+          model.nodes[index] = next;
+          ops.push({ type: "node.upsert", value: next });
+        }
+        if (ops.length) commit(ops, `multi-drag-${event.eventId}`);
+      }
+      if (event.type === "selection.move.commit") {
+        const ops = [];
+        for (const moved of event.payload.groups) {
+          const index = model.groups.findIndex(group => group.id === moved.id);
+          if (index < 0) continue;
+          const next = { ...model.groups[index], x: moved.x, y: moved.y };
+          model.groups[index] = next;
+          ops.push({ type: "group.upsert", value: next });
+        }
+        for (const moved of event.payload.nodes) {
+          const index = model.nodes.findIndex(node => node.id === moved.id);
+          if (index < 0) continue;
+          const next = { ...model.nodes[index], x: moved.x, y: moved.y, groupId: moved.groupId };
+          model.nodes[index] = next;
+          ops.push({ type: "node.upsert", value: next });
+        }
+        if (ops.length) commit(ops, `selection-drag-${event.eventId}`);
+      }
+      if (event.type === "group.move.commit") {
+        const index = model.groups.findIndex(group => group.id === event.payload.groupId);
+        if (index >= 0) {
+          const nextGroup = { ...model.groups[index], x: event.payload.x, y: event.payload.y, parentGroupId: event.payload.parentGroupId };
+          model.groups[index] = nextGroup;
+          const ops = [{ type: "group.upsert", value: nextGroup }];
+          for (const moved of event.payload.groups ?? []) {
+            const groupIndex = model.groups.findIndex(group => group.id === moved.id);
+            if (groupIndex >= 0) {
+              const nextChild = { ...model.groups[groupIndex], x: moved.x, y: moved.y };
+              model.groups[groupIndex] = nextChild;
+              ops.push({ type: "group.upsert", value: nextChild });
+            }
+          }
+          for (const moved of event.payload.nodes) {
+            const nodeIndex = model.nodes.findIndex(node => node.id === moved.id);
+            if (nodeIndex >= 0) {
+              const nextNode = { ...model.nodes[nodeIndex], x: moved.x, y: moved.y };
+              model.nodes[nodeIndex] = nextNode;
+              ops.push({ type: "node.upsert", value: nextNode });
+            }
+          }
+          commit(ops, `group-move-${event.eventId}`);
+        }
+      }
+      if (event.type === "group.resize.commit") {
+        const index = model.groups.findIndex(group => group.id === event.payload.groupId);
+        if (index >= 0) {
+          const next = { ...model.groups[index], width: event.payload.width, height: event.payload.height };
+          model.groups[index] = next;
+          commit([{ type: "group.upsert", value: next }], `group-resize-${event.eventId}`);
+        }
+      }
+      if (event.type === "edge.createRequested") {
+        const edge = { id: `edge-${edgeSequence++}`, sourcePortId: event.payload.sourcePortId, targetPortId: event.payload.targetPortId, type: "workflow-flow", overlays: [{ type: "arrow" }] };
+        model.edges.push(edge);
+        commit([{ type: "edge.upsert", value: edge }], `connect-${event.eventId}`);
+      }
+      if (event.type === "edge.detachRequested") {
+        model.edges = model.edges.filter(edge => edge.id !== event.payload.edgeId);
+        commit([{ type: "edge.remove", id: event.payload.edgeId }], `detach-${event.eventId}`);
+      }
+      if (event.type === "edge.reconnectRequested") {
+        const index = model.edges.findIndex(edge => edge.id === event.payload.edgeId);
+        if (index >= 0) {
+          const next = { ...model.edges[index], sourcePortId: event.payload.sourcePortId, targetPortId: event.payload.targetPortId };
+          model.edges[index] = next;
+          commit([{ type: "edge.upsert", value: next }], `reconnect-${event.eventId}`);
+        }
+      }
+      if (event.type === "edge.waypointsRequested") {
+        const index = model.edges.findIndex(edge => edge.id === event.payload.edgeId);
+        if (index >= 0) {
+          const next = { ...model.edges[index], waypoints: event.payload.waypoints };
+          model.edges[index] = next;
+          commit([{ type: "edge.upsert", value: next }], `waypoint-${event.eventId}`);
+        }
+      }
+    }
+    document.querySelector("#move").addEventListener("click", () => {
+      const next = { ...model.nodes[1], x: model.nodes[1].x + 40 };
+      model.nodes[1] = next;
+      commit([{ type: "node.upsert", value: next }], `move-${revision}`);
+    });
+    document.querySelector("#fit").addEventListener("click", () => commit([{ type: "viewport.fit" }], `fit-${revision}`));
+    document.querySelector("#center").addEventListener("click", () => commit([{ type: "viewport.center", value: { ids: [] } }], `center-${revision}`));
+    document.querySelector("#rotate").addEventListener("click", () => {
+      const index = model.nodes.findIndex(node => node.id === "start");
+      const next = { ...model.nodes[index], rotation: ((model.nodes[index].rotation ?? 0) + 30) % 360 };
+      model.nodes[index] = next;
+      commit([{ type: "node.upsert", value: next }], `rotate-${revision}`);
+    });
+    document.querySelector("#waypoint").addEventListener("click", () => {
+      const index = model.edges.findIndex(edge => edge.id === "handoff");
+      const next = { ...model.edges[index], waypoints: [{ x: 340, y: 140 }] };
+      model.edges[index] = next;
+      commit([{ type: "edge.upsert", value: next }], `waypoint-${revision}`);
+    });
+    document.querySelector("#toggle-group").addEventListener("click", () => {
+      const index = model.groups.findIndex(group => group.id === "review-stage");
+      const next = { ...model.groups[index], collapsed: !model.groups[index].collapsed };
+      model.groups[index] = next;
+      commit([{ type: "group.upsert", value: next }], `group-${revision}`);
+    });
+    document.querySelector("#toggle-edge-policy").addEventListener("click", event => {
+      const index = model.edges.findIndex(edge => edge.id === "handoff"), protectedFromChanges = model.edges[index].detachable === false;
+      const next = { ...model.edges[index], detachable: protectedFromChanges, reconnectable: protectedFromChanges };
+      model.edges[index] = next;
+      event.currentTarget.textContent = protectedFromChanges ? "Protect handoff" : "Allow handoff edits";
+      commit([{ type: "edge.upsert", value: next }], `edge-policy-${revision}`);
+    });
+    document.querySelector("#toggle-start-port").addEventListener("click", event => {
+      const index = model.ports.findIndex(port => port.id === "start-out"), disabled = model.ports[index].enabled === false;
+      const next = { ...model.ports[index], enabled: disabled };
+      model.ports[index] = next;
+      event.currentTarget.textContent = disabled ? "Disable Start port" : "Enable Start port";
+      commit([{ type: "port.upsert", value: next }], `port-enabled-${revision}`);
+    });
+    document.querySelector("#toggle-start-policy").addEventListener("click", event => {
+      const index = model.ports.findIndex(port => port.id === "start-out");
+      startPolicyRestricted = !startPolicyRestricted;
+      const next = { ...model.ports[index], connectionPolicy: startPolicyRestricted ? { allowPortIds: ["review-in"] } : undefined };
+      model.ports[index] = next;
+      event.currentTarget.textContent = startPolicyRestricted ? "Allow alternate" : "Restrict alternate";
+      commit([{ type: "port.upsert", value: next }], `port-policy-${revision}`);
+    });
+    document.querySelector("#toggle-flow").addEventListener("click", event => {
+      const index = model.edges.findIndex(edge => edge.id === "handoff"), paused = model.edges[index].animation === false;
+      const next = { ...model.edges[index], animation: paused ? { type: "flow", speed: 1.2, dash: "8 6", direction: "forward" } : false };
+      model.edges[index] = next;
+      event.currentTarget.textContent = paused ? "Pause flow" : "Resume flow";
+      commit([{ type: "edge.upsert", value: next }], `flow-${revision}`);
+    });
+    document.querySelector("#export-svg").addEventListener("click", () => {
+      const svg = ghostplumb.exportSvg(hello.instanceId);
+      window.ghostplumbLastSvg = svg;
+      events.textContent = `SVG export ready: ${svg.length} characters (window.ghostplumbLastSvg)`;
+    });
+    document.querySelector("#undo").addEventListener("click", () => restoreHistory(historyIndex - 1, `undo-button-${revision}`));
+    document.querySelector("#redo").addEventListener("click", () => restoreHistory(historyIndex + 1, `redo-button-${revision}`));
+    syncHistoryControls();
+  </script>
+</body>
+</html>
