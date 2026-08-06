@@ -1,8 +1,0 @@
-interface:
-  display_name: "Copilot Maker Package"
-  short_description: "Assemble Maker-ready Copilot package files."
-  default_prompt: "Use the Copilot maker-package skill to assemble the final Maker-facing Copilot package from approved specialist outputs."
-policy:
-  allow_implicit_invocation: true
-dependencies:
-  tools: []

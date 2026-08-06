@@ -1,8 +1,0 @@
-interface:
-  display_name: "Copilot Architecture Playbook"
-  short_description: "Choose Copilot agent, topic, prompt, and flow boundaries."
-  default_prompt: "Use the Copilot architecture playbook to choose the smallest viable Copilot Studio architecture for this request."
-policy:
-  allow_implicit_invocation: true
-dependencies:
-  tools: []

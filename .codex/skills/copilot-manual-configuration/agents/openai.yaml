@@ -1,8 +1,0 @@
-interface:
-  display_name: "Copilot Manual Configuration"
-  short_description: "Write Maker-facing setup guides for Copilot packages."
-  default_prompt: "Use the Copilot manual-configuration skill to turn this package into a precise Maker setup guide."
-policy:
-  allow_implicit_invocation: true
-dependencies:
-  tools: []
