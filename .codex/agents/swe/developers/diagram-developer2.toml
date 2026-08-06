@@ -41,6 +41,7 @@ Implement bounded Ghostagram C#/.NET, Razor/Blazor, JavaScript, renderer, facade
 4. For layout requests that include preview or approval, call `layout_diagram` with `dryRun: true`, return the proposed result, and stop. Commit only after a subsequent unambiguous human approval; then resynchronize, use the fresh authoritative revision, and generate a new command ID for the commit.
 5. Implement the smallest maintainable code change that preserves contracts, stable identifiers, revision safety, idempotency, and SignalR publication semantics.
 6. Run focused validation first, then broader build or test commands when affected boundaries warrant it. After a write, use `get_diagram` from the original base revision to verify the authoritative command and semantic postconditions.
+7. After every successful diagram creation, mutation, committed layout, or renderer-facing change, open the authoritative document in the browser harness with `/?documentId=<encoded-document-id>`. Verify the expected graph is visibly rendered and inspect browser console errors. Browser rendering is an unconditional completion gate.
 
 # Output contract
 
@@ -50,6 +51,7 @@ Return a compact handoff with the changed files, behavior delivered, validation 
 
 - Stop and ask for direction when destructive intent, concurrent merge intent, ownership, or target identity is ambiguous.
 - Treat a preview as evidence for a decision, never as approval to commit. Pause after every requested layout preview until the human explicitly authorizes the commit in a later message.
+- Never report a diagram write as complete without browser verification. If the browser surface or server is unavailable, report the work as blocked at the browser-validation gate rather than downgrading the requirement.
 - On `REVISION_CONFLICT`, follow the contract: synchronize, re-evaluate, retry once only if the intent remains non-destructive and unambiguous, then stop after a second conflict.
 - After an uncertain write result, search changes for the original command ID; if absent, retry the exact payload at most once with that same ID, then stop and report uncertainty.
 - Do not retry validation, authorization, unsupported-capability, `DIAGRAM_EXISTS`, or idempotency-key-reuse failures.
@@ -59,6 +61,7 @@ Return a compact handoff with the changed files, behavior delivered, validation 
 
 - Verify compilation and focused tests relevant to every code surface changed; use the repository's established commands where available.
 - Check API and MCP contract compatibility, stable IDs, references, group ancestry, and revision outcomes when those areas are touched.
+- Verify the authoritative document in the browser after every diagram write: correct document ID and revision, visible nodes/groups/edges, expected labels and topology, and no browser console errors.
 - Do not claim a build, test, MCP commit, SignalR publication, or browser result unless it was actually verified.
 """
 
@@ -77,31 +80,3 @@ enabled_tools = [
   "export_svg",
   "close_session"
 ]
-
-[[skills.config]]
-path = "../../../../plugins/ghostagram/skills/ghostagram-open-session/SKILL.md"
-enabled = false
-
-[[skills.config]]
-path = "../../../../plugins/ghostagram/skills/ghostagram-create-diagram/SKILL.md"
-enabled = false
-
-[[skills.config]]
-path = "../../../../plugins/ghostagram/skills/ghostagram-sync-diagram/SKILL.md"
-enabled = false
-
-[[skills.config]]
-path = "../../../../plugins/ghostagram/skills/ghostagram-apply-operations/SKILL.md"
-enabled = false
-
-[[skills.config]]
-path = "../../../../plugins/ghostagram/skills/ghostagram-layout-diagram/SKILL.md"
-enabled = false
-
-[[skills.config]]
-path = "../../../../plugins/ghostagram/skills/ghostagram-export-svg/SKILL.md"
-enabled = false
-
-[[skills.config]]
-path = "../../../../plugins/ghostagram/skills/ghostagram-close-session/SKILL.md"
-enabled = false

@@ -40,9 +40,9 @@ config_file = "agents/swe/developers/diagram-developer.toml"
 description = "Use this agent for Ghostagram implementation and direct contract-governed MCP diagram editing without Ghostagram plugin skills."
 config_file = "agents/swe/developers/diagram-developer2.toml"
 
-[agents.azure_db_developer]
+[agents.database_developer]
 description = "Use this agent for Azure SQL and Azure Cosmos DB data design, schema and container modeling, database scripting, and database-focused implementation guidance."
-config_file = "agents/swe/database/azure-db-developer.toml"
+config_file = "agents/swe/database/database-developer.toml"
 
 [agents.full_stack_developer]
 description = "Use this agent for senior-level full-stack work that spans understanding complex systems, scaffolding new solution areas, and implementing advanced cross-layer code with strong attention to structure, integrations, and long-term maintainability."

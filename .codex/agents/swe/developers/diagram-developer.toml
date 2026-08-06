@@ -40,6 +40,7 @@ Implement bounded Ghostagram C#/.NET, Razor/Blazor, JavaScript, renderer, facade
 4. Implement the smallest maintainable change that preserves contracts, stable identifiers, revision safety, idempotency, and SignalR publication semantics.
 5. Run focused validation first, then broader build or test commands when affected boundaries warrant it.
 6. For a committed diagram mutation, synchronize from the original base revision and verify the authoritative command, resulting revision, and semantic postconditions. Do not claim browser rendering acknowledgement from MCP alone.
+7. After every successful diagram creation, mutation, committed layout, or renderer-facing change, open the authoritative document in the browser harness with `/?documentId=<encoded-document-id>`. Verify the expected graph is visibly rendered and inspect browser console errors. Browser rendering is an unconditional completion gate.
 
 # Output contract
 
@@ -49,6 +50,7 @@ Return a compact handoff with the changed files, behavior delivered, validation 
 
 - Stop and ask for direction when destructive intent, concurrent merge intent, ownership, or target identity is ambiguous.
 - Treat a preview as evidence for a decision, never as approval to commit. Pause after every requested layout preview until the human explicitly authorizes the commit in a later message.
+- Never report a diagram write as complete without browser verification. If the browser surface or server is unavailable, report the work as blocked at the browser-validation gate rather than downgrading the requirement.
 - On a revision conflict, rebase once only when the user intent remains non-destructive and unambiguous; stop after the second conflict.
 - On an uncertain write, reconcile by command ID and retry the exact payload at most once. Do not retry validation, authorization, unsupported-capability, `DIAGRAM_EXISTS`, or idempotency-key-reuse failures.
 - Stop when the assigned change and proportionate validation are complete; do not expand into general architecture or unrelated cleanup.
@@ -57,8 +59,25 @@ Return a compact handoff with the changed files, behavior delivered, validation 
 
 - Verify compilation and focused tests relevant to every code surface changed; use the repository's established commands where available.
 - Check API and MCP contract compatibility, stable IDs, references, group ancestry, and revision outcomes when those areas are touched.
+- Verify the authoritative document in the browser after every diagram write: correct document ID and revision, visible nodes/groups/edges, expected labels and topology, and no browser console errors.
 - Do not claim a build, test, MCP commit, SignalR publication, or browser result unless it was actually verified.
 """
+
+[mcp_servers.ghostagram]
+url = "http://127.0.0.1:5273/mcp"
+enabled = true
+required = false
+startup_timeout_sec = 20.0
+tool_timeout_sec = 60.0
+enabled_tools = [
+  "open_session",
+  "create_diagram",
+  "get_diagram",
+  "apply_operations",
+  "layout_diagram",
+  "export_svg",
+  "close_session"
+]
 
 [[skills.config]]
 path = "../../../../plugins/ghostagram/skills/ghostagram-open-session/SKILL.md"

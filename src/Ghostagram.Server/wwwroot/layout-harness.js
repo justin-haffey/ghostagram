@@ -1,6 +1,8 @@
 import * as ghostagram from "./ghostagram/ghostagram.js";
 
-const documentId = "layout-harness";
+const documentId = new URLSearchParams(window.location.search).get("documentId")?.trim() || "layout-harness";
+const documentApiPath = `/api/documents/${encodeURIComponent(documentId)}`;
+document.title = `Ghostagram · ${documentId}`;
 const status = document.querySelector("#status");
 let serverRevision = 0;
 let renderRevision = 0;
@@ -60,7 +62,7 @@ document.querySelector("#fit").addEventListener("click", fit);
 window.setInterval(synchronizeRemoteChanges, 750);
 
 async function initialize() {
-  const existing = await fetch(`/api/documents/${documentId}`);
+  const existing = await fetch(documentApiPath);
   if (existing.ok) {
     const snapshot = await existing.json();
     serverRevision = snapshot.revision;
@@ -72,7 +74,7 @@ async function initialize() {
       ...ports.map(value => ({ type: "port.upsert", value })),
       ...edges.map(value => ({ type: "edge.upsert", value }))
     ];
-    const result = await post(`/api/documents/${documentId}/commands`, {
+    const result = await post(`${documentApiPath}/commands`, {
       documentId,
       actorId: "layout-lab",
       commandId: "initialize",
@@ -84,14 +86,14 @@ async function initialize() {
   }
 
   replaceModel("initial");
-  status.textContent = `Ready · server revision ${serverRevision} · use Preview for a non-persistent layout`;
+  status.textContent = `${documentId} · ready · server revision ${serverRevision} · use Preview for a non-persistent layout`;
 }
 
 async function synchronizeRemoteChanges() {
   if (synchronizing) return;
   synchronizing = true;
   try {
-    const response = await fetch(`/api/documents/${documentId}`);
+    const response = await fetch(documentApiPath);
     if (!response.ok) return;
     const snapshot = await response.json();
     if (snapshot.revision <= serverRevision) return;
@@ -122,7 +124,7 @@ async function layout(dryRun) {
         crossingSweeps: Number(document.querySelector("#sweeps").value)
       }
     };
-    const result = await post(`/api/documents/${documentId}/layout`, request);
+    const result = await post(`${documentApiPath}/layout`, request);
     if (dryRun) {
       applyOperations(result.operations);
     } else {
