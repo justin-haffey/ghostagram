@@ -34,11 +34,11 @@ config_file = "agents/swe/developers/csharp-developer.toml"
 
 [agents.diagram_developer]
 description = "Use this agent for Ghostagram implementation and collaborative diagram editing through the checked-in Ghostagram plugin skills."
-config_file = "agents/swe/developers/diagram-developer.toml"
+config_file = "agents/gram/developers/diagram-developer.toml"
 
 [agents.diagram_developer2]
 description = "Use this agent for Ghostagram implementation and direct contract-governed MCP diagram editing without Ghostagram plugin skills."
-config_file = "agents/swe/developers/diagram-developer2.toml"
+config_file = "agents/gram/developers/diagram-developer2.toml"
 
 [agents.database_developer]
 description = "Use this agent for Azure SQL and Azure Cosmos DB data design, schema and container modeling, database scripting, and database-focused implementation guidance."
