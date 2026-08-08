@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Ghostagram.Contracts;
+using Ghostagram.Core;
 using Ghostagram.Server;
 using Ghostagram.Server.Export;
 using Ghostagram.Server.Layout;
@@ -13,6 +14,8 @@ var checks = new List<(string Name, Action Check)>
     ("deterministic output", VerifyDeterminism),
     ("directed flow and crossing monotonicity", VerifyDirectedFlow),
     ("nested compound containment", VerifyNestedGroups),
+    ("group removal preserves and ungroups content", VerifyGroupRemoval),
+    ("explicit group assignment supports reparenting and ungrouping", VerifyGroupAssignment),
     ("cycles, components, and non-overlap", VerifyCyclesAndComponents),
     ("large sparse graph performance", VerifyPerformance),
     ("layout, collaborative session, export, and replay", () => VerifyCommandPipeline().GetAwaiter().GetResult())
@@ -63,6 +66,36 @@ static void VerifyNestedGroups()
     Contains(groups["inner"], nodes["review"], "inner group must contain its node");
     Contains(groups["outer"], groups["inner"], "outer group must contain the nested group");
     Contains(groups["outer"], nodes["approve"], "outer group must contain its direct node");
+}
+
+static void VerifyGroupRemoval()
+{
+    var model = Model(
+        [Node("direct", 20, 20, "outer"), Node("nested", 60, 60, "inner")],
+        [],
+        [Group("outer", null), Group("inner", "outer")]);
+    var removed = GhostagramDocumentReducer.Apply(model, [DiagramOperations.RemoveGroup("outer")]);
+    var nodes = removed.GetProperty("nodes").EnumerateArray().ToDictionary(item => item.GetProperty("id").GetString()!);
+    var groups = removed.GetProperty("groups").EnumerateArray().ToDictionary(item => item.GetProperty("id").GetString()!);
+    True(!groups.ContainsKey("outer"), "the removed group must no longer exist");
+    True(nodes["direct"].GetProperty("groupId").ValueKind == JsonValueKind.Null, "direct members must become ungrouped");
+    True(groups["inner"].GetProperty("parentGroupId").ValueKind == JsonValueKind.Null, "child groups must become top-level");
+    Equal("inner", nodes["nested"].GetProperty("groupId").GetString()!, "nested members must retain their direct group");
+}
+
+static void VerifyGroupAssignment()
+{
+    var model = Model(
+        [Node("custom", 20, 20, "left")],
+        [],
+        [Group("left", null), Group("right", null)]);
+    var moved = GhostagramDocumentReducer.Apply(model,
+    [
+        DiagramOperations.Create("group.assignNode", new { nodeId = "custom", groupId = "right" }),
+        DiagramOperations.Create("group.assignNode", new { nodeId = "custom", groupId = (string?)null })
+    ]);
+    var custom = moved.GetProperty("nodes").EnumerateArray().Single();
+    True(custom.GetProperty("groupId").ValueKind == JsonValueKind.Null, "an explicit null assignment must remove group membership");
 }
 
 static void VerifyCyclesAndComponents()

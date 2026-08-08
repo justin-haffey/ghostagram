@@ -1,0 +1,249 @@
+@page "/"
+@rendermode InteractiveServer
+@using Ghostagram.Blazor
+@using Ghostagram.Core
+
+<PageTitle>Ghostagram Laboratory</PageTitle>
+
+<div @ref="_laboratoryRoot" class="laboratory-root">
+    <MudLayout Class="@($"laboratory-layout {(_palettePinned && _paletteOpen ? "palette-docked" : string.Empty)}")">
+        <MudAppBar Fixed="true" Elevation="0" Dense="true" Class="laboratory-appbar">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" OnClick="TogglePalette" aria-label="Toggle node palette" />
+            <div class="laboratory-brand" aria-label="Ghostagram laboratory">
+                <span class="laboratory-brand-mark" aria-hidden="true"></span>
+                <MudText Typo="Typo.h6">Ghostagram</MudText>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Inherit">Laboratory</MudChip>
+            </div>
+
+            <MudMenu Label="File" Color="Color.Inherit" Dense="true">
+                <MudMenuItem OnClick="ExportAsync" Icon="@Icons.Material.Filled.Download">Export SVG</MudMenuItem>
+                <MudMenuItem OnClick="ResetAsync" Icon="@Icons.Material.Filled.RestartAlt">Reset starter design</MudMenuItem>
+            </MudMenu>
+            <MudMenu Label="Insert" Color="Color.Inherit" Dense="true">
+                <MudMenuItem OnClick="OpenDesigner" Icon="@Icons.Material.Filled.AddBox">New node type</MudMenuItem>
+                <MudMenuItem OnClick="AddGroupAsync" Icon="@Icons.Material.Filled.CreateNewFolder">Group</MudMenuItem>
+            </MudMenu>
+            <MudMenu Label="Edit" Color="Color.Inherit" Dense="true">
+                <MudMenuItem OnClick="DeleteSelectedAsync" Disabled="@(!_document.Selection.Any())" Icon="@Icons.Material.Filled.DeleteOutline">Delete selected</MudMenuItem>
+                <MudMenuItem OnClick="RemoveSelectedGroupFramesAsync" Disabled="@(!HasSelectedGroups)" Icon="@Icons.Material.Filled.FolderOff">Remove group frame</MudMenuItem>
+                <MudMenuItem OnClick="UndoAsync" Disabled="@(!_undo.Any())" Icon="@Icons.Material.Filled.Undo">Undo</MudMenuItem>
+                <MudMenuItem OnClick="RedoAsync" Disabled="@(!_redo.Any())" Icon="@Icons.Material.Filled.Redo">Redo</MudMenuItem>
+            </MudMenu>
+            <MudMenu Label="View" Color="Color.Inherit" Dense="true">
+                <MudMenuItem OnClick="TogglePalette" Icon="@Icons.Material.Filled.AccountTree">Node palette</MudMenuItem>
+                <MudMenuItem OnClick="FitAsync" Icon="@Icons.Material.Filled.CenterFocusStrong">Frame diagram</MudMenuItem>
+            </MudMenu>
+
+            <MudSpacer />
+            <MudText Typo="Typo.caption" Class="appbar-revision">Revision @_revision</MudText>
+        </MudAppBar>
+
+        <MudDrawer @bind-Open="_paletteOpen"
+                   Variant="DrawerVariant.Temporary"
+                   Anchor="Anchor.Left"
+                   ClipMode="DrawerClipMode.Always"
+                   Overlay="false"
+                   Elevation="2"
+                   Class="laboratory-palette"
+                   Width="320px">
+            <div class="palette-heading">
+                <div>
+                    <MudText Typo="Typo.overline">Node library</MudText>
+                    <MudText Typo="Typo.h6">Palette</MudText>
+                </div>
+                <MudIconButton Icon="@(_palettePinned ? Icons.Material.Filled.PushPin : Icons.Material.Outlined.PushPin)"
+                               Color="@(_palettePinned ? Color.Primary : Color.Default)"
+                               OnClick="TogglePalettePin"
+                               aria-label="@(_palettePinned ? "Unpin palette" : "Pin palette")" />
+            </div>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="palette-help">
+                Drag a node file onto the canvas. Pin the palette to keep it beside your design.
+            </MudText>
+
+            <MudExpansionPanels MultiExpansion="true" Class="palette-accordion">
+                @foreach (var category in PaletteCategories)
+                {
+                    <MudExpansionPanel Text="@category"
+                                       Expanded="@_expandedCategories.Contains(category)"
+                                       ExpandedChanged="@(value => SetCategoryExpanded(category, value))">
+                        @foreach (var template in _templates.Where(item => item.Category == category))
+                        {
+                            <MudPaper Class="palette-node-file"
+                                      Elevation="0"
+                                      tabindex="0"
+                                      role="button"
+                                      data-template-id="@template.Id"
+                                      title="@($"Drag {template.Label} to the canvas")">
+                                <span class="palette-node-accent" style="@($"--node-accent:{template.Accent}")"></span>
+                                <MudIcon Icon="@TemplateIcon(template)" Size="Size.Medium" />
+                                <span class="palette-node-copy">
+                                    <strong>@template.Label</strong>
+                                    <small>@template.Description</small>
+                                </span>
+                                <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" Class="palette-node-grip" />
+                            </MudPaper>
+                        }
+                    </MudExpansionPanel>
+                }
+            </MudExpansionPanels>
+
+            <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddBox" OnClick="OpenDesigner" Class="palette-create">
+                Design a node type
+            </MudButton>
+        </MudDrawer>
+
+        <MudMainContent Class="laboratory-main">
+            <section class="laboratory-toolbar" aria-label="Diagram controls">
+                <div class="toolbar-group toolbar-layout">
+                    <MudSelect T="string" @bind-Value="_layoutDirection" Label="Sort direction" Dense="true" Variant="Variant.Outlined" Class="toolbar-select">
+                        <MudSelectItem T="string" Value="@("right")">Left to right</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("down")">Top to bottom</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("left")">Right to left</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("up")">Bottom to top</MudSelectItem>
+                    </MudSelect>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AutoFixHigh" OnClick="ApplyLayoutAsync">Sort layout</MudButton>
+                </div>
+
+                <MudDivider Vertical="true" FlexItem="true" />
+
+                <div class="toolbar-group toolbar-edge">
+                    <MudSelect T="string" Value="_edgeConnector" ValueChanged="OnEdgeConnectorChangedAsync" Label="Edge shape" Dense="true" Variant="Variant.Outlined" Class="toolbar-select edge-select">
+                        <MudSelectItem T="string" Value="@("flowchart")">Square</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("bezier")">Curved</MudSelectItem>
+                    </MudSelect>
+                    <MudSwitch T="bool" Value="_edgeAnimated" ValueChanged="OnEdgeAnimatedChangedAsync" Color="Color.Secondary" Label="Animated" />
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Timeline" OnClick="ApplyEdgeSettingsAsync" Disabled="@(!_document.Edges.Any())">
+                        @EdgeApplyLabel
+                    </MudButton>
+                </div>
+
+                <MudSpacer />
+
+                <MudTooltip Text="Delete the current node, group, or edge selection">
+                    <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" OnClick="DeleteSelectedAsync" Disabled="@(!_document.Selection.Any())" aria-label="Delete selected" />
+                </MudTooltip>
+                <MudTooltip Text="Frame the whole diagram">
+                    <MudIconButton Icon="@Icons.Material.Filled.CenterFocusStrong" OnClick="FitAsync" aria-label="Frame diagram" />
+                </MudTooltip>
+            </section>
+
+            <section class="laboratory-canvas-card" aria-label="Diagram canvas">
+                <header class="canvas-statusbar">
+                    <div class="canvas-status-copy">
+                        <span class="status-dot @(_busy ? "is-busy" : string.Empty)"></span>
+                        <span>@_activity</span>
+                    </div>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@_document.Nodes.Count nodes</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@_document.Edges.Count edges</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@_document.Groups.Count groups</MudChip>
+                </header>
+
+                <div class="laboratory-canvas" data-ghostagram-drop-zone>
+                    <GhostDiagram @ref="_diagram"
+                                  Document="@_document"
+                                  Revision="@_revision"
+                                  Options="@_options"
+                                  EventReceived="OnGhostagramEvent"
+                                  AriaLabel="Interactive Ghostagram design canvas" />
+                    <div class="canvas-drop-overlay" data-ghostagram-drop-overlay>
+                        <MudIcon Icon="@Icons.Material.Filled.AddToPhotos" />
+                        <span>Drop to add node</span>
+                    </div>
+                </div>
+
+                <footer class="canvas-footer">
+                    <span>Drag nodes and groups · Shift-drag to select · F2 edits labels · Delete removes a selection</span>
+                    <span>Changes save automatically</span>
+                </footer>
+            </section>
+        </MudMainContent>
+    </MudLayout>
+
+    @if (_isDesignerOpen)
+    {
+        <div class="studio-modal-backdrop" @onclick="CloseDesigner">
+        <MudPaper Class="studio-modal designer-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Node designer" @onclick:stopPropagation="true">
+        <header class="studio-modal-header">
+            <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.DesignServices" Class="mr-2" />Node designer</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseDesigner" aria-label="Close node designer" />
+        </header>
+        <div class="studio-modal-content">
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                Create a reusable palette item, then click the preview edges to add connection points.
+            </MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_draft.Label" Label="Node name" Variant="Variant.Outlined" Immediate="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField T="double" @bind-Value="_draft.Width" Label="Width" Min="96" Max="360" Step="8" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField T="double" @bind-Value="_draft.Height" Label="Height" Min="48" Max="240" Step="8" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_draft.Accent" Label="Accent color" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudSelect T="string" @bind-Value="_draft.Direction" Label="New point direction" Variant="Variant.Outlined">
+                        <MudSelectItem T="string" Value="@("both")">Both</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("source")">Output</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("target")">Input</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            <div class="node-designer-preview" style="@($"--node-accent:{_draft.Accent}")">
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-top" OnClick="AddTopConnectionPoint" aria-label="Add top connection point" />
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-right" OnClick="AddRightConnectionPoint" aria-label="Add right connection point" />
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-bottom" OnClick="AddBottomConnectionPoint" aria-label="Add bottom connection point" />
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-left" OnClick="AddLeftConnectionPoint" aria-label="Add left connection point" />
+                <div class="node-designer-card">
+                    <MudText Typo="Typo.overline">Custom node</MudText>
+                    <MudText Typo="Typo.h6">@(string.IsNullOrWhiteSpace(_draft.Label) ? "Untitled" : _draft.Label)</MudText>
+                    <MudText Typo="Typo.caption">@_draftPorts.Count connection point@(_draftPorts.Count == 1 ? string.Empty : "s")</MudText>
+                </div>
+            </div>
+
+            <MudList T="string" Dense="true" Class="designer-port-list">
+                @if (_draftPorts.Count == 0)
+                {
+                    <MudListItem T="string" Icon="@Icons.Material.Outlined.TouchApp">Click a + on the preview to add a port.</MudListItem>
+                }
+                @foreach (var port in _draftPorts)
+                {
+                    <MudListItem T="string">
+                        <div class="designer-port-row">
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@port.Side</MudChip>
+                            <MudSelect T="string" @bind-Value="port.Direction" Dense="true" Variant="Variant.Outlined" Class="port-direction-select">
+                                <MudSelectItem T="string" Value="@("both")">Both</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("source")">Output</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("target")">Input</MudSelectItem>
+                            </MudSelect>
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveConnectionPoint(port.Id))" aria-label="Remove connection point" />
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        </div>
+        <footer class="studio-modal-actions">
+            <MudButton OnClick="CloseDesigner">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddBox" OnClick="AddCustomTemplate">Add to palette</MudButton>
+        </footer>
+        </MudPaper>
+        </div>
+    }
+
+    @if (_isExportOpen)
+    {
+        <div class="studio-modal-backdrop" @onclick="CloseExport">
+        <MudPaper Class="studio-modal export-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Exported SVG" @onclick:stopPropagation="true">
+        <header class="studio-modal-header"><MudText Typo="Typo.h6">Exported SVG</MudText></header>
+        <div class="studio-modal-content">
+            <MudTextField T="string" Value="@_exportedSvg" Lines="18" ReadOnly="true" Variant="Variant.Outlined" Class="export-field" />
+        </div>
+        <footer class="studio-modal-actions"><MudButton OnClick="CloseExport">Close</MudButton></footer>
+        </MudPaper>
+        </div>
+    }
+</div>

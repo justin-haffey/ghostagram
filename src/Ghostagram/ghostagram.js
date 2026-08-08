@@ -40,6 +40,8 @@ export function hello(instanceId) { return protocolFacade.hello(instanceId); }
 export function replace(instanceId, request) { return protocolFacade.replace(instanceId, request); }
 export function apply(instanceId, request) { return protocolFacade.apply(instanceId, request); }
 export function inspect(instanceId) { return protocolFacade.inspect(instanceId); }
+/** Converts a browser client point into the current document coordinate system. */
+export function clientToCanvas(instanceId, clientX, clientY) { return protocolFacade.clientToCanvas(instanceId, clientX, clientY); }
 export function exportSvg(instanceId, options = {}) { return protocolFacade.exportSvg(instanceId, options); }
 export function dispose(instanceId) { return protocolFacade.dispose(instanceId); }
 export function capabilities() { return structuredClone(supported); }
@@ -166,6 +168,10 @@ class GhostagramEngine {
   inspect() {
     return { ok: this.lifecycle !== "disposed", instanceId: this.instanceId, lifecycle: this.lifecycle, documentId: this.state.documentId, revision: this.state.revision, stats: this.stats(), model: serialiseState(this.state) };
   }
+  clientToCanvas(clientX, clientY) {
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) throw new GhostagramError("INVALID_MODEL", "Client coordinates must be finite numbers.");
+    return viewportPoint({ clientX, clientY }, this.dom.root.getBoundingClientRect(), this.state.viewport);
+  }
   exportSvg(options = {}) { return exportSvgDocument(this.state, options); }
   stats() { return { nodes: this.state.nodes.size, ports: this.state.ports.size, edges: this.state.edges.size, groups: this.state.groups.size, selected: this.state.selection.size, scheduled: this.renderer.scheduled }; }
   remember(id, value) { this.completed.set(id, value); if (this.completed.size > 256) this.completed.delete(this.completed.keys().next().value); }
@@ -189,12 +195,15 @@ class GhostagramEngine {
     }
   }
   renderAll() {
-    this.finishLabelEdit(false);
+    // A host-driven replace can arrive while an input has focus. Temporarily
+    // detach it without treating that DOM removal as a user blur/commit.
+    const editor = this.suspendLabelEditor();
     this.dom.nodes.replaceChildren(); this.dom.groups.replaceChildren(); this.dom.edges.replaceChildren(); this.dom.overlay.replaceChildren();
     this.dom.nodeById.clear(); this.dom.groupById.clear(); this.dom.pathById.clear(); this.dom.labelById.clear(); this.dom.customOverlayByKey.clear(); this.dom.edgeHandlesById.clear(); this.dom.waypointHandlesById.clear(); this.dom.previewPath = null; this.previewLabelOffsets.clear();
     for (const group of groupsForRender(this.state)) this.renderGroup(group);
     for (const node of this.state.nodes.values()) this.renderNode(node);
     for (const edge of this.state.edges.values()) this.renderEdge(edge);
+    this.restoreLabelEditor(editor);
     this.renderViewport(); this.renderSelection();
   }
   renderDirty() {
@@ -257,9 +266,9 @@ class GhostagramEngine {
     el.title = ""; el.querySelector(".ghostagram-node-label").textContent = node.label ?? node.id; renderIconifyIcon(el.querySelector(".ghostagram-item-icon"), node.icon);
     applyStyle(el, node.style, { background: "#f8fafc", border: "1px solid #334155", borderRadius: "6px", color: "#0f172a", padding: "6px", boxSizing: "border-box", cursor: "grab", pointerEvents: "auto" });
     el.style.transform = node.rotation ? `rotate(${node.rotation}deg)` : "";
-    const label = el.querySelector(".ghostagram-node-label"), icon = el.querySelector(".ghostagram-item-icon"), rotate = el.querySelector(".ghostagram-node-rotate"), handle = el.querySelector(".ghostagram-node-resize"), activeEditor = this.labelEditor?.kind === "node" && this.labelEditor.id === node.id ? this.labelEditor : null;
+    const label = el.querySelector(".ghostagram-node-label"), icon = el.querySelector(".ghostagram-item-icon"), rotate = el.querySelector(".ghostagram-node-rotate"), handle = el.querySelector(".ghostagram-node-resize"), activeEditor = this.labelEditor?.kind === "node" && this.labelEditor.id === node.id ? this.suspendLabelEditor() : null;
     rotate.hidden = true; handle.hidden = true; el.replaceChildren(label, icon, rotate, handle);
-    if (activeEditor) { label.style.visibility = "hidden"; el.append(activeEditor.input); this.focusLabelEditor(activeEditor); }
+    this.restoreLabelEditor(activeEditor);
     for (const portId of this.state.portsByNode.get(node.id) ?? []) this.renderPort(el, this.state.ports.get(portId));
   }
   renderPort(nodeEl, port) {
@@ -425,6 +434,8 @@ class GhostagramEngine {
     input.style.cssText = kind === "node" ? "position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);box-sizing:border-box;border:1px solid #0f766e;border-radius:3px;padding:2px 4px;font:inherit;color:inherit;background:#fff;z-index:3;" : kind === "group" ? "position:absolute;left:4px;top:2px;width:calc(100% - 8px);height:20px;box-sizing:border-box;border:1px solid #0f766e;border-radius:3px;padding:1px 3px;font:inherit;color:inherit;background:#fff;z-index:3;" : "position:absolute;width:128px;height:24px;box-sizing:border-box;border:1px solid #0f766e;border-radius:3px;padding:2px 4px;font:14px system-ui,sans-serif;color:#0f172a;background:#fff;transform:translate(-50%,-50%);z-index:5;pointer-events:auto;";
     const stop = event => event.stopPropagation();
     input.addEventListener("pointerdown", stop, { signal: this.abort.signal });
+    input.addEventListener("click", stop, { signal: this.abort.signal });
+    input.addEventListener("dblclick", stop, { signal: this.abort.signal });
     input.addEventListener("keydown", event => { stop(event); if (event.key === "Enter") { event.preventDefault(); this.finishLabelEdit(true); } else if (event.key === "Escape") { event.preventDefault(); this.finishLabelEdit(false); } }, { signal: this.abort.signal });
     input.addEventListener("blur", () => this.finishLabelEdit(true), { signal: this.abort.signal });
     if (label) label.style.visibility = "hidden"; el.append(input); this.labelEditor = { kind, id, initialValue, input, label };
@@ -437,15 +448,38 @@ class GhostagramEngine {
   focusLabelEditor(editor) {
     requestAnimationFrame(() => {
       if (this.labelEditor !== editor || !editor.input.isConnected) return;
-      editor.input.focus({ preventScroll: true }); editor.input.select();
+      editor.input.focus({ preventScroll: true });
+      editor.input.select();
+      editor.input.setSelectionRange(0, editor.input.value.length, "forward");
     });
   }
   finishLabelEdit(commit) {
     const editor = this.labelEditor;
     if (!editor) return;
     this.labelEditor = null; editor.input.remove(); editor.label?.style.removeProperty("visibility");
-    const label = editor.input.value.trim();
-    if (commit && label !== editor.initialValue && (label || editor.kind === "edge")) this.emit(`${editor.kind}.label.commit`, { [`${editor.kind}Id`]: editor.id, label }, "browser");
+    const label = editableLabelValue(editor.input.value), initialLabel = editableLabelValue(editor.initialValue);
+    if (commit && label !== initialLabel) this.emit(`${editor.kind}.label.commit`, { [`${editor.kind}Id`]: editor.id, label }, "browser");
+  }
+  suspendLabelEditor() {
+    const editor = this.labelEditor;
+    if (!editor) return null;
+    this.labelEditor = null;
+    return editor;
+  }
+  restoreLabelEditor(editor) {
+    if (!editor) return;
+    const item = editor.kind === "node" ? this.state.nodes.get(editor.id) : editor.kind === "group" ? this.state.groups.get(editor.id) : this.state.edges.get(editor.id);
+    const el = editor.kind === "node" ? this.dom.nodeById.get(editor.id) : editor.kind === "group" ? this.dom.groupById.get(editor.id) : this.dom.editors;
+    if (!item || !el || item.labelEditable === false) return;
+    editor.label = editor.kind === "edge" ? this.dom.labelById.get(editor.id) : el.querySelector(editor.kind === "node" ? ".ghostagram-node-label" : ".ghostagram-group-label");
+    this.labelEditor = editor;
+    if (editor.label) editor.label.style.visibility = "hidden";
+    el.append(editor.input);
+    if (editor.kind === "edge") {
+      const edge = this.state.edges.get(editor.id), geometry = edge && edgeGeometry(this.state, edge, this.previewNodes);
+      if (edge && geometry) this.positionEdgeLabelEditor(editor, editor.label ? { x: Number(editor.label.getAttribute("x")), y: Number(editor.label.getAttribute("y")) } : this.edgeLabelPoint(edge, geometry.sourcePoint, geometry.targetPoint, geometry));
+    }
+    this.focusLabelEditor(editor);
   }
 
   selectableIds() { return selectableIds(this.state); }
@@ -528,7 +562,7 @@ class GhostagramEngine {
       for (const member of members) { const preview = { ...member, x: member.x + dx, y: member.y + dy }; this.previewNodes.set(member.id, preview); const el = this.dom.nodeById.get(member.id); if (el) { el.style.left = `${preview.x}px`; el.style.top = `${preview.y}px`; } for (const edgeId of incident(this.state, member.id)) { const edge = this.state.edges.get(edgeId); if (edge) this.renderEdge(edge); } }
       this.setGroupDropTarget(targetGroup?.id); this.emit("group.move.preview", { groupId, parentGroupId: targetGroup?.id ?? null, ...position, dx, dy }, "browser", true);
     };
-    const up = e => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, e); const position = dragPosition(start, e, this.state.viewport.zoom, this.options.gridSize), dx = position.x - initial.x, dy = position.y - initial.y, targetGroup = groupForGroupPosition(this.state, groupId, position); this.setGroupDropTarget(null); this.emit("group.move.commit", { groupId, parentGroupId: targetGroup?.id ?? null, ...position, dx, dy, groups: childGroups.map(child => ({ id: child.id, x: child.x + dx, y: child.y + dy })), nodes: members.map(member => ({ id: member.id, x: member.x + dx, y: member.y + dy })) }, "browser"); };
+    const up = e => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, e); const position = dragPosition(start, e, this.state.viewport.zoom, this.options.gridSize), dx = position.x - initial.x, dy = position.y - initial.y, targetGroup = groupForGroupPosition(this.state, groupId, position); this.setGroupDropTarget(null); this.emit("group.move.commit", groupMovePayload(groupId, targetGroup?.id ?? null, position, dx, dy, childGroups, members), "browser"); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up, { once: true });
   }
   startSelectedGroupDrag(groupId, event, selection) {
@@ -653,7 +687,13 @@ class GhostagramEngine {
 }
 
 function emptyState() { return { documentId: null, revision: 0, nodes: new Map(), ports: new Map(), edges: new Map(), groups: new Map(), edgeTypes: new Map(), portsByNode: new Map(), edgesByPort: new Map(), nodesByGroup: new Map(), groupsByGroup: new Map(), selection: new Set(), viewport: { x: 0, y: 0, zoom: 1 } }; }
-function buildState(model) { const state = emptyState(); state.documentId = model.documentId ?? null; for (const type of model.edgeTypes ?? []) upsertEdgeType(state, type); for (const group of model.groups ?? []) upsertGroup(state, group, true); for (const node of model.nodes ?? []) upsertNode(state, node); for (const port of model.ports ?? []) upsertPort(state, port); for (const edge of model.edges ?? []) upsertEdge(state, edge); state.selection = new Set(model.selection ?? []); state.viewport = { ...state.viewport, ...(model.viewport ?? {}) }; validateState(state); return state; }
+function editableLabelValue(value) { const label = String(value ?? "").trim(); return label || null; }
+function omitNullProperties(value) {
+  if (Array.isArray(value)) return value.map(omitNullProperties);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value).flatMap(([key, nested]) => nested === null ? [] : [[key, omitNullProperties(nested)]]));
+}
+function buildState(model) { model = omitNullProperties(model); const state = emptyState(); state.documentId = model.documentId ?? null; for (const type of model.edgeTypes ?? []) upsertEdgeType(state, type); for (const group of model.groups ?? []) upsertGroup(state, group, true); for (const node of model.nodes ?? []) upsertNode(state, node); for (const port of model.ports ?? []) upsertPort(state, port); for (const edge of model.edges ?? []) upsertEdge(state, edge); state.selection = new Set(model.selection ?? []); state.viewport = { ...state.viewport, ...(model.viewport ?? {}) }; validateState(state); return state; }
 function cloneState(s) { return { ...s, nodes: new Map(s.nodes), ports: new Map(s.ports), edges: new Map(s.edges), groups: new Map(s.groups), edgeTypes: new Map(s.edgeTypes), portsByNode: mapSets(s.portsByNode), edgesByPort: mapSets(s.edgesByPort), nodesByGroup: mapSets(s.nodesByGroup), groupsByGroup: mapSets(s.groupsByGroup), selection: new Set(s.selection), viewport: { ...s.viewport } }; }
 function mapSets(source) { return new Map([...source].map(([key, value]) => [key, new Set(value)])); }
 function serialiseState(s) { return { documentId: s.documentId, revision: s.revision, nodes: [...s.nodes.values()], ports: [...s.ports.values()], edges: [...s.edges.values()], groups: [...s.groups.values()], edgeTypes: [...s.edgeTypes.values()], selection: [...s.selection], viewport: s.viewport }; }
@@ -684,6 +724,7 @@ const modelOperationDispatcher = new OperationDispatcher({
 }, operation => { throw new GhostagramError("CAPABILITY_UNSUPPORTED", `Operation '${operation.type}' is not supported.`, { operation: operation.type }); });
 
 function applyOperation(state, op, dirty, options) {
+  op = omitNullProperties(op);
   requireObject(op, "INVALID_MODEL", "Operations must be objects.");
   modelOperationDispatcher.dispatch(op, { state, dirty, options, value: op.value ?? op });
 }
@@ -705,7 +746,7 @@ function upsertEdgeType(s, raw) { requireId(raw, "edge type"); validateEdgeTypeD
 function removeEdgeType(s, id, dirty) { if (!s.edgeTypes.delete(id)) return; for (const edge of s.edges.values()) if (edge.type === id) dirty.edges.add(edge.id); }
 function upsertEdge(s, raw) { requireId(raw, "edge"); const prior = s.edges.get(raw.id), source = s.ports.get(raw.sourcePortId), target = s.ports.get(raw.targetPortId); if (!source || !target) throw new GhostagramError("MISSING_REFERENCE", "Edge references a missing source or target port."); if (source.direction === "target" || target.direction === "source") throw new GhostagramError("INVALID_MODEL", "Port directions do not permit this connection."); if (!scopesCompatible(source, target)) throw new GhostagramError("SCOPE_MISMATCH", `Port scopes '${source.scope}' and '${target.scope}' are incompatible.`); if ((!prior || prior.sourcePortId !== source.id || prior.targetPortId !== target.id) && !connectionPoliciesCompatible(source, target)) throw new GhostagramError("CONNECTION_REJECTED", `Port policy rejects '${source.id}' to '${target.id}'.`); for (const portId of [prior?.sourcePortId, prior?.targetPortId]) if (portId) s.edgesByPort.get(portId)?.delete(raw.id); for (const port of [source, target]) { const used = s.edgesByPort.get(port.id)?.size ?? 0; if (port.maxConnections >= 0 && used >= port.maxConnections && (!prior || ![prior.sourcePortId, prior.targetPortId].includes(port.id))) throw new GhostagramError("PORT_FULL", `Port '${port.id}' is at its connection limit.`); }
   const preliminary = { ...prior, ...raw, connector: raw.connector ?? prior?.connector, overlays: raw.overlays ?? prior?.overlays, style: raw.style ?? prior?.style, waypoints: raw.waypoints ?? prior?.waypoints ?? [], detachable: raw.detachable ?? prior?.detachable, reconnectable: raw.reconnectable ?? prior?.reconnectable, labelEditable: raw.labelEditable ?? prior?.labelEditable ?? true };
-  const edge = preliminary.type === undefined ? { ...preliminary, connector: preliminary.connector ?? "flowchart", overlays: preliminary.overlays ?? [], style: preliminary.style ?? {}, detachable: preliminary.detachable ?? true, reconnectable: preliminary.reconnectable ?? true } : preliminary;
+  const edge = preliminary.type == null ? { ...preliminary, type: undefined, connector: preliminary.connector ?? "flowchart", overlays: preliminary.overlays ?? [], style: preliminary.style ?? {}, detachable: preliminary.detachable ?? true, reconnectable: preliminary.reconnectable ?? true } : preliminary;
   const resolved = resolveEdgeDescriptor(edge, s.edgeTypes); if (!supported.connectors.includes(resolved.connector) && !connectorRegistry.has(resolved.connector)) throw new GhostagramError("CAPABILITY_UNSUPPORTED", `Connector '${resolved.connector}' is unsupported.`); if (typeof resolved.detachable !== "boolean" || typeof resolved.reconnectable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Edge detachable and reconnectable flags must be boolean."); if (typeof edge.labelEditable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Edge labelEditable must be boolean."); if ((edge.labelOffsetX !== undefined && !Number.isFinite(edge.labelOffsetX)) || (edge.labelOffsetY !== undefined && !Number.isFinite(edge.labelOffsetY))) throw new GhostagramError("INVALID_MODEL", "Edge label offsets must be numeric."); if (!Array.isArray(resolved.waypoints) || resolved.waypoints.some(point => !Number.isFinite(point?.x) || !Number.isFinite(point?.y))) throw new GhostagramError("INVALID_MODEL", "Edge waypoints must be { x, y } coordinates."); validateOverlays(resolved.overlays); edgeStyleDescriptor(resolved.style); flowchartOptions(resolved.connectorOptions); flowAnimationDescriptor(resolved.animation); s.edges.set(edge.id, edge); for (const portId of [edge.sourcePortId, edge.targetPortId]) (s.edgesByPort.get(portId) ?? s.edgesByPort.set(portId, new Set()).get(portId)).add(edge.id); }
 function upsertGroup(s, raw, deferParentValidation = false) {
   const { locked: _legacyLocked, ...value } = raw;
@@ -819,7 +860,10 @@ function dirtyGroupTree(s, groupId, dirty) {
 }
 function scopesCompatible(source, target) { return source.scope === "*" || target.scope === "*" || source.scope === target.scope; }
 function validateConnectionPolicy(policy) {
-  if (policy === undefined) return;
+  // .NET optional record properties are serialized as null by JS interop.
+  // Treat that identically to an omitted policy so a C# host can leave the
+  // optional connection policy unspecified.
+  if (policy === undefined || policy === null) return;
   if (!policy || typeof policy !== "object" || Array.isArray(policy)) throw new GhostagramError("INVALID_MODEL", "Port connectionPolicy must be an object.");
   const keys = ["allowPortIds", "denyPortIds", "allowNodeIds", "denyNodeIds"];
   for (const key of Object.keys(policy)) if (!keys.includes(key)) throw new GhostagramError("CAPABILITY_UNSUPPORTED", `Port connectionPolicy.${key} is unsupported.`);
@@ -886,6 +930,17 @@ function multiDragPositions(nodes, anchorId, start, pointer, zoom, gridSize) {
   return nodes.map(node => node.id === anchorId ? { id: node.id, ...anchorPosition } : { id: node.id, x: snap(node.x + dx, gridSize), y: snap(node.y + dy, gridSize) });
 }
 function translatePositions(items, dx, dy, gridSize) { return items.map(item => ({ id: item.id, x: snap(item.x + dx, gridSize), y: snap(item.y + dy, gridSize) })); }
+function groupMovePayload(groupId, parentGroupId, position, dx, dy, childGroups, members) {
+  return {
+    groupId,
+    parentGroupId,
+    ...position,
+    dx,
+    dy,
+    groups: childGroups.map(child => ({ id: child.id, x: child.x + dx, y: child.y + dy })),
+    nodes: members.map(member => ({ id: member.id, x: member.x + dx, y: member.y + dy, groupId: member.groupId ?? null }))
+  };
+}
 function selectedMovePositions(state, selection, dx, dy, gridSize) {
   const selectedIds = [...selection], selectedGroupRoots = selectedIds.map(id => state.groups.get(id)).filter(group => group && !selectedIds.some(selectedId => selectedId !== group.id && isGroupDescendant(state, selectedId, group.id)));
   const selectedGroupIds = [...new Set(selectedGroupRoots.flatMap(group => [group.id, ...descendantGroupIds(state, group.id)]))];
@@ -973,8 +1028,8 @@ function validateEdgeTypeDescriptor(descriptor) {
   for (const key of ["detachable", "reconnectable"]) if (descriptor[key] !== undefined && typeof descriptor[key] !== "boolean") throw new GhostagramError("INVALID_MODEL", `Edge type ${key} must be boolean.`);
 }
 function resolveEdgeDescriptor(edge, edgeTypes = new Map()) {
-  const type = edge.type === undefined ? undefined : edgeTypes.get(edge.type);
-  if (edge.type !== undefined && !type) throw new GhostagramError("MISSING_REFERENCE", `Edge '${edge.id ?? "unknown"}' references unregistered edge type '${edge.type}'.`);
+  const type = edge.type == null ? undefined : edgeTypes.get(edge.type);
+  if (edge.type != null && !type) throw new GhostagramError("MISSING_REFERENCE", `Edge '${edge.id ?? "unknown"}' references unregistered edge type '${edge.type}'.`);
   return {
     ...type,
     ...edge,
@@ -1201,4 +1256,4 @@ function asProblem(error) {
 function ok(requestId, renderedRevision, stats) { return { ok: true, requestId, renderedRevision, stats }; }
 function failed(request, code, message, renderedRevision, details) { return { ok: false, requestId: request?.requestId ?? null, renderedRevision, stats: {}, problem: { code, message, details } }; }
 
-export const __testing = { anchorPoint, buildState, applyOperation, canConnect, canReconnect, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, groupForGroupPosition, groupForNodePosition, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isNodeHiddenByCollapsedGroup, markerFor, multiDragPositions, nodesInRectangle, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, previewPointForPort, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };
+export const __testing = { anchorPoint, buildState, applyOperation, canConnect, canReconnect, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isNodeHiddenByCollapsedGroup, markerFor, multiDragPositions, nodesInRectangle, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, previewPointForPort, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };

@@ -1,13 +1,27 @@
 using Ghostagram.Contracts;
+using Ghostagram.Server.Components;
 using Ghostagram.Server;
 using Ghostagram.Server.Export;
 using Ghostagram.Server.Layout;
 using Ghostagram.Server.Sessions;
-using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.FileProviders;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (builder.Environment.IsDevelopment())
+{
+    var keyDirectory = new DirectoryInfo(Path.Combine(Path.GetTempPath(), "ghostagram-server", "data-protection"));
+    keyDirectory.Create();
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(keyDirectory)
+        .SetApplicationName("Ghostagram.Server.Development");
+}
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents(options => options.DetailedErrors = builder.Environment.IsDevelopment());
+builder.Services.AddMudServices();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<FileDocumentStore>();
 builder.Services.AddSingleton<IDocumentStore>(provider => provider.GetRequiredService<FileDocumentStore>());
@@ -24,8 +38,6 @@ builder.Services.AddMcpServer()
     .WithToolsFromAssembly();
 
 var app = builder.Build();
-app.UseDefaultFiles();
-app.UseStaticFiles();
 var ghostagramAssets = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "Ghostagram"));
 if (Directory.Exists(ghostagramAssets))
 {
@@ -35,9 +47,13 @@ if (Directory.Exists(ghostagramAssets))
         RequestPath = "/ghostagram"
     });
 }
+app.UseStaticFiles();
+app.UseAntiforgery();
 app.Use(async (context, next) =>
 {
-    context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'";
+    // MudBlazor emits its theme variables and Ghostagram emits instance-scoped
+    // animation keyframes as inline style elements. Scripts remain self-only.
+    context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'";
     await next();
 });
 
@@ -65,6 +81,8 @@ app.MapPost("/api/documents/{documentId}/layout", async (string documentId, Diag
 });
 app.MapMcp("/mcp");
 app.MapHub<DiagramHub>("/hubs/diagrams");
+app.MapStaticAssets();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.Run();
 

@@ -3,9 +3,10 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Ghostagram.Blazor\Ghostagram.Blazor.csproj" />
     <ProjectReference Include="..\Ghostagram.Contracts\Ghostagram.Contracts.csproj" />
+    <ProjectReference Include="..\Ghostagram.Core\Ghostagram.Core.csproj" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.4.1" />
-    <Content Include="..\Ghostagram\ghostagram.js" Link="wwwroot\ghostagram\ghostagram.js" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="..\Ghostagram\runtime\**\*.js" Link="wwwroot\ghostagram\runtime\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <PackageReference Include="MudBlazor" Version="9.8.0" />
   </ItemGroup>
 </Project>

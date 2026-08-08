@@ -34,7 +34,7 @@ public static class GhostagramDocumentReducer
             case "node.remove": Remove(root, "nodes", Id(operation, value)); break;
             case "port.remove": Remove(root, "ports", Id(operation, value)); break;
             case "edge.remove": Remove(root, "edges", Id(operation, value)); break;
-            case "group.remove": Remove(root, "groups", Id(operation, value)); break;
+            case "group.remove": RemoveGroup(root, Id(operation, value)); break;
             case "edgeType.remove": Remove(root, "edgeTypes", Id(operation, value)); break;
             case "group.assignNode": Assign(root, "nodes", String(value, "nodeId"), "groupId", value["groupId"]?.DeepClone()); break;
             case "group.assignGroup": Assign(root, "groups", String(value, "groupId"), "parentGroupId", value["parentGroupId"]?.DeepClone()); break;
@@ -66,6 +66,15 @@ public static class GhostagramDocumentReducer
     {
         var items = Collection(root, name);
         for (var index = items.Count - 1; index >= 0; index--) if (items[index] is JsonObject item && IdOf(item) == id) items.RemoveAt(index);
+    }
+
+    private static void RemoveGroup(JsonObject root, string id)
+    {
+        foreach (var node in Collection(root, "nodes").OfType<JsonObject>())
+            if (OptionalString(node, "groupId") == id) node["groupId"] = null;
+        foreach (var group in Collection(root, "groups").OfType<JsonObject>())
+            if (OptionalString(group, "parentGroupId") == id) group["parentGroupId"] = null;
+        Remove(root, "groups", id);
     }
 
     private static void Assign(JsonObject root, string name, string id, string property, JsonNode? value)

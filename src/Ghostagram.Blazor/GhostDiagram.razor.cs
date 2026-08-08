@@ -2,6 +2,7 @@ using System.Text.Json;
 using Ghostagram.Contracts;
 using Ghostagram.Core;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
 namespace Ghostagram.Blazor;
@@ -20,6 +21,7 @@ public partial class GhostDiagram
     private long _renderedRevision;
 
     [Inject] private IJSRuntime Js { get; set; } = default!;
+    [Inject] private ILogger<GhostDiagram> Logger { get; set; } = default!;
     [Parameter] public DiagramDocument? Document { get; set; }
     [Parameter] public string? DocumentId { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
@@ -47,7 +49,7 @@ public partial class GhostDiagram
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender || _initialized) return;
-        _module = await Js.InvokeAsync<IJSObjectReference>("import", "./_content/Ghostagram.Blazor/ghostagram/ghostagram.js");
+        _module = await Js.InvokeAsync<IJSObjectReference>("import", Options.ModulePath ?? "./Ghostagram.Blazor/ghostagram/ghostagram.js");
         _self = DotNetObjectReference.Create(this);
         var hello = await _module.InvokeAsync<GhostagramHello>("create", _host, Options.ToInteropOptions(_self));
         _instanceId = hello.InstanceId;
@@ -84,13 +86,26 @@ public partial class GhostDiagram
     public Task<GhostagramInspection> InspectAsync(CancellationToken cancellationToken = default) =>
         RequireModule().InvokeAsync<GhostagramInspection>("inspect", cancellationToken, _instanceId).AsTask();
 
+    /// <summary>Converts browser client coordinates to the current Ghostagram document coordinate system.</summary>
+    public Task<GhostagramCanvasPoint> ClientToCanvasAsync(double clientX, double clientY, CancellationToken cancellationToken = default) =>
+        RequireModule().InvokeAsync<GhostagramCanvasPoint>("clientToCanvas", cancellationToken, _instanceId, clientX, clientY).AsTask();
+
     public Task<string> ExportSvgAsync(CancellationToken cancellationToken = default) =>
         RequireModule().InvokeAsync<string>("exportSvg", cancellationToken, _instanceId).AsTask();
 
     [JSInvokable]
     public async Task OnGhostagramEvent(GhostagramEvent envelope)
     {
-        if (EventReceived.HasDelegate) await EventReceived.InvokeAsync(envelope);
+        if (!EventReceived.HasDelegate) return;
+        try
+        {
+            await EventReceived.InvokeAsync(envelope);
+        }
+        catch (Exception exception)
+        {
+            // Browser events are proposals. A host callback failure must not terminate the live diagram circuit.
+            Logger.LogWarning(exception, "Ignoring Ghostagram event {EventType} ({EventId}) after host callback failure.", envelope.Type, envelope.EventId);
+        }
     }
 
     public async ValueTask DisposeAsync()

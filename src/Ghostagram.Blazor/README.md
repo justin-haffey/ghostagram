@@ -21,7 +21,7 @@ The component owns one browser canvas; its `Document` parameter stays a typed C#
 }
 ```
 
-Call `await diagram.FitAsync()`, `ReplaceAsync(...)`, `ApplyAsync(...)`, `InspectAsync()`, or `ExportSvgAsync()` from normal Razor event handlers. Static Ghostagram browser assets are supplied automatically at `/_content/Ghostagram.Blazor/ghostagram/`.
+Call `await diagram.FitAsync()`, `ReplaceAsync(...)`, `ApplyAsync(...)`, `InspectAsync()`, or `ExportSvgAsync()` from normal Razor event handlers. Static Ghostagram browser assets are supplied automatically at `/Ghostagram.Blazor/ghostagram/`. A host that maps them elsewhere can set `GhostDiagramOptions.ModulePath` to the ESM entry point; `Ghostagram.Server` uses `/ghostagram/ghostagram.js`.
 
 ## Declarative composition
 

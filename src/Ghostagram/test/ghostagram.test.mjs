@@ -16,6 +16,30 @@ test("buildState indexes a valid graph", () => {
   assert.deepEqual([...state.edgesByPort.get("a-out")], ["edge-1"]);
 });
 
+test("nullable optional .NET fields behave as omitted descriptors", () => {
+  const state = __testing.buildState({
+    ...base,
+    ports: base.ports.map(port => ({ ...port, endpoint: null, connectionPolicy: null })),
+    edges: [{
+      ...base.edges[0],
+      type: null,
+      connector: null,
+      overlays: [
+        { type: "arrow", label: null, location: null, offsetX: null, offsetY: null, fontSize: null },
+        { type: "label", label: "C# label", location: null, offsetX: null, offsetY: null, fontSize: null }
+      ],
+      style: null,
+      label: null,
+      labelOffsetX: null,
+      labelOffsetY: null
+    }]
+  });
+  const edge = __testing.resolveEdgeDescriptor(state.edges.get("edge-1"), state.edgeTypes);
+  assert.equal(edge.connector, "flowchart");
+  assert.equal(edge.overlays.length, 2);
+  assert.deepEqual(edge.style, {});
+});
+
 test("protocol revisions are non-negative integers and client deltas cannot skip a revision", () => {
   assert.equal(__testing.revision(0, "INVALID", "invalid"), 0);
   assert.equal(__testing.revision(42, "INVALID", "invalid"), 42);
@@ -29,6 +53,14 @@ test("flow animation is opt-in, normalized, and validated with the edge model", 
   assert.deepEqual(__testing.flowAnimationDescriptor({ speed: 2, dash: "4 3", direction: "reverse" }), { type: "flow", speed: 2, dash: "4 3", direction: "reverse" });
   assert.throws(() => __testing.buildState({ ...base, edges: [{ ...base.edges[0], animation: { speed: 0 } }] }), /speed/i);
   assert.throws(() => __testing.buildState({ ...base, edges: [{ ...base.edges[0], animation: { direction: "sideways" } }] }), /direction/i);
+});
+
+test("an explicit false delta stops an already animated edge", () => {
+  const state = __testing.buildState({ ...base, edges: [{ ...base.edges[0], animation: true }] });
+  const dirty = { all: false, nodes: new Set(), edges: new Set(), groups: new Set(), viewport: false, selection: false };
+  __testing.applyOperation(state, { type: "edge.upsert", value: { ...state.edges.get("edge-1"), animation: false } }, dirty, { minZoom: .2, maxZoom: 3 });
+  assert.equal(state.edges.get("edge-1").animation, false);
+  assert.equal(__testing.flowAnimationDescriptor(state.edges.get("edge-1").animation), null);
 });
 
 test("edge style is JSON-safe, validates deterministically, and is exported", () => {
@@ -173,6 +205,24 @@ test("keyboard movement preserves group membership and moves nested selected con
   const positions = __testing.selectedMovePositions(state, new Set(["outer", "inner", "b"]), 16, 8, 8);
   assert.deepEqual(positions.groups, [{ id: "outer", x: 16, y: 16 }, { id: "inner", x: 32, y: 32 }]);
   assert.deepEqual(positions.nodes, [{ id: "b", x: 256, y: 88, groupId: null }, { id: "a", x: 48, y: 48, groupId: "inner" }]);
+});
+
+test("group drag commits retain direct membership for every moved node", () => {
+  const payload = __testing.groupMovePayload(
+    "outer",
+    null,
+    { x: 64, y: 32 },
+    32,
+    16,
+    [{ id: "inner", x: 96, y: 64 }],
+    [{ id: "inside", x: 120, y: 80, groupId: "inner" }, { id: "outside", x: 360, y: 80, groupId: null }]
+  );
+
+  assert.deepEqual(payload.groups, [{ id: "inner", x: 128, y: 80 }]);
+  assert.deepEqual(payload.nodes, [
+    { id: "inside", x: 152, y: 96, groupId: "inner" },
+    { id: "outside", x: 392, y: 96, groupId: null }
+  ]);
 });
 
 test("fit centers all content and derives a bounded zoom from canvas dimensions", () => {
@@ -533,6 +583,12 @@ test("node and group label edit policies are JSON-safe", () => {
   assert.throws(() => __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], labelEditable: "yes" }, base.nodes[1]] }), /labelEditable/i);
   assert.throws(() => __testing.buildState({ ...base, groups: [{ id: "g", x: 0, y: 0, width: 100, height: 80, labelEditable: "yes" }] }), /labelEditable/i);
   assert.throws(() => __testing.buildState({ ...base, edges: [{ ...base.edges[0], labelEditable: "yes" }] }), /labelEditable/i);
+});
+
+test("label commits normalize whitespace without creating invisible labels", () => {
+  assert.equal(__testing.editableLabelValue("  Updated label  "), "Updated label");
+  assert.equal(__testing.editableLabelValue("\t \n"), null);
+  assert.equal(__testing.editableLabelValue(null), null);
 });
 
 test("SVG export is standalone and escapes model text", () => {

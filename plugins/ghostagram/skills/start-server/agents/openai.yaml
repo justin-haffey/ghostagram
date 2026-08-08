@@ -1,0 +1,10 @@
+interface:
+  display_name: "Start Ghostagram Server"
+  short_description: "Start Ghostagram quickly for collaboration"
+  default_prompt: "Use $start-server to start a ready Ghostagram development server."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools: []

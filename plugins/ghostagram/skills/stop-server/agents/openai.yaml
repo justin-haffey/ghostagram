@@ -1,0 +1,10 @@
+interface:
+  display_name: "Stop Ghostagram Server"
+  short_description: "Stop the owned Ghostagram server safely"
+  default_prompt: "Use $stop-server to stop the Ghostagram server previously started by Codex."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools: []

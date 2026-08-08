@@ -1,4 +1,4 @@
-import * as ghostagram from "./ghostagram/ghostagram.js";
+import * as ghostagram from "/ghostagram/ghostagram.js";
 
 const documentId = new URLSearchParams(window.location.search).get("documentId")?.trim() || "layout-harness";
 const documentApiPath = `/api/documents/${encodeURIComponent(documentId)}`;

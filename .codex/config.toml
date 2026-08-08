@@ -1,4 +1,5 @@
 # AGENTS
+model_verbosity = "low"
 [agents]
 # Note: using new multi-agent-v2
 # max_threads = 8

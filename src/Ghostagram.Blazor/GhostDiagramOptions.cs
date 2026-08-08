@@ -9,7 +9,8 @@ public sealed record GhostDiagramOptions(
     int GridSize = 16,
     double MinZoom = .2,
     double MaxZoom = 3,
-    bool RespectReducedMotion = true)
+    bool RespectReducedMotion = true,
+    string? ModulePath = null)
 {
     internal object ToInteropOptions(object eventSink) => new
     {
@@ -38,3 +39,4 @@ public sealed record GhostagramHello(bool Ok, string InstanceId, int ProtocolVer
 public sealed record GhostagramResult(bool Ok, string? RequestId, long RenderedRevision, JsonElement Stats, GhostagramProblem? Problem = null);
 public sealed record GhostagramProblem(string Code, string Message, JsonElement? Details = null);
 public sealed record GhostagramInspection(string InstanceId, string? DocumentId, long Revision, JsonElement Model, JsonElement Stats);
+public sealed record GhostagramCanvasPoint(double X, double Y);

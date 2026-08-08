@@ -11,10 +11,12 @@ public sealed record DiagramDocument(
     IReadOnlyList<DiagramEdge> Edges,
     IReadOnlyList<DiagramGroup>? Groups = null,
     DiagramViewport? Viewport = null,
-    IReadOnlyList<DiagramEdgeType>? EdgeTypes = null)
+    IReadOnlyList<DiagramEdgeType>? EdgeTypes = null,
+    IReadOnlyList<string>? Selection = null)
 {
     public IReadOnlyList<DiagramGroup> Groups { get; init; } = Groups ?? [];
     public IReadOnlyList<DiagramEdgeType> EdgeTypes { get; init; } = EdgeTypes ?? [];
+    public IReadOnlyList<string> Selection { get; init; } = Selection ?? [];
     public DiagramViewport Viewport { get; init; } = Viewport ?? new();
 }
 
@@ -85,6 +87,26 @@ public sealed record DiagramFlowchartOptions(double Stub = 32, double CornerRadi
 public sealed record DiagramOverlay(string Type, string? Label = null, double? Location = null, double? OffsetX = null, double? OffsetY = null, double? FontSize = null);
 public sealed record DiagramEdgeType(string Id, string Connector = "flowchart", DiagramEdgeStyle? Style = null, IReadOnlyList<DiagramOverlay>? Overlays = null, object? Animation = null, bool? Detachable = null, bool? Reconnectable = null);
 
+/// <summary>
+/// Resolves the direct group for a node by the node center. This is the shared
+/// C# counterpart of the browser drop rule, so palette-created nodes and
+/// browser-dragged nodes use the same nested-group selection semantics.
+/// </summary>
+public static class DiagramGroupMembership
+{
+    public static string? ResolveGroupId(IEnumerable<DiagramGroup> groups, double x, double y, double width, double height)
+    {
+        var centerX = x + width / 2;
+        var centerY = y + height / 2;
+        return groups
+            .Where(group => !group.Collapsed && centerX >= group.X && centerX <= group.X + group.Width && centerY >= group.Y && centerY <= group.Y + group.Height)
+            .OrderBy(group => group.Width * group.Height)
+            .ThenBy(group => group.Id, StringComparer.Ordinal)
+            .Select(group => group.Id)
+            .FirstOrDefault();
+    }
+}
+
 /// <summary>Creates browser/server-compatible operations without hand-written JSON.</summary>
 public static class DiagramOperations
 {
@@ -102,6 +124,8 @@ public static class DiagramOperations
     public static GhostagramOperation RemovePort(string id) => Create("port.remove", new { id }, id);
     public static GhostagramOperation RemoveEdge(string id) => Create("edge.remove", new { id }, id);
     public static GhostagramOperation RemoveGroup(string id) => Create("group.remove", new { id }, id);
+    public static GhostagramOperation Select(IEnumerable<string> ids) => Create("selection.replace", new { ids = ids.ToArray() });
+    public static GhostagramOperation SetViewport(DiagramViewport viewport) => Create("viewport.set", viewport);
     public static GhostagramOperation Fit(double padding = 32) => Create("viewport.fit", new { padding });
     public static GhostagramOperation Center(double x, double y, double? zoom = null) => Create("viewport.center", new { x, y, zoom });
 
