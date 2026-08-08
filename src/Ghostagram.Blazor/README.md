@@ -21,7 +21,9 @@ The component owns one browser canvas; its `Document` parameter stays a typed C#
 }
 ```
 
-Call `await diagram.FitAsync()`, `ReplaceAsync(...)`, `ApplyAsync(...)`, `InspectAsync()`, or `ExportSvgAsync()` from normal Razor event handlers. Static Ghostagram browser assets are supplied automatically at `/Ghostagram.Blazor/ghostagram/`. A host that maps them elsewhere can set `GhostDiagramOptions.ModulePath` to the ESM entry point; `Ghostagram.Server` uses `/ghostagram/ghostagram.js`.
+Call `await diagram.FitAsync()`, `ReplaceAsync(...)`, `ApplyAsync(...)`, `InspectAsync()`, or `ExportSvgAsync()` from normal Razor event handlers. `CanvasCenterAsync()` returns the visible canvas center in model coordinates, while `HitTestClientPointAsync(...)` validates and projects an external pointer drop. These geometry methods keep zoom, pan, bounds, and coordinate conversion inside the canvas runtime rather than duplicating browser math in a host application.
+
+Static Ghostagram browser assets are supplied automatically at `/Ghostagram.Blazor/ghostagram/`. A host that maps them elsewhere can set `GhostDiagramOptions.ModulePath` to the ESM entry point; `Ghostagram.Server` uses `/ghostagram/ghostagram.js`.
 
 ## Declarative composition
 
@@ -40,3 +42,44 @@ Use exactly one mode: either the controlled `Document` shown above, or a declara
     <GhostEdge Id="handoff" SourcePortId="start-out" TargetPortId="review-in" Label="handoff" />
 </GhostDiagram>
 ```
+
+## Reusable node palette
+
+`GhostPalette` is a dependency-free, folder-style Blazor control. The component owns accessible rendering, pointer and keyboard activation, dragging between palette groups, and canvas-drop signaling. The host supplies its groups and items, persists any changes, and decides how a dropped item becomes a diagram node.
+
+```razor
+<GhostPalette @ref="palette"
+              Groups="groups"
+              Items="items"
+              ItemDropped="AddNodeAtDrop"
+              ItemInvoked="AddNodeAtCenter"
+              ItemMoved="MoveNodeType"
+              GroupExpandedChanged="SetExpanded" />
+
+<div @ref="canvasTarget">
+    <GhostDiagram @ref="diagram" Document="workflow" Revision="revision" />
+</div>
+
+@code {
+    private GhostPalette? palette;
+    private GhostDiagram? diagram;
+    private ElementReference canvasTarget;
+    private readonly IReadOnlyList<GhostPaletteGroup> groups =
+        [new("workflow", "Workflow", Expanded: true)];
+    private readonly IReadOnlyList<GhostPaletteItem> items =
+        [new("start", "workflow", "Start", "Workflow entry point", "#14b8a6")];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && palette is not null)
+            await palette.AttachDropTargetAsync(canvasTarget);
+    }
+
+    private Task AddNodeAtDrop(GhostPaletteDropRequest request) => Task.CompletedTask;
+    private Task AddNodeAtCenter(string itemId) => Task.CompletedTask;
+    private Task MoveNodeType(GhostPaletteMoveRequest request) => Task.CompletedTask;
+    private Task SetExpanded(GhostPaletteGroupToggleRequest request) => Task.CompletedTask;
+}
+```
+
+Use `HeadingContent`, `HeaderActions`, `FooterContent`, and `ItemIcon` render fragments to integrate host-specific controls or an icon library without adding that dependency to `Ghostagram.Blazor`. Include the generated `Ghostagram.Blazor.bundle.scp.css` static asset in the host document head. The default palette module is served from `/Ghostagram.Blazor/ghostagram-palette.js` with a release cache key; override `ModulePath` when a host maps static assets elsewhere.

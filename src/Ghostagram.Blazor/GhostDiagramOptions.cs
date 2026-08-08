@@ -40,3 +40,4 @@ public sealed record GhostagramResult(bool Ok, string? RequestId, long RenderedR
 public sealed record GhostagramProblem(string Code, string Message, JsonElement? Details = null);
 public sealed record GhostagramInspection(string InstanceId, string? DocumentId, long Revision, JsonElement Model, JsonElement Stats);
 public sealed record GhostagramCanvasPoint(double X, double Y);
+public sealed record GhostagramCanvasHit(bool Inside, double X, double Y);

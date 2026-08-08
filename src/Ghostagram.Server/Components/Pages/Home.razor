@@ -5,7 +5,7 @@
 
 <PageTitle>Ghostagram Laboratory</PageTitle>
 
-<div @ref="_laboratoryRoot" class="laboratory-root">
+<div class="laboratory-root">
     <MudLayout Class="@($"laboratory-layout {(_palettePinned && _paletteOpen ? "palette-docked" : string.Empty)}")">
         <MudAppBar Fixed="true" Elevation="0" Dense="true" Class="laboratory-appbar">
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" OnClick="TogglePalette" aria-label="Toggle node palette" />
@@ -21,9 +21,11 @@
             </MudMenu>
             <MudMenu Label="Insert" Color="Color.Inherit" Dense="true">
                 <MudMenuItem OnClick="OpenDesigner" Icon="@Icons.Material.Filled.AddBox">New node type</MudMenuItem>
-                <MudMenuItem OnClick="AddGroupAsync" Icon="@Icons.Material.Filled.CreateNewFolder">Group</MudMenuItem>
+                <MudMenuItem OnClick="OpenPaletteGroupEditor" Icon="@Icons.Material.Filled.CreateNewFolder">Palette group</MudMenuItem>
+                <MudMenuItem OnClick="AddGroupAsync" Icon="@Icons.Material.Filled.SelectAll">Canvas group</MudMenuItem>
             </MudMenu>
             <MudMenu Label="Edit" Color="Color.Inherit" Dense="true">
+                <MudMenuItem OnClick="OpenNodeStyleEditor" Disabled="@(!CanEditSelectedNode)" Icon="@Icons.Material.Filled.Palette">Node style</MudMenuItem>
                 <MudMenuItem OnClick="DeleteSelectedAsync" Disabled="@(!_document.Selection.Any())" Icon="@Icons.Material.Filled.DeleteOutline">Delete selected</MudMenuItem>
                 <MudMenuItem OnClick="RemoveSelectedGroupFramesAsync" Disabled="@(!HasSelectedGroups)" Icon="@Icons.Material.Filled.FolderOff">Remove group frame</MudMenuItem>
                 <MudMenuItem OnClick="UndoAsync" Disabled="@(!_undo.Any())" Icon="@Icons.Material.Filled.Undo">Undo</MudMenuItem>
@@ -46,50 +48,33 @@
                    Elevation="2"
                    Class="laboratory-palette"
                    Width="320px">
-            <div class="palette-heading">
-                <div>
-                    <MudText Typo="Typo.overline">Node library</MudText>
-                    <MudText Typo="Typo.h6">Palette</MudText>
-                </div>
-                <MudIconButton Icon="@(_palettePinned ? Icons.Material.Filled.PushPin : Icons.Material.Outlined.PushPin)"
-                               Color="@(_palettePinned ? Color.Primary : Color.Default)"
-                               OnClick="TogglePalettePin"
-                               aria-label="@(_palettePinned ? "Unpin palette" : "Pin palette")" />
-            </div>
-            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="palette-help">
-                Drag a node file onto the canvas. Pin the palette to keep it beside your design.
-            </MudText>
-
-            <MudExpansionPanels MultiExpansion="true" Class="palette-accordion">
-                @foreach (var category in PaletteCategories)
-                {
-                    <MudExpansionPanel Text="@category"
-                                       Expanded="@_expandedCategories.Contains(category)"
-                                       ExpandedChanged="@(value => SetCategoryExpanded(category, value))">
-                        @foreach (var template in _templates.Where(item => item.Category == category))
-                        {
-                            <MudPaper Class="palette-node-file"
-                                      Elevation="0"
-                                      tabindex="0"
-                                      role="button"
-                                      data-template-id="@template.Id"
-                                      title="@($"Drag {template.Label} to the canvas")">
-                                <span class="palette-node-accent" style="@($"--node-accent:{template.Accent}")"></span>
-                                <MudIcon Icon="@TemplateIcon(template)" Size="Size.Medium" />
-                                <span class="palette-node-copy">
-                                    <strong>@template.Label</strong>
-                                    <small>@template.Description</small>
-                                </span>
-                                <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" Class="palette-node-grip" />
-                            </MudPaper>
-                        }
-                    </MudExpansionPanel>
-                }
-            </MudExpansionPanels>
-
-            <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddBox" OnClick="OpenDesigner" Class="palette-create">
-                Design a node type
-            </MudButton>
+            <GhostPalette @ref="_palette"
+                          Groups="PaletteGroups"
+                          Items="PaletteItems"
+                          ItemDropped="DropPaletteItemAsync"
+                          ItemInvoked="InvokePaletteItemAsync"
+                          ItemMoved="MovePaletteItemAsync"
+                          ItemDeleteRequested="DeleteCustomTemplate"
+                          GroupDeleteRequested="RemovePaletteGroup"
+                          GroupExpandedChanged="SetCategoryExpanded">
+                <HeaderActions>
+                    <MudTooltip Text="Add a palette group">
+                        <MudIconButton Icon="@Icons.Material.Filled.CreateNewFolder" OnClick="OpenPaletteGroupEditor" aria-label="Add a palette group" />
+                    </MudTooltip>
+                    <MudIconButton Icon="@(_palettePinned ? Icons.Material.Filled.PushPin : Icons.Material.Outlined.PushPin)"
+                                   Color="@(_palettePinned ? Color.Primary : Color.Default)"
+                                   OnClick="TogglePalettePin"
+                                   aria-label="@(_palettePinned ? "Unpin palette" : "Pin palette")" />
+                </HeaderActions>
+                <ItemIcon Context="item">
+                    <MudIcon Icon="@TemplateIcon(item.Id)" Size="Size.Medium" />
+                </ItemIcon>
+                <FooterContent>
+                    <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddBox" OnClick="OpenDesigner">
+                        Design a node type
+                    </MudButton>
+                </FooterContent>
+            </GhostPalette>
         </MudDrawer>
 
         <MudMainContent Class="laboratory-main">
@@ -119,6 +104,9 @@
 
                 <MudSpacer />
 
+                <MudTooltip Text="Edit the selected node's appearance">
+                    <MudIconButton Icon="@Icons.Material.Filled.Palette" Color="Color.Primary" OnClick="OpenNodeStyleEditor" Disabled="@(!CanEditSelectedNode)" aria-label="Edit selected node style" />
+                </MudTooltip>
                 <MudTooltip Text="Delete the current node, group, or edge selection">
                     <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" OnClick="DeleteSelectedAsync" Disabled="@(!_document.Selection.Any())" aria-label="Delete selected" />
                 </MudTooltip>
@@ -138,14 +126,14 @@
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@_document.Groups.Count groups</MudChip>
                 </header>
 
-                <div class="laboratory-canvas" data-ghostagram-drop-zone>
+                <div @ref="_canvasDropZone" class="laboratory-canvas" data-ghostagram-drop-zone>
                     <GhostDiagram @ref="_diagram"
                                   Document="@_document"
                                   Revision="@_revision"
                                   Options="@_options"
                                   EventReceived="OnGhostagramEvent"
                                   AriaLabel="Interactive Ghostagram design canvas" />
-                    <div class="canvas-drop-overlay" data-ghostagram-drop-overlay>
+                    <div @ref="_canvasDropOverlay" class="canvas-drop-overlay" data-ghostagram-drop-overlay>
                         <MudIcon Icon="@Icons.Material.Filled.AddToPhotos" />
                         <span>Drop to add node</span>
                     </div>
@@ -182,7 +170,12 @@
                     <MudNumericField T="double" @bind-Value="_draft.Height" Label="Height" Min="48" Max="240" Step="8" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="6">
-                    <MudTextField @bind-Value="_draft.Accent" Label="Accent color" Variant="Variant.Outlined" />
+                    <MudSelect T="string" @bind-Value="_draft.Category" Label="Palette group" Variant="Variant.Outlined">
+                        @foreach (var category in _paletteCategories)
+                        {
+                            <MudSelectItem T="string" Value="@category.Name">@category.Name</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
                 <MudItem xs="6">
                     <MudSelect T="string" @bind-Value="_draft.Direction" Label="New point direction" Variant="Variant.Outlined">
@@ -191,9 +184,43 @@
                         <MudSelectItem T="string" Value="@("target")">Input</MudSelectItem>
                     </MudSelect>
                 </MudItem>
+                <MudItem xs="12" sm="4">
+                    <div class="designer-color-field">
+                        <label for="node-outline-color">Outline</label>
+                        <div class="designer-color-control">
+                            <input id="node-outline-color" type="color" @bind="_draft.Outline" @bind:event="oninput" aria-label="Select node outline color" />
+                            <MudTextField @bind-Value="_draft.Outline" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                        </div>
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <div class="designer-color-field">
+                        <label for="node-background-color">Background</label>
+                        <div class="designer-color-control">
+                            <input id="node-background-color" type="color" @bind="_draft.Background" @bind:event="oninput" aria-label="Select node background color" />
+                            <MudTextField @bind-Value="_draft.Background" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                        </div>
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <div class="designer-color-field">
+                        <label for="node-text-color">Text</label>
+                        <div class="designer-color-control">
+                            <input id="node-text-color" type="color" @bind="_draft.TextColor" @bind:event="oninput" aria-label="Select node text color" />
+                            <MudTextField @bind-Value="_draft.TextColor" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                        </div>
+                    </div>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudSelect T="string" @bind-Value="_draft.TextAlign" Label="Text alignment" Variant="Variant.Outlined">
+                        <MudSelectItem T="string" Value="@("left")">Left</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("center")">Center</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("right")">Right</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
             </MudGrid>
 
-            <div class="node-designer-preview" style="@($"--node-accent:{_draft.Accent}")">
+            <div class="node-designer-preview" style="@($"--node-outline:{NormalizeColor(_draft.Outline, "#d24686")};--node-background:{NormalizeColor(_draft.Background, "#ffffff")};--node-text:{NormalizeColor(_draft.TextColor, "#172033")};--node-align:{NormalizeTextAlign(_draft.TextAlign)}")">
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-top" OnClick="AddTopConnectionPoint" aria-label="Add top connection point" />
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-right" OnClick="AddRightConnectionPoint" aria-label="Add right connection point" />
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-bottom" OnClick="AddBottomConnectionPoint" aria-label="Add bottom connection point" />
@@ -230,6 +257,87 @@
             <MudButton OnClick="CloseDesigner">Cancel</MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddBox" OnClick="AddCustomTemplate">Add to palette</MudButton>
         </footer>
+        </MudPaper>
+        </div>
+    }
+
+    @if (_isPaletteGroupEditorOpen)
+    {
+        <div class="studio-modal-backdrop" @onclick="ClosePaletteGroupEditor">
+        <MudPaper Class="studio-modal compact-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Add palette group" @onclick:stopPropagation="true">
+            <header class="studio-modal-header">
+                <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.CreateNewFolder" Class="mr-2" />New palette group</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="ClosePaletteGroupEditor" aria-label="Close palette group dialog" />
+            </header>
+            <div class="studio-modal-content">
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">Create a folder for organizing reusable node types. Removing it later moves its contents to Custom.</MudText>
+                <MudTextField @bind-Value="_paletteGroupName" Label="Group name" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
+            </div>
+            <footer class="studio-modal-actions">
+                <MudButton OnClick="ClosePaletteGroupEditor">Cancel</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CreateNewFolder" OnClick="AddPaletteGroup">Add group</MudButton>
+            </footer>
+        </MudPaper>
+        </div>
+    }
+
+    @if (_isStyleEditorOpen)
+    {
+        <div class="studio-modal-backdrop" @onclick="CloseStyleEditor">
+        <MudPaper Class="studio-modal style-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Node style editor" @onclick:stopPropagation="true">
+            <header class="studio-modal-header">
+                <div>
+                    <MudText Typo="Typo.overline">Selected node</MudText>
+                    <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Palette" Class="mr-2" />@StyleNodeLabel</MudText>
+                </div>
+                <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseStyleEditor" aria-label="Close node style editor" />
+            </header>
+            <div class="studio-modal-content">
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">Adjust the node's visual style without changing its reusable palette definition.</MudText>
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4">
+                        <div class="designer-color-field">
+                            <label for="style-outline-color">Outline</label>
+                            <div class="designer-color-control">
+                                <input id="style-outline-color" type="color" @bind="_styleDraft.Outline" @bind:event="oninput" aria-label="Select outline color" />
+                                <MudTextField @bind-Value="_styleDraft.Outline" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <div class="designer-color-field">
+                            <label for="style-background-color">Background</label>
+                            <div class="designer-color-control">
+                                <input id="style-background-color" type="color" @bind="_styleDraft.Background" @bind:event="oninput" aria-label="Select background color" />
+                                <MudTextField @bind-Value="_styleDraft.Background" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <div class="designer-color-field">
+                            <label for="style-text-color">Text</label>
+                            <div class="designer-color-control">
+                                <input id="style-text-color" type="color" @bind="_styleDraft.TextColor" @bind:event="oninput" aria-label="Select text color" />
+                                <MudTextField @bind-Value="_styleDraft.TextColor" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect T="string" @bind-Value="_styleDraft.TextAlign" Label="Text alignment" Variant="Variant.Outlined">
+                            <MudSelectItem T="string" Value="@("left")">Left</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("center")">Center</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("right")">Right</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+                <div class="style-editor-preview" style="@($"--node-outline:{NormalizeColor(_styleDraft.Outline, "#4177de")};--node-background:{NormalizeColor(_styleDraft.Background, "#ffffff")};--node-text:{NormalizeColor(_styleDraft.TextColor, "#172033")};--node-align:{NormalizeTextAlign(_styleDraft.TextAlign)}")">
+                    @StyleNodeLabel
+                </div>
+            </div>
+            <footer class="studio-modal-actions">
+                <MudButton OnClick="CloseStyleEditor">Cancel</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" OnClick="ApplyNodeStyleAsync">Apply style</MudButton>
+            </footer>
         </MudPaper>
         </div>
     }

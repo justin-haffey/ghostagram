@@ -84,118 +84,6 @@ textarea {
   overflow: hidden;
 }
 
-.palette-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 16px 4px;
-}
-
-.palette-help {
-  display: block;
-  padding: 0 16px 12px;
-  line-height: 1.45;
-}
-
-.palette-accordion {
-  height: calc(100vh - 245px);
-  overflow: auto;
-  padding: 0 10px 14px;
-}
-
-.palette-accordion .mud-expand-panel {
-  margin-bottom: 6px;
-  border: 1px solid #e4e8f1;
-  border-radius: 8px !important;
-  box-shadow: none;
-  overflow: hidden;
-}
-
-.palette-accordion .mud-expand-panel-header {
-  min-height: 44px;
-  background: #f4f6fb;
-}
-
-.palette-accordion .mud-expand-panel-content {
-  padding: 4px 8px 10px;
-}
-
-.palette-node-file {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 56px;
-  margin-top: 6px;
-  padding: 8px 8px 8px 12px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: #fff;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  transition: border-color .15s ease, background .15s ease, transform .15s ease, box-shadow .15s ease;
-}
-
-.palette-node-file:hover,
-.palette-node-file:focus-visible {
-  border-color: #c9c0f2;
-  background: #faf9ff;
-  box-shadow: 0 5px 16px rgba(57, 43, 118, .08);
-  outline: none;
-  transform: translateX(2px);
-}
-
-.palette-node-file:active {
-  cursor: grabbing;
-}
-
-.palette-node-file.is-dragging {
-  border-color: #9b89e8;
-  background: #f4f1ff;
-  cursor: grabbing;
-  opacity: .82;
-}
-
-.palette-node-accent {
-  position: absolute;
-  inset: 9px auto 9px 0;
-  width: 3px;
-  border-radius: 4px;
-  background: var(--node-accent);
-}
-
-.palette-node-copy {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-  line-height: 1.25;
-}
-
-.palette-node-copy strong {
-  font-size: .86rem;
-  font-weight: 650;
-}
-
-.palette-node-copy small {
-  margin-top: 3px;
-  overflow: hidden;
-  color: var(--studio-muted);
-  font-size: .72rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.palette-node-grip {
-  color: #a3aabc;
-}
-
-.palette-create {
-  width: calc(100% - 32px) !important;
-  margin: 0 16px 16px;
-}
-
 .laboratory-main {
   height: 100vh;
   padding-top: 52px !important;
@@ -361,6 +249,18 @@ textarea {
   width: min(920px, calc(100vw - 32px));
 }
 
+.studio-modal.designer-modal {
+  width: min(820px, calc(100vw - 32px));
+}
+
+.studio-modal.compact-modal {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.studio-modal.style-modal {
+  width: min(720px, calc(100vw - 32px));
+}
+
 .studio-modal-header,
 .studio-modal-actions {
   display: flex;
@@ -388,11 +288,59 @@ textarea {
 .node-designer-card {
   width: min(260px, 80%);
   padding: 22px;
-  border: 2px solid var(--node-accent);
+  border: 2px solid var(--node-outline);
   border-radius: 12px;
-  background: #fff;
-  text-align: center;
+  color: var(--node-text);
+  background: var(--node-background);
+  text-align: var(--node-align);
   box-shadow: 0 12px 30px rgba(37, 43, 71, .10);
+}
+
+.designer-color-field > label {
+  display: block;
+  margin: 0 0 6px 2px;
+  color: #50586b;
+  font-size: .75rem;
+  font-weight: 650;
+}
+
+.designer-color-control {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.designer-color-control input[type="color"] {
+  width: 52px;
+  height: 52px;
+  padding: 4px;
+  border: 1px solid #cfd5e2;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.designer-color-control input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.designer-color-control input[type="color"]::-webkit-color-swatch {
+  border: 0;
+  border-radius: 5px;
+}
+
+.style-editor-preview {
+  width: min(320px, 100%);
+  min-height: 72px;
+  margin: 24px auto 4px;
+  padding: 20px;
+  border: 2px solid var(--node-outline);
+  border-radius: 10px;
+  color: var(--node-text);
+  background: var(--node-background);
+  text-align: var(--node-align);
+  box-shadow: 0 10px 28px rgba(37, 43, 71, .10);
 }
 
 .designer-port {
@@ -437,6 +385,17 @@ textarea {
   .toolbar-edge .mud-switch { display: none; }
   .toolbar-select { width: 140px; }
   .appbar-revision { display: none; }
+}
+
+@media (max-width: 600px) {
+  .designer-color-control {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .designer-color-control input[type="color"] {
+    width: 48px;
+    height: 48px;
+  }
 }
 
 @media (max-width: 720px) {

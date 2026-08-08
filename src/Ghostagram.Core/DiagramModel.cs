@@ -79,7 +79,11 @@ public sealed record DiagramGroup(
 
 public sealed record DiagramViewport(double X = 0, double Y = 0, double Zoom = 1);
 public sealed record DiagramPoint(double X, double Y);
-public sealed record DiagramNodeStyle(string? Background = null, string? BorderColor = null, string? Color = null);
+public sealed record DiagramNodeStyle(
+    string? Background = null,
+    string? BorderColor = null,
+    string? Color = null,
+    string? TextAlign = null);
 public sealed record DiagramEdgeStyle(string? Stroke = null, double? StrokeWidth = null, string? Dash = null, double? Opacity = null, string? LabelColor = null);
 public sealed record DiagramEndpoint(string Type = "dot", double? Size = null, string? Fill = null, string? Stroke = null, double? StrokeWidth = null);
 public sealed record DiagramConnectionPolicy(IReadOnlyList<string>? AllowPortIds = null, IReadOnlyList<string>? DenyPortIds = null, IReadOnlyList<string>? AllowNodeIds = null, IReadOnlyList<string>? DenyNodeIds = null);

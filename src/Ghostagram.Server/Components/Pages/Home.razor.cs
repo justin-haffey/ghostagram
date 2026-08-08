@@ -5,7 +5,6 @@ using Ghostagram.Contracts;
 using Ghostagram.Core;
 using Ghostagram.Server.Layout;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Ghostagram.Server.Components.Pages;
@@ -18,12 +17,9 @@ public partial class Home : IAsyncDisposable
 
     [Inject] private DiagramCommandService Commands { get; set; } = default!;
     [Inject] private DiagramLayoutService Layouts { get; set; } = default!;
-    [Inject] private IJSRuntime JavaScript { get; set; } = default!;
-
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private static readonly string[] PaletteCategories = ["Workflow", "Content", "Containers", "Custom"];
-
-    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js");
+    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260808.2");
+    private readonly List<PaletteCategory> _paletteCategories = CreatePaletteCategories();
     private readonly List<NodeTemplate> _templates = CreateBuiltInTemplates();
     private readonly List<DraftPort> _draftPorts = [];
     private readonly HashSet<string> _expandedCategories = new(StringComparer.Ordinal) { "Workflow" };
@@ -34,13 +30,17 @@ public partial class Home : IAsyncDisposable
 
     private DiagramDocument _document = EmptyDocument();
     private NodeDraft _draft = new();
+    private NodeStyleDraft _styleDraft = new();
     private GhostDiagram? _diagram;
-    private ElementReference _laboratoryRoot;
-    private IJSObjectReference? _laboratoryModule;
-    private DotNetObjectReference<Home>? _selfReference;
+    private GhostPalette? _palette;
+    private ElementReference _canvasDropZone;
+    private ElementReference _canvasDropOverlay;
+    private bool _paletteTargetAttached;
     private bool _paletteOpen = true;
     private bool _palettePinned = true;
     private bool _isDesignerOpen;
+    private bool _isPaletteGroupEditorOpen;
+    private bool _isStyleEditorOpen;
     private bool _isExportOpen;
     private bool _busy;
     private string _activity = "Loading saved design…";
@@ -48,6 +48,8 @@ public partial class Home : IAsyncDisposable
     private string _edgeConnector = "flowchart";
     private bool _edgeAnimated;
     private string? _exportedSvg;
+    private string _paletteGroupName = string.Empty;
+    private string? _styleNodeId;
     private long _revision;
     private int _templateSequence;
     private int _portSequence;
@@ -61,12 +63,11 @@ public partial class Home : IAsyncDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (!firstRender || _paletteTargetAttached || _palette is null) return;
         try
         {
-            _selfReference = DotNetObjectReference.Create(this);
-            _laboratoryModule = await JavaScript.InvokeAsync<IJSObjectReference>("import", "/laboratory.js");
-            await _laboratoryModule.InvokeVoidAsync("initializePaletteDrop", _laboratoryRoot, _selfReference);
+            await _palette.AttachDropTargetAsync(_canvasDropZone, _canvasDropOverlay);
+            _paletteTargetAttached = true;
         }
         catch (Exception exception)
         {
@@ -136,21 +137,151 @@ public partial class Home : IAsyncDisposable
         else _expandedCategories.Remove(category);
     }
 
-    private void OpenDesigner() => _isDesignerOpen = true;
+    private void SetCategoryExpanded(GhostPaletteGroupToggleRequest request) => SetCategoryExpanded(request.GroupId, request.Expanded);
+
+    private void OpenDesigner()
+    {
+        if (!_paletteCategories.Any(category => string.Equals(category.Name, _draft.Category, StringComparison.Ordinal)))
+            _draft.Category = "Custom";
+        _isDesignerOpen = true;
+    }
     private void CloseDesigner() => _isDesignerOpen = false;
+    private void OpenPaletteGroupEditor()
+    {
+        _paletteGroupName = string.Empty;
+        _isPaletteGroupEditorOpen = true;
+    }
+    private void ClosePaletteGroupEditor() => _isPaletteGroupEditorOpen = false;
+    private void CloseStyleEditor() => _isStyleEditorOpen = false;
     private void CloseExport() => _isExportOpen = false;
 
     private bool HasSelectedGroups => _document.Groups.Any(group => _document.Selection.Contains(group.Id, StringComparer.Ordinal));
     private bool HasSelectedEdges => _document.Edges.Any(edge => _document.Selection.Contains(edge.Id, StringComparer.Ordinal));
+    private bool CanEditSelectedNode => SelectedNode() is not null;
     private string EdgeApplyLabel => HasSelectedEdges ? "Apply selected" : "Apply all edges";
+    private string StyleNodeLabel => _document.Nodes.SingleOrDefault(node => node.Id == _styleNodeId)?.Label ?? "Node style";
+    private IReadOnlyList<GhostPaletteGroup> PaletteGroups => _paletteCategories
+        .Select(category => new GhostPaletteGroup(category.Name, category.Name, _expandedCategories.Contains(category.Name), !category.IsSystem))
+        .ToArray();
+    private IReadOnlyList<GhostPaletteItem> PaletteItems => _templates
+        .Select(template => new GhostPaletteItem(template.Id, template.Category, template.Label, template.Description, template.Outline, template.IsCustom))
+        .ToArray();
+
+    private DiagramNode? SelectedNode()
+    {
+        if (_document.Selection.Count != 1) return null;
+        var selected = _document.Selection.ToHashSet(StringComparer.Ordinal);
+        return _document.Nodes.SingleOrDefault(node => selected.Contains(node.Id));
+    }
+
+    private void AddPaletteGroup()
+    {
+        var name = _paletteGroupName.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _activity = "Enter a name for the palette group";
+            return;
+        }
+        if (_paletteCategories.Any(category => string.Equals(category.Name, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            _activity = $"A palette group named {name} already exists";
+            return;
+        }
+
+        var customIndex = _paletteCategories.FindIndex(category => category.Name == "Custom");
+        _paletteCategories.Insert(customIndex < 0 ? _paletteCategories.Count : customIndex, new PaletteCategory(name, false));
+        _expandedCategories.Add(name);
+        _draft.Category = name;
+        _isPaletteGroupEditorOpen = false;
+        _paletteOpen = true;
+        _activity = $"Added palette group {name}";
+    }
+
+    private void RemovePaletteGroup(string name)
+    {
+        var category = _paletteCategories.SingleOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal));
+        if (category is null || category.IsSystem) return;
+
+        var moved = 0;
+        for (var index = 0; index < _templates.Count; index++)
+        {
+            if (!string.Equals(_templates[index].Category, name, StringComparison.Ordinal)) continue;
+            _templates[index] = _templates[index] with { Category = "Custom" };
+            moved++;
+        }
+        _paletteCategories.Remove(category);
+        _expandedCategories.Remove(name);
+        _expandedCategories.Add("Custom");
+        if (string.Equals(_draft.Category, name, StringComparison.Ordinal)) _draft.Category = "Custom";
+        _activity = moved == 0
+            ? $"Removed empty palette group {name}"
+            : $"Removed palette group {name} and moved {moved} node type{(moved == 1 ? string.Empty : "s")} to Custom";
+    }
+
+    private Task MovePaletteItemAsync(GhostPaletteMoveRequest request)
+    {
+        var templateId = request.ItemId;
+        var categoryName = request.GroupId;
+        var index = _templates.FindIndex(item => item.Id == templateId);
+        if (index < 0 || !_paletteCategories.Any(category => category.Name == categoryName)) return Task.CompletedTask;
+        if (_templates[index].Category == categoryName) return Task.CompletedTask;
+
+        var label = _templates[index].Label;
+        _templates[index] = _templates[index] with { Category = categoryName };
+        _expandedCategories.Add(categoryName);
+        _activity = $"Moved {label} to {categoryName}";
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void DeleteCustomTemplate(string templateId)
+    {
+        var template = _templates.SingleOrDefault(item => item.Id == templateId && item.IsCustom);
+        if (template is null) return;
+        _templates.Remove(template);
+        _activity = $"Deleted custom node type {template.Label} from the palette";
+    }
+
+    private void OpenNodeStyleEditor()
+    {
+        var node = SelectedNode();
+        if (node is null) return;
+        var style = node.Style ?? new DiagramNodeStyle();
+        _styleNodeId = node.Id;
+        _styleDraft = new NodeStyleDraft
+        {
+            Background = NormalizeColor(style.Background, "#ffffff"),
+            Outline = NormalizeColor(style.BorderColor, "#4177de"),
+            TextColor = NormalizeColor(style.Color, "#172033"),
+            TextAlign = NormalizeTextAlign(style.TextAlign)
+        };
+        _isStyleEditorOpen = true;
+    }
+
+    private async Task ApplyNodeStyleAsync()
+    {
+        var node = _document.Nodes.SingleOrDefault(item => item.Id == _styleNodeId);
+        if (node is null)
+        {
+            _isStyleEditorOpen = false;
+            return;
+        }
+
+        var style = new DiagramNodeStyle(
+            NormalizeColor(_styleDraft.Background, "#ffffff"),
+            NormalizeColor(_styleDraft.Outline, "#4177de"),
+            NormalizeColor(_styleDraft.TextColor, "#172033"),
+            NormalizeTextAlign(_styleDraft.TextAlign));
+        if (await SubmitOperationsAsync([DiagramOperations.Upsert(node with { Style = style })], $"Updated {node.Label ?? "node"} style"))
+            _isStyleEditorOpen = false;
+    }
 
     private async Task AddGroupAsync()
     {
-        if (_laboratoryModule is null || _busy) return;
+        if (_diagram is null || _busy) return;
         try
         {
-            var center = await _laboratoryModule.InvokeAsync<ClientPoint>("canvasClientCenter", _laboratoryRoot);
-            await DropPaletteItem("group", center.X, center.Y);
+            var center = await _diagram.CanvasCenterAsync();
+            await AddPaletteItemAtCanvasPointAsync("group", center);
         }
         catch (Exception exception)
         {
@@ -158,44 +289,14 @@ public partial class Home : IAsyncDisposable
         }
     }
 
-    [JSInvokable]
-    public async Task DropPaletteItem(string templateId, double clientX, double clientY)
+    private async Task DropPaletteItemAsync(GhostPaletteDropRequest request)
     {
-        var template = _templates.SingleOrDefault(item => item.Id == templateId);
-        if (template is null || _diagram is null) return;
+        if (_diagram is null) return;
 
         try
         {
-            var point = await _diagram.ClientToCanvasAsync(clientX, clientY);
-            if (template.IsGroup)
-            {
-                var group = new DiagramGroup(
-                    NextId("group"),
-                    Snap(point.X - template.Width / 2),
-                    Snap(point.Y - template.Height / 2),
-                    template.Width,
-                    template.Height,
-                    template.Label,
-                    Icon: template.Icon);
-                await SubmitOperationsAsync([DiagramOperations.Upsert(group)], $"Added {template.Label}");
-            }
-            else
-            {
-                var id = NextId("node");
-                var x = Snap(point.X - template.Width / 2);
-                var y = Snap(point.Y - template.Height / 2);
-                var groupId = DiagramGroupMembership.ResolveGroupId(_document.Groups, x, y, template.Width, template.Height);
-                var node = new DiagramNode(id, x, y, template.Width, template.Height, template.Label, GroupId: groupId, Icon: template.Icon,
-                    Style: new DiagramNodeStyle("#ffffff", template.Accent, "#172033"));
-                var ports = template.Ports.Select((port, index) => new DiagramPort(
-                    $"{id}-{port.Id}-{index + 1}", id, port.Direction, Anchor: port.Side,
-                    Endpoint: new DiagramEndpoint("dot", 11, template.Accent, "#ffffff", 2))).ToArray();
-                var operations = new List<GhostagramOperation> { DiagramOperations.Upsert(node) };
-                operations.AddRange(ports.Select(DiagramOperations.Upsert));
-                await SubmitOperationsAsync(operations, $"Added {template.Label}");
-            }
-
-            if (!_palettePinned) _paletteOpen = false;
+            var hit = await _diagram.HitTestClientPointAsync(request.ClientX, request.ClientY);
+            if (hit.Inside) await AddPaletteItemAtCanvasPointAsync(request.ItemId, new GhostagramCanvasPoint(hit.X, hit.Y));
         }
         catch (Exception exception)
         {
@@ -208,6 +309,55 @@ public partial class Home : IAsyncDisposable
         }
     }
 
+    private async Task InvokePaletteItemAsync(string templateId)
+    {
+        if (_diagram is null) return;
+        try
+        {
+            await AddPaletteItemAtCanvasPointAsync(templateId, await _diagram.CanvasCenterAsync());
+        }
+        catch (Exception exception)
+        {
+            _activity = $"Unable to add palette item: {exception.Message}";
+        }
+    }
+
+    private async Task AddPaletteItemAtCanvasPointAsync(string templateId, GhostagramCanvasPoint point)
+    {
+        var template = _templates.SingleOrDefault(item => item.Id == templateId);
+        if (template is null) return;
+
+        if (template.IsGroup)
+        {
+            var group = new DiagramGroup(
+                NextId("group"),
+                Snap(point.X - template.Width / 2),
+                Snap(point.Y - template.Height / 2),
+                template.Width,
+                template.Height,
+                template.Label,
+                Icon: template.Icon);
+            await SubmitOperationsAsync([DiagramOperations.Upsert(group)], $"Added {template.Label}");
+        }
+        else
+        {
+            var id = NextId("node");
+            var x = Snap(point.X - template.Width / 2);
+            var y = Snap(point.Y - template.Height / 2);
+            var groupId = DiagramGroupMembership.ResolveGroupId(_document.Groups, x, y, template.Width, template.Height);
+            var node = new DiagramNode(id, x, y, template.Width, template.Height, template.Label, GroupId: groupId, Icon: template.Icon,
+                Style: new DiagramNodeStyle(template.Background, template.Outline, template.TextColor, template.TextAlign));
+            var ports = template.Ports.Select((port, index) => new DiagramPort(
+                $"{id}-{port.Id}-{index + 1}", id, port.Direction, Anchor: port.Side,
+                Endpoint: new DiagramEndpoint("dot", 11, template.Outline, "#ffffff", 2))).ToArray();
+            var operations = new List<GhostagramOperation> { DiagramOperations.Upsert(node) };
+            operations.AddRange(ports.Select(DiagramOperations.Upsert));
+            await SubmitOperationsAsync(operations, $"Added {template.Label}");
+        }
+
+        if (!_palettePinned) _paletteOpen = false;
+    }
+
     private void AddConnectionPoint(string side) => _draftPorts.Add(new DraftPort($"draft-port-{++_portSequence}", side, _draft.Direction));
     private void AddTopConnectionPoint() => AddConnectionPoint("top");
     private void AddRightConnectionPoint() => AddConnectionPoint("right");
@@ -218,15 +368,21 @@ public partial class Home : IAsyncDisposable
     private void AddCustomTemplate()
     {
         var label = string.IsNullOrWhiteSpace(_draft.Label) ? "Custom node" : _draft.Label.Trim();
-        var accent = ValidColor(_draft.Accent) ? _draft.Accent : "#d24686";
+        var outline = NormalizeColor(_draft.Outline, "#d24686");
+        var background = NormalizeColor(_draft.Background, "#ffffff");
+        var textColor = NormalizeColor(_draft.TextColor, "#172033");
+        var textAlign = NormalizeTextAlign(_draft.TextAlign);
+        var category = _paletteCategories.Any(item => item.Name == _draft.Category) ? _draft.Category : "Custom";
         var ports = _draftPorts.Select((port, index) => new PortTemplate($"port-{index + 1}", port.Side, port.Direction)).ToArray();
-        _templates.Add(new NodeTemplate($"custom-{++_templateSequence}", "Custom", label, "Custom component",
-            Math.Clamp(_draft.Width, 96, 360), Math.Clamp(_draft.Height, 48, 240), accent, ports, false, "mdi:shape-outline"));
+        _templates.Add(new NodeTemplate($"custom-{++_templateSequence}", category, label, "Custom component",
+            Math.Clamp(_draft.Width, 96, 360), Math.Clamp(_draft.Height, 48, 240), outline, background, textColor, textAlign,
+            ports, false, "mdi:shape-outline", true));
         _draft = new NodeDraft();
         _draftPorts.Clear();
         _isDesignerOpen = false;
         _paletteOpen = true;
-        _activity = $"Added {label} to the palette";
+        _expandedCategories.Add(category);
+        _activity = $"Added {label} to {category}";
     }
 
     private async Task OnGhostagramEvent(GhostagramEvent envelope)
@@ -267,6 +423,7 @@ public partial class Home : IAsyncDisposable
             case "selection.move.commit": await CommitNodeAndGroupPositionsAsync(envelope.Payload, "Moved selection"); break;
             case "group.move.commit": await CommitGroupMoveAsync(envelope.Payload); break;
             case "group.resize.commit": await CommitGroupAsync(envelope.Payload, group => group with { Width = Number(envelope.Payload, "width"), Height = Number(envelope.Payload, "height") }, "Resized group"); break;
+            case "group.visibilityRequested": await SetGroupVisibilityAsync(envelope.Payload); break;
             case "group.label.commit": await CommitGroupAsync(envelope.Payload, group => group with { Label = NullableLabel(envelope.Payload, "label") }, "Updated group label"); break;
             case "edge.createRequested": await CreateEdgeAsync(envelope.Payload); break;
             case "edge.reconnectRequested": await ReconnectEdgeAsync(envelope.Payload); break;
@@ -316,6 +473,12 @@ public partial class Home : IAsyncDisposable
     {
         var current = _document.Groups.SingleOrDefault(group => group.Id == String(payload, "groupId"));
         if (current is not null) await SubmitOperationsAsync([DiagramOperations.Upsert(update(current))], activity);
+    }
+
+    private Task SetGroupVisibilityAsync(JsonElement payload)
+    {
+        var hidden = Boolean(payload, "hidden");
+        return CommitGroupAsync(payload, group => group with { Collapsed = hidden }, hidden ? "Hid group contents" : "Showed group contents");
     }
 
     private async Task CommitNodeAndGroupPositionsAsync(JsonElement payload, string activity)
@@ -778,8 +941,9 @@ public partial class Home : IAsyncDisposable
         return depth;
     }
 
-    private static string TemplateIcon(NodeTemplate template) => template.Id switch
+    private static string TemplateIcon(string templateId) => templateId switch
     {
+        "start" => Icons.Material.Outlined.PlayCircle,
         "task" => Icons.Material.Outlined.TaskAlt,
         "decision" => Icons.Material.Outlined.CallSplit,
         "note" => Icons.Material.Outlined.StickyNote2,
@@ -824,16 +988,27 @@ public partial class Home : IAsyncDisposable
 
     private static List<NodeTemplate> CreateBuiltInTemplates() =>
     [
-        new("task", "Workflow", "Task", "Work step with input and output", 168, 72, "#4177de", [new PortTemplate("input", "left", "target"), new PortTemplate("output", "right", "source")], false, "mdi:checkbox-marked-circle-outline"),
-        new("decision", "Workflow", "Decision", "Branch a workflow into paths", 172, 88, "#d97706", [new PortTemplate("input", "left", "target"), new PortTemplate("yes", "right", "source"), new PortTemplate("no", "bottom", "source")], false, "mdi:source-branch"),
-        new("note", "Content", "Note", "Context without connection points", 184, 92, "#0f9d79", [], false, "mdi:note-text-outline"),
-        new("group", "Containers", "Group", "Resizable visual boundary", 320, 220, "#7455dd", [], true, "mdi:layers-outline")
+        new("start", "Workflow", "Start", "Entry point for a workflow", 144, 64, "#16875b", "#ecfdf5", "#115e45", "center", [new PortTemplate("output", "right", "source")], false, "mdi:play-circle-outline"),
+        new("task", "Workflow", "Task", "Work step with input and output", 168, 72, "#4177de", "#ffffff", "#172033", "center", [new PortTemplate("input", "left", "target"), new PortTemplate("output", "right", "source")], false, "mdi:checkbox-marked-circle-outline"),
+        new("decision", "Workflow", "Decision", "Branch a workflow into paths", 172, 88, "#d97706", "#fffaf0", "#7c2d12", "center", [new PortTemplate("input", "left", "target"), new PortTemplate("yes", "right", "source"), new PortTemplate("no", "bottom", "source")], false, "mdi:source-branch"),
+        new("note", "Content", "Note", "Context without connection points", 184, 92, "#0f9d79", "#f0fdfa", "#134e4a", "left", [], false, "mdi:note-text-outline"),
+        new("group", "Containers", "Group", "Resizable visual boundary", 320, 220, "#7455dd", "#ffffff", "#172033", "left", [], true, "mdi:layers-outline")
+    ];
+
+    private static List<PaletteCategory> CreatePaletteCategories() =>
+    [
+        new("Workflow", true),
+        new("Content", true),
+        new("Containers", true),
+        new("Custom", true)
     ];
 
     private static string CommandId(string kind) => $"{kind}-{Guid.NewGuid():N}";
     private static string NextId(string prefix) => $"{prefix}-{Guid.NewGuid():N}";
     private static double Snap(double value) => Math.Round(value / GridSize) * GridSize;
-    private static bool ValidColor(string value) => value.Length is 4 or 7 && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit);
+    private static bool ValidColor(string? value) => value is not null && value.Length is 4 or 7 && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit);
+    private static string NormalizeColor(string? value, string fallback) => ValidColor(value) ? value!.ToLowerInvariant() : fallback;
+    private static string NormalizeTextAlign(string? value) => value is "left" or "right" or "center" ? value : "center";
     private static string String(JsonElement element, string property) => element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? string.Empty : string.Empty;
     private static string? NullableLabel(JsonElement element, string property)
     {
@@ -851,6 +1026,7 @@ public partial class Home : IAsyncDisposable
         return true;
     }
     private static double Number(JsonElement element, string property) => element.TryGetProperty(property, out var value) && value.TryGetDouble(out var number) ? number : 0;
+    private static bool Boolean(JsonElement element, string property) => element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.True;
     private static IReadOnlyList<string> StringArray(JsonElement element, string property) => element.TryGetProperty(property, out var values) && values.ValueKind == JsonValueKind.Array ? values.EnumerateArray().Where(value => value.ValueKind == JsonValueKind.String).Select(value => value.GetString()!).ToArray() : [];
     private static IReadOnlyList<DiagramPoint> Points(JsonElement element, string property) => element.TryGetProperty(property, out var values) && values.ValueKind == JsonValueKind.Array ? values.EnumerateArray().Select(value => new DiagramPoint(Number(value, "x"), Number(value, "y"))).ToArray() : [];
     private static DiagramViewport Viewport(JsonElement element) => element.TryGetProperty("viewport", out var viewport) ? new DiagramViewport(Number(viewport, "x"), Number(viewport, "y"), Number(viewport, "zoom")) : new DiagramViewport();
@@ -866,17 +1042,11 @@ public partial class Home : IAsyncDisposable
         payload.TryGetProperty(property, out var points) && points.ValueKind == JsonValueKind.Array
             ? points.EnumerateArray().Where(point => point.ValueKind == JsonValueKind.Object).Select(point => new GroupPosition(String(point, "id"), Number(point, "x"), Number(point, "y"))).Where(item => !string.IsNullOrWhiteSpace(item.Id)).ToArray()
             : [];
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        try
-        {
-            if (_laboratoryModule is not null) await _laboratoryModule.InvokeVoidAsync("disposePaletteDrop", _laboratoryRoot);
-        }
-        catch (JSDisconnectedException) { }
-        if (_laboratoryModule is not null) await _laboratoryModule.DisposeAsync();
-        _selfReference?.Dispose();
         _eventGate.Dispose();
         _commandGate.Dispose();
+        return ValueTask.CompletedTask;
     }
 
     private sealed class NodeDraft
@@ -884,8 +1054,20 @@ public partial class Home : IAsyncDisposable
         public string Label { get; set; } = "Human review";
         public double Width { get; set; } = 184;
         public double Height { get; set; } = 80;
-        public string Accent { get; set; } = "#d24686";
+        public string Outline { get; set; } = "#d24686";
+        public string Background { get; set; } = "#ffffff";
+        public string TextColor { get; set; } = "#172033";
+        public string TextAlign { get; set; } = "center";
+        public string Category { get; set; } = "Custom";
         public string Direction { get; set; } = "both";
+    }
+
+    private sealed class NodeStyleDraft
+    {
+        public string Outline { get; set; } = "#4177de";
+        public string Background { get; set; } = "#ffffff";
+        public string TextColor { get; set; } = "#172033";
+        public string TextAlign { get; set; } = "center";
     }
 
     private sealed class DraftPort(string id, string side, string direction)
@@ -895,9 +1077,23 @@ public partial class Home : IAsyncDisposable
         public string Direction { get; set; } = direction;
     }
 
-    private sealed record NodeTemplate(string Id, string Category, string Label, string Description, double Width, double Height, string Accent, IReadOnlyList<PortTemplate> Ports, bool IsGroup, string Icon);
+    private sealed record NodeTemplate(
+        string Id,
+        string Category,
+        string Label,
+        string Description,
+        double Width,
+        double Height,
+        string Outline,
+        string Background,
+        string TextColor,
+        string TextAlign,
+        IReadOnlyList<PortTemplate> Ports,
+        bool IsGroup,
+        string Icon,
+        bool IsCustom = false);
+    private sealed record PaletteCategory(string Name, bool IsSystem);
     private sealed record PortTemplate(string Id, string Side, string Direction);
     private sealed record NodePosition(string Id, double X, double Y, string? GroupId, bool HasGroupId);
     private sealed record GroupPosition(string Id, double X, double Y);
-    private sealed record ClientPoint(double X, double Y);
 }

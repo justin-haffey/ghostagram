@@ -181,6 +181,14 @@ test("connection previews convert browser coordinates through the current viewpo
   assert.deepEqual(point, { x: 200, y: 90 });
 });
 
+test("canvas geometry owns center projection and bounded external hit testing", () => {
+  const bounds = { left: 10, top: 20, right: 410, bottom: 320, width: 400, height: 300 };
+  const viewport = { x: 100, y: 50, zoom: 2 };
+  assert.deepEqual(__testing.canvasCenterPoint(bounds, viewport), { x: 200, y: 125 });
+  assert.deepEqual(__testing.canvasHitDescriptor({ clientX: 210, clientY: 170 }, bounds, viewport), { inside: true, x: 200, y: 125 });
+  assert.deepEqual(__testing.canvasHitDescriptor({ clientX: 9, clientY: 170 }, bounds, viewport), { inside: false, x: 99.5, y: 125 });
+});
+
 test("drag previews and commits use the same grid-snapped position", () => {
   const position = __testing.dragPosition({ x: 100, y: 100, nodeX: 64, nodeY: 48 }, { clientX: 109, clientY: 117 }, 1, 16);
   assert.deepEqual(position, { x: 80, y: 64 });
@@ -423,6 +431,24 @@ test("group collapse invalidates only its members and incident edges", () => {
   assert.deepEqual([...dirty.nodes], ["a"]);
   assert.deepEqual([...dirty.edges], ["edge-1"]);
   assert.equal(dirty.all, false);
+});
+
+test("selected group visibility control advertises the next intuitive action", () => {
+  const visible = __testing.groupVisibilityDescriptor({ id: "group-a", label: "Review", collapsed: false }, true);
+  assert.equal(visible.hidden, false);
+  assert.equal(visible.contentsHidden, false);
+  assert.equal(visible.expanded, true);
+  assert.equal(visible.icon, "mdi:eye-off-outline");
+  assert.equal(visible.label, "Hide contents of Review");
+
+  const collapsed = __testing.groupVisibilityDescriptor({ id: "group-a", label: "Review", collapsed: true }, true);
+  assert.equal(collapsed.hidden, false);
+  assert.equal(collapsed.contentsHidden, true);
+  assert.equal(collapsed.expanded, false);
+  assert.equal(collapsed.icon, "mdi:eye-outline");
+  assert.equal(collapsed.label, "Show contents of Review");
+
+  assert.equal(__testing.groupVisibilityDescriptor({ id: "group-a", collapsed: false }, false).hidden, true);
 });
 
 test("flat group membership is indexed, reparentable, and cleared when a group is removed", () => {

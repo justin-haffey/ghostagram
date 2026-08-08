@@ -44,7 +44,8 @@ if (Directory.Exists(ghostagramAssets))
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider(ghostagramAssets),
-        RequestPath = "/ghostagram"
+        RequestPath = "/ghostagram",
+        OnPrepareResponse = context => context.Context.Response.Headers.CacheControl = "no-cache"
     });
 }
 app.UseStaticFiles();

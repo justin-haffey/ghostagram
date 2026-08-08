@@ -90,6 +90,14 @@ public partial class GhostDiagram
     public Task<GhostagramCanvasPoint> ClientToCanvasAsync(double clientX, double clientY, CancellationToken cancellationToken = default) =>
         RequireModule().InvokeAsync<GhostagramCanvasPoint>("clientToCanvas", cancellationToken, _instanceId, clientX, clientY).AsTask();
 
+    /// <summary>Returns the visible canvas center in the current document coordinate system.</summary>
+    public Task<GhostagramCanvasPoint> CanvasCenterAsync(CancellationToken cancellationToken = default) =>
+        RequireModule().InvokeAsync<GhostagramCanvasPoint>("canvasCenter", cancellationToken, _instanceId).AsTask();
+
+    /// <summary>Projects a browser point and reports whether it is inside the live canvas.</summary>
+    public Task<GhostagramCanvasHit> HitTestClientPointAsync(double clientX, double clientY, CancellationToken cancellationToken = default) =>
+        RequireModule().InvokeAsync<GhostagramCanvasHit>("hitTestClientPoint", cancellationToken, _instanceId, clientX, clientY).AsTask();
+
     public Task<string> ExportSvgAsync(CancellationToken cancellationToken = default) =>
         RequireModule().InvokeAsync<string>("exportSvg", cancellationToken, _instanceId).AsTask();
 

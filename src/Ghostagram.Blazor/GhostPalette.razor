@@ -1,0 +1,113 @@
+@namespace Ghostagram.Blazor
+@implements IAsyncDisposable
+
+<div @ref="_root" class="@CssClass" aria-label="@AriaLabel">
+    <header class="ghost-palette__heading">
+        <div class="ghost-palette__title-block">
+            @if (HeadingContent is not null)
+            {
+                @HeadingContent
+            }
+            else
+            {
+                <span class="ghost-palette__eyebrow">@Eyebrow</span>
+                <h2>@Title</h2>
+            }
+        </div>
+        @if (HeaderActions is not null)
+        {
+            <div class="ghost-palette__header-actions">@HeaderActions</div>
+        }
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(HelpText))
+    {
+        <p class="ghost-palette__help">@HelpText</p>
+    }
+
+    <div class="ghost-palette__tree" role="tree" aria-label="@TreeAriaLabel">
+        @foreach (var group in Groups)
+        {
+            var groupItems = Items.Where(item => string.Equals(item.GroupId, group.Id, StringComparison.Ordinal)).ToArray();
+            <section @key="group.Id" class="ghost-palette__group" data-palette-category="@group.Id" role="treeitem" aria-expanded="@group.Expanded.ToString().ToLowerInvariant()">
+                <button type="button" class="ghost-palette__group-toggle" data-palette-action @onclick="() => ToggleGroupAsync(group)" aria-expanded="@group.Expanded" aria-controls="@GroupContentId(group.Id)">
+                    <svg class="ghost-palette__folder-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 6.5h6l2 2h10v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+                    </svg>
+                    <span>@group.Label</span>
+                    <svg class="ghost-palette__chevron @(group.Expanded ? "is-expanded" : string.Empty)" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m9 7 5 5-5 5" />
+                    </svg>
+                </button>
+
+                @if (group.Expanded)
+                {
+                    <div id="@GroupContentId(group.Id)" class="ghost-palette__group-content" role="group">
+                        <div class="ghost-palette__dropzone">
+                            @if (groupItems.Length == 0)
+                            {
+                                <div class="ghost-palette__empty">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6l2 2h8v9H4Z" /><path d="m9 13 3 3 3-3" /></svg>
+                                    <span>Drop node types here</span>
+                                </div>
+                            }
+
+                            @foreach (var item in groupItems)
+                            {
+                                <div @key="item.Id" class="ghost-palette__entry">
+                                    <button type="button"
+                                            class="ghost-palette__item @(item.CanDelete ? "has-action" : string.Empty)"
+                                            data-template-id="@item.Id"
+                                            title="@($"Drag {item.Label} to the canvas or another palette group")">
+                                        <span class="ghost-palette__accent" style="@($"--ghost-palette-accent:{item.Accent}")"></span>
+                                        <span class="ghost-palette__item-icon" aria-hidden="true">
+                                            @if (ItemIcon is not null)
+                                            {
+                                                @ItemIcon(item)
+                                            }
+                                            else
+                                            {
+                                                <span>@ItemMonogram(item)</span>
+                                            }
+                                        </span>
+                                        <span class="ghost-palette__copy">
+                                            <strong>@item.Label</strong>
+                                            @if (!string.IsNullOrWhiteSpace(item.Description))
+                                            {
+                                                <small>@item.Description</small>
+                                            }
+                                        </span>
+                                        <svg class="ghost-palette__grip" viewBox="0 0 24 24" aria-hidden="true">
+                                            <circle cx="8" cy="7" r="1" /><circle cx="16" cy="7" r="1" />
+                                            <circle cx="8" cy="12" r="1" /><circle cx="16" cy="12" r="1" />
+                                            <circle cx="8" cy="17" r="1" /><circle cx="16" cy="17" r="1" />
+                                        </svg>
+                                    </button>
+                                    @if (item.CanDelete)
+                                    {
+                                        <button type="button" class="ghost-palette__delete-item" data-palette-action @onclick="() => DeleteItemAsync(item.Id)" @onclick:stopPropagation="true" aria-label="@($"Delete {item.Label} custom node type")" title="Delete custom node type">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" /></svg>
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        @if (group.CanDelete)
+                        {
+                            <button type="button" class="ghost-palette__delete-group" data-palette-action @onclick="() => DeleteGroupAsync(group.Id)">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3Z" /><path d="m9 13 6 6m0-6-6 6" /></svg>
+                                Remove group
+                            </button>
+                        }
+                    </div>
+                }
+            </section>
+        }
+    </div>
+
+    @if (FooterContent is not null)
+    {
+        <footer class="ghost-palette__footer">@FooterContent</footer>
+    }
+</div>

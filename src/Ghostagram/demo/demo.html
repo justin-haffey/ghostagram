@@ -201,6 +201,14 @@
           commit([{ type: "group.upsert", value: next }], `group-label-${event.eventId}`);
         }
       }
+      if (event.type === "group.visibilityRequested") {
+        const index = model.groups.findIndex(group => group.id === event.payload.groupId);
+        if (index >= 0) {
+          const next = { ...model.groups[index], collapsed: Boolean(event.payload.hidden) };
+          model.groups[index] = next;
+          commit([{ type: "group.upsert", value: next }], `group-visibility-${event.eventId}`);
+        }
+      }
       if (event.type === "edge.label.commit") {
         const index = model.edges.findIndex(edge => edge.id === event.payload.edgeId);
         if (index >= 0) {

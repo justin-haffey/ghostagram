@@ -22,6 +22,8 @@ export class ProtocolFacade {
   apply(instanceId, request) { return this.#require(instanceId).apply(request); }
   inspect(instanceId) { return this.#require(instanceId).inspect(); }
   clientToCanvas(instanceId, clientX, clientY) { return this.#require(instanceId).clientToCanvas(clientX, clientY); }
+  canvasCenter(instanceId) { return this.#require(instanceId).canvasCenter(); }
+  hitTestClientPoint(instanceId, clientX, clientY) { return this.#require(instanceId).hitTestClientPoint(clientX, clientY); }
   exportSvg(instanceId, options) { return this.#require(instanceId).exportSvg(options); }
 
   dispose(instanceId) {

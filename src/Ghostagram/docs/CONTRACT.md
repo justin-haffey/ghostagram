@@ -10,6 +10,8 @@ Ghostagram deliberately exposes static ESM functions that accept and return JSON
 | `replace(instanceId, request)` | Initial load or recovery after a revision mismatch. |
 | `apply(instanceId, request)` | Atomically apply a revisioned operation batch. |
 | `inspect(instanceId)` | Diagnostic snapshot only; the .NET model remains authoritative. |
+| `canvasCenter(instanceId)` | Return the model-coordinate point at the center of the visible canvas viewport. |
+| `hitTestClientPoint(instanceId, clientX, clientY)` | Test a browser client point against the canvas and project it into model coordinates. |
 | `dispose(instanceId)` | Release listeners, pending frames, and the owned DOM subtree. |
 
 Call `capabilities()` once after module import, then reject document descriptors that the browser engine does not support before issuing `replace`.
@@ -109,6 +111,7 @@ Common commit events map directly to an atomic host update:
 | `selection.move.commit` | One atomic batch of `group.upsert` and `node.upsert` operations for a mixed selected set; group membership is preserved. Pointer drags and keyboard movement use the same event; keyboard events include `keyboard: true`. |
 | `group.move.commit` | One root `group.upsert`, including proposed `parentGroupId`; `group.upsert` for every payload `groups` descendant; plus member `node.upsert` operations. |
 | `group.resize.commit` | `group.upsert` with new bounds. |
+| `group.visibilityRequested` | `group.upsert` with `collapsed` set from the proposed `hidden` value. The centered eye control appears only above a selected group; the group frame remains visible while its contents are hidden so they can be shown again. |
 | `edge.createRequested` | `edge.upsert`. |
 | `edge.reconnectRequested` | `edge.upsert` with new source/target port IDs. |
 | `edge.waypointsRequested` | `edge.upsert` with updated waypoints. |

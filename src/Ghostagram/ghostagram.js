@@ -5,7 +5,7 @@
  */
 import { InteractionController } from "./runtime/interaction-controller.js";
 import { OperationDispatcher } from "./runtime/operation-dispatcher.js";
-import { ProtocolFacade } from "./runtime/protocol-facade.js";
+import { ProtocolFacade } from "./runtime/protocol-facade.js?v=20260808.2";
 import { RenderScheduler } from "./runtime/render-scheduler.js";
 
 export const PROTOCOL_VERSION = 1;
@@ -23,7 +23,7 @@ const supported = Object.freeze({
   features: {
     batchedDeltas: true, groups: "nested-membership-resizable", incrementalRendering: true,
     multiInstance: true, multiSelection: true, portConnectionLimits: true, connectionScopes: true, directNodeRotation: true,
-    razorInterop: true, viewport: true,
+    razorInterop: true, viewport: true, canvasGeometry: true,
     customFactories: true, dynamicAnchors: true, editableWaypoints: true, labelOverlayPlacement: true,
     nestedGroups: true, perimeterAnchors: true, rotation: true, flowAnimation: true, selectionLasso: true, edgeTypes: true, iconifyIcons: true, selectorSources: false
   }
@@ -42,6 +42,10 @@ export function apply(instanceId, request) { return protocolFacade.apply(instanc
 export function inspect(instanceId) { return protocolFacade.inspect(instanceId); }
 /** Converts a browser client point into the current document coordinate system. */
 export function clientToCanvas(instanceId, clientX, clientY) { return protocolFacade.clientToCanvas(instanceId, clientX, clientY); }
+/** Returns the visible canvas center in document coordinates. */
+export function canvasCenter(instanceId) { return protocolFacade.canvasCenter(instanceId); }
+/** Projects a browser point and reports whether it is inside the live canvas. */
+export function hitTestClientPoint(instanceId, clientX, clientY) { return protocolFacade.hitTestClientPoint(instanceId, clientX, clientY); }
 export function exportSvg(instanceId, options = {}) { return protocolFacade.exportSvg(instanceId, options); }
 export function dispose(instanceId) { return protocolFacade.dispose(instanceId); }
 export function capabilities() { return structuredClone(supported); }
@@ -172,6 +176,11 @@ class GhostagramEngine {
     if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) throw new GhostagramError("INVALID_MODEL", "Client coordinates must be finite numbers.");
     return viewportPoint({ clientX, clientY }, this.dom.root.getBoundingClientRect(), this.state.viewport);
   }
+  canvasCenter() { return canvasCenterPoint(this.dom.root.getBoundingClientRect(), this.state.viewport); }
+  hitTestClientPoint(clientX, clientY) {
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) throw new GhostagramError("INVALID_MODEL", "Client coordinates must be finite numbers.");
+    return canvasHitDescriptor({ clientX, clientY }, this.dom.root.getBoundingClientRect(), this.state.viewport);
+  }
   exportSvg(options = {}) { return exportSvgDocument(this.state, options); }
   stats() { return { nodes: this.state.nodes.size, ports: this.state.ports.size, edges: this.state.edges.size, groups: this.state.groups.size, selected: this.state.selection.size, scheduled: this.renderer.scheduled }; }
   remember(id, value) { this.completed.set(id, value); if (this.completed.size > 256) this.completed.delete(this.completed.keys().next().value); }
@@ -236,14 +245,24 @@ class GhostagramEngine {
       el = document.createElement("div"); el.className = "ghostagram-group"; el.dataset.groupId = group.id;
       const label = document.createElement("span"); label.className = "ghostagram-group-label"; label.style.cssText = "position:absolute;left:6px;top:4px;pointer-events:none;user-select:none;color:#334155;font-size:12px;font-weight:600;line-height:1.2;";
       const icon = document.createElement("iconify-icon"); icon.className = "ghostagram-item-icon"; icon.style.cssText = "position:absolute;right:5px;top:4px;display:inline-block;width:18px;height:18px;color:#334155;pointer-events:none;z-index:3;";
+      const visibility = document.createElement("button"); visibility.type = "button"; visibility.className = "ghostagram-group-visibility"; visibility.hidden = true;
+      const visibilityIcon = document.createElementNS(SVG_NS, "svg"); visibilityIcon.classList.add("ghostagram-group-visibility-icon"); visibilityIcon.setAttribute("viewBox", "0 0 24 24"); visibilityIcon.setAttribute("aria-hidden", "true");
+      const eye = document.createElementNS(SVG_NS, "path"); eye.setAttribute("d", "M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0Z");
+      const pupil = document.createElementNS(SVG_NS, "circle"); pupil.setAttribute("cx", "12"); pupil.setAttribute("cy", "12"); pupil.setAttribute("r", "3");
+      const slash = document.createElementNS(SVG_NS, "line"); slash.classList.add("ghostagram-group-visibility-slash"); slash.setAttribute("x1", "4"); slash.setAttribute("y1", "4"); slash.setAttribute("x2", "20"); slash.setAttribute("y2", "20");
+      visibilityIcon.append(eye, pupil, slash); visibility.append(visibilityIcon);
+      visibility.addEventListener("pointerdown", event => event.stopPropagation(), { signal: this.abort.signal });
+      visibility.addEventListener("dblclick", event => event.stopPropagation(), { signal: this.abort.signal });
+      visibility.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); const current = this.state.groups.get(group.id); if (!current) return; const hidden = !current.collapsed; this.emit("group.visibilityRequested", { groupId: group.id, hidden, collapsed: hidden }, "browser"); }, { signal: this.abort.signal });
       const handle = document.createElement("button"); handle.type = "button"; handle.className = "ghostagram-group-resize"; handle.setAttribute("aria-label", `Resize ${group.label ?? group.id}`); handle.title = "Resize group"; handle.style.cssText = "position:absolute;right:-7px;bottom:-7px;width:14px;height:14px;padding:0;border:1px solid #0f766e;background:#fff;cursor:nwse-resize;z-index:2;";
       handle.addEventListener("pointerdown", event => { event.stopPropagation(); this.startGroupResize(group.id, event); }, { signal: this.abort.signal });
       el.addEventListener("click", event => this.selectFromElement(group.id, event, "group"), { signal: this.abort.signal });
       el.addEventListener("dblclick", event => { if (!event.target.closest?.("button,input")) this.startLabelEdit("group", group.id); }, { signal: this.abort.signal });
       el.addEventListener("contextmenu", event => this.requestContext(group.id, event, "group"), { signal: this.abort.signal });
-      el.addEventListener("pointerdown", event => { if (!event.shiftKey && event.detail < 2) this.startGroupDrag(group.id, event); }, { signal: this.abort.signal }); el.append(label, icon, handle); this.dom.groups.append(el); this.dom.groupById.set(group.id, el);
+      el.addEventListener("pointerdown", event => { if (!event.shiftKey && event.detail < 2) this.startGroupDrag(group.id, event); }, { signal: this.abort.signal }); el.append(label, icon, visibility, handle); this.dom.groups.append(el); this.dom.groupById.set(group.id, el);
     }
-    setBox(el, group); el.style.display = isGroupHiddenByCollapsedAncestor(this.state, group) ? "none" : "block"; el.style.removeProperty("z-index"); el.dataset.collapsed = String(group.collapsed); el.title = ""; el.querySelector(".ghostagram-group-label").textContent = group.label ?? group.id; renderIconifyIcon(el.querySelector(".ghostagram-item-icon"), group.icon); el.querySelector(".ghostagram-group-resize").hidden = !(this.previewSelection ?? this.state.selection).has(group.id); applyStyle(el, group.style, { border: group.collapsed ? "1px solid #64748b" : "1px dashed #64748b", background: group.collapsed ? "rgba(148,163,184,.14)" : "rgba(148,163,184,.08)", cursor: "move" });
+    const selected = (this.previewSelection ?? this.state.selection).has(group.id);
+    setBox(el, group); el.style.display = isGroupHiddenByCollapsedAncestor(this.state, group) ? "none" : "block"; el.style.removeProperty("z-index"); el.dataset.collapsed = String(group.collapsed); el.title = ""; el.querySelector(".ghostagram-group-label").textContent = group.label ?? group.id; renderIconifyIcon(el.querySelector(".ghostagram-item-icon"), group.icon); el.querySelector(".ghostagram-group-resize").hidden = !selected; updateGroupVisibilityControl(el, group, selected); applyStyle(el, group.style, { border: group.collapsed ? "1px solid #64748b" : "1px dashed #64748b", background: group.collapsed ? "rgba(148,163,184,.14)" : "rgba(148,163,184,.08)", cursor: "move" });
   }
   renderNode(node) {
     let el = this.dom.nodeById.get(node.id);
@@ -417,6 +436,7 @@ class GhostagramEngine {
       const selected = selection.has(id), group = this.state.groups.get(id);
       el.classList.toggle("ghostagram-selected", selected);
       el.querySelector(".ghostagram-group-resize").hidden = !selected;
+      updateGroupVisibilityControl(el, group, selected);
     }
     for (const [id, el] of this.dom.pathById) el.classList.toggle("ghostagram-selected", selection.has(id));
     for (const [id, handles] of this.dom.edgeHandlesById) for (const handle of [handles.source, handles.target]) handle.style.display = selection.has(id) && !handles.hidden ? "" : "none";
@@ -920,6 +940,13 @@ function previewPointForPort(state, previewNodes, port, peerNode) {
 function viewportPoint(pointer, bounds, viewport) {
   return { x: (pointer.clientX - bounds.left) / viewport.zoom + viewport.x, y: (pointer.clientY - bounds.top) / viewport.zoom + viewport.y };
 }
+function canvasCenterPoint(bounds, viewport) {
+  return viewportPoint({ clientX: bounds.left + bounds.width / 2, clientY: bounds.top + bounds.height / 2 }, bounds, viewport);
+}
+function canvasHitDescriptor(pointer, bounds, viewport) {
+  const point = viewportPoint(pointer, bounds, viewport);
+  return { inside: pointer.clientX >= bounds.left && pointer.clientX <= bounds.right && pointer.clientY >= bounds.top && pointer.clientY <= bounds.bottom, ...point };
+}
 function dragPosition(start, pointer, zoom, gridSize) {
   return { x: snap(start.nodeX + (pointer.clientX - start.x) / zoom, gridSize), y: snap(start.nodeY + (pointer.clientY - start.y) / zoom, gridSize) };
 }
@@ -1157,6 +1184,19 @@ function renderIconifyIcon(element, icon) {
   ensureIconifyIcon();
   element.setAttribute("icon", icon); element.setAttribute("aria-label", icon); element.title = icon;
 }
+function groupVisibilityDescriptor(group, selected) {
+  const name = group?.label ?? group?.id ?? "group", hidden = Boolean(group?.collapsed);
+  return { hidden: !selected, contentsHidden: hidden, expanded: !hidden, icon: hidden ? "mdi:eye-outline" : "mdi:eye-off-outline", label: hidden ? `Show contents of ${name}` : `Hide contents of ${name}` };
+}
+function updateGroupVisibilityControl(element, group, selected) {
+  const button = element?.querySelector?.(".ghostagram-group-visibility");
+  if (!button || !group) return;
+  const descriptor = groupVisibilityDescriptor(group, selected);
+  button.hidden = descriptor.hidden; button.dataset.hidden = String(descriptor.contentsHidden); button.title = descriptor.label;
+  button.setAttribute("aria-label", descriptor.label); button.setAttribute("aria-expanded", String(descriptor.expanded));
+  const slash = button.querySelector(".ghostagram-group-visibility-slash");
+  if (slash) slash.style.display = descriptor.icon === "mdi:eye-off-outline" ? "" : "none";
+}
 function nodesInRectangle(state, rectangle) { return [...state.nodes.values()].filter(node => !isNodeHiddenByCollapsedGroup(state, node) && rectanglesIntersect(rectangle, node)).map(node => node.id); }
 function edgesInRectangle(state, rectangle) {
   return [...state.edges.values()].filter(rawEdge => {
@@ -1215,6 +1255,13 @@ function buildRoot(host) {
   style.textContent = `@keyframes ${flowAnimationName} { to { stroke-dashoffset: -14; } }
     .ghostagram-node.ghostagram-selected { outline:3px solid #0f766e; outline-offset:2px; box-shadow:0 0 0 5px rgba(13,148,136,.18); }
     .ghostagram-group.ghostagram-selected { outline:3px solid #0f766e; outline-offset:2px; box-shadow:0 0 0 5px rgba(13,148,136,.14); }
+    .ghostagram-group-visibility { position:absolute;z-index:6;top:-34px;left:50%;display:grid;width:30px;height:25px;padding:0;border:1px solid #0f766e;border-radius:13px;place-items:center;color:#0f766e;background:#fff;box-shadow:0 4px 12px rgba(15,118,110,.22);transform:translateX(-50%);cursor:pointer;transition:background .14s ease,box-shadow .14s ease,transform .14s ease; }
+    .ghostagram-group-visibility::after { position:absolute;bottom:-8px;left:50%;width:1px;height:7px;background:#0f766e;content:"";transform:translateX(-50%); }
+    .ghostagram-group-visibility:hover { background:#f0fdfa;box-shadow:0 5px 15px rgba(15,118,110,.3);transform:translateX(-50%) translateY(-1px); }
+    .ghostagram-group-visibility:focus-visible { outline:2px solid #14b8a6;outline-offset:2px; }
+    .ghostagram-group-visibility[data-hidden="true"] { color:#fff;background:#0f766e; }
+    .ghostagram-group-visibility-icon { display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8;pointer-events:none; }
+    .ghostagram-group-visibility-slash { stroke-width:2.4; }
     .ghostagram-edge.ghostagram-selected { filter:drop-shadow(0 0 2px #0f766e); stroke-width:4px; }`;
   root.className = "ghostagram-root"; root.tabIndex = 0; root.setAttribute("role", "application"); root.setAttribute("aria-label", "Ghostagram diagram canvas"); root.style.cssText = "position:relative;overflow:hidden;width:100%;height:100%;touch-action:none;";
   stage.className = "ghostagram-stage"; stage.style.cssText = "position:absolute;inset:0;transform-origin:0 0;";
@@ -1256,4 +1303,4 @@ function asProblem(error) {
 function ok(requestId, renderedRevision, stats) { return { ok: true, requestId, renderedRevision, stats }; }
 function failed(request, code, message, renderedRevision, details) { return { ok: false, requestId: request?.requestId ?? null, renderedRevision, stats: {}, problem: { code, message, details } }; }
 
-export const __testing = { anchorPoint, buildState, applyOperation, canConnect, canReconnect, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isNodeHiddenByCollapsedGroup, markerFor, multiDragPositions, nodesInRectangle, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, previewPointForPort, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };
+export const __testing = { anchorPoint, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupVisibilityDescriptor, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isNodeHiddenByCollapsedGroup, markerFor, multiDragPositions, nodesInRectangle, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, previewPointForPort, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };
