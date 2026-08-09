@@ -3,10 +3,13 @@
     <Project Path="src/Ghostagram.Blazor/Ghostagram.Blazor.csproj" />
     <Project Path="src/Ghostagram.Contracts/Ghostagram.Contracts.csproj" />
     <Project Path="src/Ghostagram.Core/Ghostagram.Core.csproj" />
+    <Project Path="src/Ghostagram.Execution/Ghostagram.Execution.csproj" />
+    <Project Path="src/Ghostagram.NodeSets.Maf/Ghostagram.NodeSets.Maf.csproj" />
     <Project Path="src/Ghostagram.Server/Ghostagram.Server.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Ghostagram.Core.Tests/Ghostagram.Core.Tests.csproj" />
     <Project Path="tests/Ghostagram.Layout.Verification/Ghostagram.Layout.Verification.csproj" />
+    <Project Path="tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj" />
   </Folder>
 </Solution>

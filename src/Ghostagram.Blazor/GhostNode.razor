@@ -13,14 +13,27 @@
     [Parameter] public double Height { get; set; } = 80;
     [Parameter] public bool Resizable { get; set; } = true;
     [Parameter] public bool Rotatable { get; set; } = true;
+    [Parameter] public bool LabelEditable { get; set; } = true;
     [Parameter] public string? Icon { get; set; }
     [Parameter] public DiagramNodeStyle? Style { get; set; }
+    [Parameter] public string? TypeId { get; set; }
+    [Parameter] public int TypeVersion { get; set; } = 1;
+    [Parameter] public IReadOnlyList<DiagramNodeProperty>? Properties { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
     private DiagramCompositionContext _nestedContext = default!;
 
     protected override void OnInitialized()
     {
-        Context.Add(new DiagramNode(Id, X, Y, Width, Height, Label, Context.GroupId, Resizable: Resizable, Rotatable: Rotatable, Icon: Icon, Style: Style));
+        Context.Add(new DiagramNode(
+            Id, X, Y, Width, Height, Label, Context.GroupId,
+            Resizable: Resizable,
+            Rotatable: Rotatable,
+            LabelEditable: LabelEditable,
+            Icon: Icon,
+            Style: Style,
+            TypeId: TypeId,
+            TypeVersion: TypeVersion,
+            Properties: Properties));
         _nestedContext = Context.InNode(Id);
     }
 }

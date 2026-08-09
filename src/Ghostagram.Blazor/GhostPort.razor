@@ -12,10 +12,15 @@
     [Parameter] public object? Anchor { get; set; }
     [Parameter] public DiagramEndpoint? Endpoint { get; set; }
     [Parameter] public DiagramConnectionPolicy? ConnectionPolicy { get; set; }
+    [Parameter] public string? PropertyId { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public int Order { get; set; }
 
     protected override void OnInitialized()
     {
         var nodeId = NodeId ?? Context.NodeId ?? throw new InvalidOperationException("GhostPort must be nested in GhostNode or provide NodeId.");
-        Context.Add(new DiagramPort(Id, nodeId, Direction, Scope, MaxConnections, Enabled, Anchor, Endpoint, ConnectionPolicy));
+        Context.Add(new DiagramPort(
+            Id, nodeId, Direction, Scope, MaxConnections, Enabled, Anchor, Endpoint, ConnectionPolicy,
+            PropertyId, Label, Order));
     }
 }

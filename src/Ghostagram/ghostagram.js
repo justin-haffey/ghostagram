@@ -5,7 +5,7 @@
  */
 import { InteractionController } from "./runtime/interaction-controller.js";
 import { OperationDispatcher } from "./runtime/operation-dispatcher.js";
-import { ProtocolFacade } from "./runtime/protocol-facade.js?v=20260808.2";
+import { ProtocolFacade } from "./runtime/protocol-facade.js?v=20260808.3";
 import { RenderScheduler } from "./runtime/render-scheduler.js";
 
 export const PROTOCOL_VERSION = 1;
@@ -14,6 +14,12 @@ const endpointRegistry = new Map();
 const overlayRegistry = new Map();
 const SVG_NS = "http://www.w3.org/2000/svg";
 const ICONIFY_ICON_SCRIPT = "https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js";
+const NODE_PROPERTY_TOP = 30;
+const NODE_PROPERTY_HEIGHT = 20;
+const NODE_PROPERTY_GAP = 1;
+const NODE_PROPERTY_EDITOR_COLOR = "#0f172a";
+const NODE_PROPERTY_EDITOR_BORDER = "#94a3b8";
+const NODE_INTERACTIVE_SELECTOR = "button,input,select,textarea,[contenteditable='true'],[data-ghostagram-interactive]";
 let iconifyScriptRequested = false;
 const supported = Object.freeze({
   protocolVersion: PROTOCOL_VERSION,
@@ -274,10 +280,10 @@ class GhostagramEngine {
       rotate.addEventListener("pointerdown", event => { event.stopPropagation(); this.startNodeRotate(node.id, event); }, { signal: this.abort.signal });
       const handle = document.createElement("button"); handle.type = "button"; handle.className = "ghostagram-node-resize"; handle.setAttribute("aria-label", `Resize ${node.label ?? node.id}`); handle.title = "Resize node"; handle.style.cssText = "position:absolute;right:-7px;bottom:-7px;width:14px;height:14px;padding:0;border:1px solid #0f766e;background:#fff;cursor:nwse-resize;z-index:2;";
       handle.addEventListener("pointerdown", event => { event.stopPropagation(); this.startNodeResize(node.id, event); }, { signal: this.abort.signal }); el.append(label, icon, rotate, handle);
-      el.addEventListener("click", event => this.selectFromElement(node.id, event), { signal: this.abort.signal });
-      el.addEventListener("dblclick", event => { if (!event.target.closest?.("button,input")) this.startLabelEdit("node", node.id); }, { signal: this.abort.signal });
-      el.addEventListener("contextmenu", event => this.requestContext(node.id, event), { signal: this.abort.signal });
-      el.addEventListener("pointerdown", event => { if (event.detail < 2) this.startDrag(node.id, event); }, { signal: this.abort.signal });
+      el.addEventListener("click", event => { if (!isInteractiveNodeTarget(event.target)) this.selectFromElement(node.id, event); }, { signal: this.abort.signal });
+      el.addEventListener("dblclick", event => { if (!isInteractiveNodeTarget(event.target)) this.startLabelEdit("node", node.id); }, { signal: this.abort.signal });
+      el.addEventListener("contextmenu", event => { if (!isInteractiveNodeTarget(event.target)) this.requestContext(node.id, event); }, { signal: this.abort.signal });
+      el.addEventListener("pointerdown", event => { if (!isInteractiveNodeTarget(event.target) && event.detail < 2) this.startDrag(node.id, event); }, { signal: this.abort.signal });
       this.dom.nodes.append(el); this.dom.nodeById.set(node.id, el);
     }
     setBox(el, node);
@@ -287,14 +293,60 @@ class GhostagramEngine {
     el.style.transform = node.rotation ? `rotate(${node.rotation}deg)` : "";
     const label = el.querySelector(".ghostagram-node-label"), icon = el.querySelector(".ghostagram-item-icon"), rotate = el.querySelector(".ghostagram-node-rotate"), handle = el.querySelector(".ghostagram-node-resize"), activeEditor = this.labelEditor?.kind === "node" && this.labelEditor.id === node.id ? this.suspendLabelEditor() : null;
     rotate.hidden = true; handle.hidden = true; el.replaceChildren(label, icon, rotate, handle);
+    this.renderNodeProperties(el, node);
     this.restoreLabelEditor(activeEditor);
     for (const portId of this.state.portsByNode.get(node.id) ?? []) this.renderPort(el, this.state.ports.get(portId));
+  }
+  renderNodeProperties(nodeEl, node) {
+    const properties = node.properties ?? [];
+    if (!properties.length) return;
+    const body = document.createElement("div"); body.className = "ghostagram-node-properties";
+    body.style.cssText = `position:absolute;left:6px;right:6px;top:${NODE_PROPERTY_TOP}px;display:grid;gap:${NODE_PROPERTY_GAP}px;z-index:1;`;
+    for (const property of properties) {
+      if (property.mode === "hidden") continue;
+      const row = document.createElement("label"); row.className = "ghostagram-node-property"; row.dataset.propertyId = property.id;
+      row.style.cssText = `display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:center;gap:5px;height:${NODE_PROPERTY_HEIGHT}px;font-size:11px;line-height:18px;`;
+      const name = document.createElement("span"); name.className = "ghostagram-node-property-label"; name.textContent = property.label ?? property.name ?? property.id; name.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.75;";
+      row.append(name);
+      if ((property.mode === "edit" || property.mode === "displayAndEdit") && editablePropertyTypes.has(property.type)) {
+        const input = propertyInput(property); input.dataset.propertyId = property.id; input.dataset.ghostagramInteractive = "true"; input.setAttribute("aria-label", `${node.label ?? node.id}: ${property.label ?? property.id}`);
+        input.style.cssText = propertyEditorStyle();
+        let lastSignature = propertyValueSignature(property.value);
+        const commit = () => {
+          try {
+            const value = propertyInputValue(input, property);
+            const decision = propertyCommitDecision(lastSignature, value);
+            input.setCustomValidity("");
+            if (!decision.commit) return;
+            lastSignature = decision.signature;
+            this.emit("node.property.commit", { nodeId: node.id, propertyId: property.id, value }, "browser");
+          } catch (error) {
+            input.setCustomValidity(error?.message ?? "Invalid value.");
+            input.reportValidity();
+          }
+        };
+        input.addEventListener("pointerdown", event => event.stopPropagation(), { signal: this.abort.signal });
+        input.addEventListener("click", event => event.stopPropagation(), { signal: this.abort.signal });
+        input.addEventListener("dblclick", event => event.stopPropagation(), { signal: this.abort.signal });
+        input.addEventListener("keydown", event => {
+          event.stopPropagation();
+          if (event.key === "Enter") { event.preventDefault(); commit(); input.blur(); }
+        }, { signal: this.abort.signal });
+        input.addEventListener("change", commit, { signal: this.abort.signal });
+        input.addEventListener("blur", commit, { signal: this.abort.signal });
+        row.append(input);
+      } else {
+        const value = document.createElement("output"); value.className = "ghostagram-node-property-value"; value.textContent = propertyDisplayValue(property); value.style.cssText = "min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;"; row.append(value);
+      }
+      body.append(row);
+    }
+    nodeEl.append(body);
   }
   renderPort(nodeEl, port) {
     const endpoint = endpointDescriptor(port);
     if (!port || endpoint.type === "blank") return;
     const el = document.createElement("button"); el.type = "button"; el.className = "ghostagram-port"; el.dataset.portId = port.id; el.setAttribute("aria-label", port.label ?? port.id); el.title = port.label ?? port.id;
-    const anchor = port.anchor ?? "right", size = endpoint.size ?? 12, strokeWidth = endpoint.strokeWidth ?? 1;
+    const anchor = resolvePortAnchor(this.state, port), size = endpoint.size ?? 12, strokeWidth = endpoint.strokeWidth ?? 1;
     el.disabled = port.enabled === false;
     el.style.cssText = `position:absolute;width:${size}px;height:${size}px;border:${strokeWidth}px solid ${endpoint.stroke ?? "#0f766e"};border-radius:${endpoint.type === "rectangle" ? "1px" : "50%"};background:${endpoint.fill ?? "#fff"};padding:0;opacity:${port.enabled === false ? .45 : 1};cursor:${port.enabled === false ? "not-allowed" : "crosshair"};${portAnchorStyle(anchor, size, strokeWidth)}`;
     endpointRegistry.get(endpoint.type)?.(el, endpoint, port);
@@ -619,7 +671,7 @@ class GhostagramEngine {
   startNodeResize(nodeId, event) {
     const node = this.state.nodes.get(nodeId);
     if (!node || node.resizable === false || event.button !== 0) return;
-    event.preventDefault(); const initial = this.previewNodes.get(nodeId) ?? node, start = { x: event.clientX, y: event.clientY, width: initial.width, height: initial.height }, minWidth = Number.isFinite(node.minWidth) ? Math.max(1, node.minWidth) : 48, minHeight = Number.isFinite(node.minHeight) ? Math.max(1, node.minHeight) : 32;
+    event.preventDefault(); const initial = this.previewNodes.get(nodeId) ?? node, start = { x: event.clientX, y: event.clientY, width: initial.width, height: initial.height }, minWidth = Number.isFinite(node.minWidth) ? Math.max(1, node.minWidth) : 48, configuredMinHeight = Number.isFinite(node.minHeight) ? Math.max(1, node.minHeight) : 32, minHeight = Math.max(configuredMinHeight, nodeContentMinimumHeight(this.state, node));
     const move = pointer => { const size = resizeDimensions(start, pointer, this.state.viewport.zoom, this.options.gridSize, minWidth, minHeight), preview = { ...node, ...initial, ...size }; this.previewNodes.set(nodeId, preview); const el = this.dom.nodeById.get(nodeId); if (el) { el.style.width = `${size.width}px`; el.style.height = `${size.height}px`; } for (const edgeId of incident(this.state, nodeId)) { const edge = this.state.edges.get(edgeId); if (edge) this.renderEdge(edge); } this.emit("node.resize.preview", { nodeId, ...size }, "browser", true); };
     const up = pointer => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, pointer); this.emit("node.resize.commit", { nodeId, ...resizeDimensions(start, pointer, this.state.viewport.zoom, this.options.gridSize, minWidth, minHeight) }, "browser"); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up, { once: true });
@@ -708,10 +760,15 @@ class GhostagramEngine {
 
 function emptyState() { return { documentId: null, revision: 0, nodes: new Map(), ports: new Map(), edges: new Map(), groups: new Map(), edgeTypes: new Map(), portsByNode: new Map(), edgesByPort: new Map(), nodesByGroup: new Map(), groupsByGroup: new Map(), selection: new Set(), viewport: { x: 0, y: 0, zoom: 1 } }; }
 function editableLabelValue(value) { const label = String(value ?? "").trim(); return label || null; }
-function omitNullProperties(value) {
-  if (Array.isArray(value)) return value.map(omitNullProperties);
+function omitNullProperties(value, preserveNull = false) {
+  if (Array.isArray(value)) return value.map(item => omitNullProperties(item, preserveNull));
   if (!value || typeof value !== "object") return value;
-  return Object.fromEntries(Object.entries(value).flatMap(([key, nested]) => nested === null ? [] : [[key, omitNullProperties(nested)]]));
+  return Object.fromEntries(Object.entries(value).flatMap(([key, nested]) => {
+    // Optional .NET descriptors commonly serialize null, but dynamic property values are
+    // data: null is a first-class JSON value and must survive renderer round-trips.
+    const nextPreserveNull = preserveNull || key === "properties" || (key === "value" && "type" in value && "id" in value);
+    return nested === null && !nextPreserveNull ? [] : [[key, omitNullProperties(nested, nextPreserveNull)]];
+  }));
 }
 function buildState(model) { model = omitNullProperties(model); const state = emptyState(); state.documentId = model.documentId ?? null; for (const type of model.edgeTypes ?? []) upsertEdgeType(state, type); for (const group of model.groups ?? []) upsertGroup(state, group, true); for (const node of model.nodes ?? []) upsertNode(state, node); for (const port of model.ports ?? []) upsertPort(state, port); for (const edge of model.edges ?? []) upsertEdge(state, edge); state.selection = new Set(model.selection ?? []); state.viewport = { ...state.viewport, ...(model.viewport ?? {}) }; validateState(state); return state; }
 function cloneState(s) { return { ...s, nodes: new Map(s.nodes), ports: new Map(s.ports), edges: new Map(s.edges), groups: new Map(s.groups), edgeTypes: new Map(s.edgeTypes), portsByNode: mapSets(s.portsByNode), edgesByPort: mapSets(s.edgesByPort), nodesByGroup: mapSets(s.nodesByGroup), groupsByGroup: mapSets(s.groupsByGroup), selection: new Set(s.selection), viewport: { ...s.viewport } }; }
@@ -748,11 +805,109 @@ function applyOperation(state, op, dirty, options) {
   requireObject(op, "INVALID_MODEL", "Operations must be objects.");
   modelOperationDispatcher.dispatch(op, { state, dirty, options, value: op.value ?? op });
 }
+const propertyModes = new Set(["display", "edit", "displayAndEdit", "hidden"]);
+const editablePropertyTypes = new Set(["string", "boolean", "integer", "decimal", "number", "date", "dateTime", "datetime", "enum", "json"]);
+function normaliseNodeProperties(raw) {
+  if (raw === null) return [];
+  if (!Array.isArray(raw)) throw new GhostagramError("INVALID_MODEL", "Node properties must be an array or null.");
+  const ids = new Set();
+  return raw.map((candidate, index) => {
+    requireObject(candidate, "INVALID_MODEL", "Each node property must be an object.");
+    const id = candidate.id;
+    if (!id || typeof id !== "string" || ids.has(id)) throw new GhostagramError("INVALID_MODEL", "Node properties require unique string ids.");
+    ids.add(id);
+    const type = candidate.type ?? "string", mode = candidate.mode ?? "display";
+    if (typeof type !== "string" || !type.trim()) throw new GhostagramError("INVALID_MODEL", `Node property '${id}' requires a non-empty type identifier.`);
+    if (!propertyModes.has(mode)) throw new GhostagramError("INVALID_MODEL", `Node property '${id}' has an unsupported mode '${mode}'.`);
+    if (candidate.name !== undefined && typeof candidate.name !== "string") throw new GhostagramError("INVALID_MODEL", "Node property name must be a string.");
+    if (candidate.label !== undefined && candidate.label !== null && typeof candidate.label !== "string") throw new GhostagramError("INVALID_MODEL", "Node property label must be a string or null.");
+    if (candidate.options !== undefined && candidate.options !== null && (!Array.isArray(candidate.options) || candidate.options.some(option => typeof option !== "string"))) throw new GhostagramError("INVALID_MODEL", "Node property options must be string values.");
+    return { ...candidate, id, name: candidate.name ?? id, type, mode, order: Number.isSafeInteger(candidate.order) ? candidate.order : index, options: candidate.options ?? null };
+  }).sort((left, right) => left.order - right.order || left.id.localeCompare(right.id));
+}
+function propertyPortAnchor(node, propertyId, direction = "both") {
+  const properties = node?.properties ?? [], index = properties.findIndex(property => property.id === propertyId);
+  if (index < 0) return null;
+  const visible = properties.filter(property => property.mode !== "hidden"), visibleIndex = visible.findIndex(property => property.id === propertyId);
+  const row = visibleIndex < 0 ? index : visibleIndex;
+  return {
+    type: "property",
+    side: direction === "target" ? "left" : "right",
+    offsetY: NODE_PROPERTY_TOP + NODE_PROPERTY_HEIGHT / 2 + row * (NODE_PROPERTY_HEIGHT + NODE_PROPERTY_GAP)
+  };
+}
+function resolvePortAnchor(state, port) {
+  if (port?.propertyId) return propertyPortAnchor(state.nodes.get(port.nodeId), port.propertyId, port.direction) ?? port.anchor ?? "right";
+  if (port?.anchor != null) return port.anchor;
+  const node = port && state.nodes.get(port.nodeId);
+  return node?.properties?.length ? orderedNodePortAnchor(state, node, port) ?? "right" : "right";
+}
+function orderedNodePortAnchor(state, node, port) {
+  const ordered = [...(state.portsByNode.get(node.id) ?? [])]
+    .map(id => state.ports.get(id)).filter(Boolean)
+    .sort((left, right) => left.order - right.order || left.id.localeCompare(right.id));
+  const slot = ordered.findIndex(candidate => candidate.id === port.id);
+  if (slot < 0) return null;
+  return { type: "ordered", side: port.direction === "target" ? "left" : "right", offsetY: NODE_PROPERTY_TOP + NODE_PROPERTY_HEIGHT / 2 + slot * (NODE_PROPERTY_HEIGHT + NODE_PROPERTY_GAP) };
+}
+function nodeContentMinimumHeight(state, node) {
+  const visibleProperties = (node.properties ?? []).filter(property => property.mode !== "hidden");
+  const propertyBottom = visibleProperties.length
+    ? NODE_PROPERTY_TOP + visibleProperties.length * NODE_PROPERTY_HEIGHT + (visibleProperties.length - 1) * NODE_PROPERTY_GAP + 8
+    : 0;
+  let portBottom = 0;
+  for (const portId of state.portsByNode.get(node.id) ?? []) {
+    const port = state.ports.get(portId), anchor = port && resolvePortAnchor(state, port);
+    if (isPixelSideAnchor(anchor)) portBottom = Math.max(portBottom, anchor.offsetY + 8);
+  }
+  return Math.max(propertyBottom, portBottom);
+}
+function propertyDisplayValue(property) {
+  if (property.value === null || property.value === undefined) return "—";
+  if (property.type === "boolean") return property.value ? "Yes" : "No";
+  if (property.type === "json") { try { return JSON.stringify(property.value); } catch { return String(property.value); } }
+  return String(property.value);
+}
+function propertyInput(property) {
+  const type = property.type;
+  if (type === "boolean") { const input = document.createElement("input"); input.type = "checkbox"; input.checked = property.value === true; return input; }
+  if (type === "enum") { const select = document.createElement("select"); for (const optionValue of property.options ?? []) { const option = document.createElement("option"); option.value = optionValue; option.textContent = optionValue; option.selected = optionValue === property.value; select.append(option); } return select; }
+  const input = document.createElement("input");
+  input.type = type === "integer" || type === "decimal" || type === "number" ? "number" : type === "date" ? "date" : type === "dateTime" || type === "datetime" ? "datetime-local" : "text";
+  input.value = type === "json"
+    ? (property.value === null || property.value === undefined ? "" : JSON.stringify(property.value))
+    : type === "dateTime" || type === "datetime" ? dateTimeInputValue(property.value) : property.value ?? "";
+  return input;
+}
+function propertyEditorStyle() { return `min-width:0;width:100%;height:${NODE_PROPERTY_HEIGHT}px;border:1px solid ${NODE_PROPERTY_EDITOR_BORDER};border-radius:3px;background:rgba(255,255,255,.92);color:${NODE_PROPERTY_EDITOR_COLOR};font:inherit;padding:1px 4px;box-sizing:border-box;accent-color:#4f46e5;`; }
+function propertyInputValue(input, property) {
+  if (property.type === "boolean") return Boolean(input.checked);
+  if (property.type === "integer") return input.value === "" ? null : Number.parseInt(input.value, 10);
+  if (property.type === "decimal" || property.type === "number") return input.value === "" ? null : Number(input.value);
+  if (property.type === "dateTime" || property.type === "datetime") return input.value === "" ? null : new Date(input.value).toISOString();
+  if (property.type === "json") { if (input.value.trim() === "") return null; try { return JSON.parse(input.value); } catch { throw new GhostagramError("INVALID_PROPERTY_VALUE", "Enter valid JSON."); } }
+  return input.value;
+}
+function propertyValueSignature(value) {
+  if (value === undefined) return "undefined";
+  try { return JSON.stringify(value); } catch { return String(value); }
+}
+function propertyCommitDecision(previousSignature, value) {
+  const signature = propertyValueSignature(value);
+  return { signature, commit: signature !== previousSignature };
+}
+function dateTimeInputValue(value) {
+  if (value === null || value === undefined || value === "") return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return String(value);
+  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
 function upsertNode(s, raw) {
   const { locked: _legacyLocked, ...value } = raw;
   requireId(value, "node");
   if (value.rotation !== undefined && !Number.isFinite(value.rotation)) throw new GhostagramError("INVALID_MODEL", "Node rotation must be numeric.");
-  const prior = s.nodes.get(value.id), { locked: _legacyPriorLock, ...previous } = prior ?? {}, node = { ...previous, ...value, x: number(value.x, "INVALID_MODEL", "Node x is required."), y: number(value.y, "INVALID_MODEL", "Node y is required."), width: positive(value.width, "INVALID_MODEL", "Node width is required."), height: positive(value.height, "INVALID_MODEL", "Node height is required."), rotation: value.rotation ?? previous.rotation ?? 0, icon: Object.hasOwn(value, "icon") ? iconifyIconName(value.icon) : previous.icon ?? null, resizable: value.resizable ?? previous.resizable ?? true, rotatable: value.rotatable ?? previous.rotatable ?? true, labelEditable: value.labelEditable ?? previous.labelEditable ?? true, style: value.style ?? previous.style ?? {} };
+  const prior = s.nodes.get(value.id), { locked: _legacyPriorLock, ...previous } = prior ?? {}, node = { ...previous, ...value, x: number(value.x, "INVALID_MODEL", "Node x is required."), y: number(value.y, "INVALID_MODEL", "Node y is required."), width: positive(value.width, "INVALID_MODEL", "Node width is required."), height: positive(value.height, "INVALID_MODEL", "Node height is required."), rotation: value.rotation ?? previous.rotation ?? 0, icon: Object.hasOwn(value, "icon") ? iconifyIconName(value.icon) : previous.icon ?? null, resizable: value.resizable ?? previous.resizable ?? true, rotatable: value.rotatable ?? previous.rotatable ?? true, labelEditable: value.labelEditable ?? previous.labelEditable ?? true, style: value.style ?? previous.style ?? {}, properties: Object.hasOwn(value, "properties") ? normaliseNodeProperties(value.properties) : previous.properties ?? [] };
   if (typeof node.resizable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Node resizable must be boolean.");
   if (typeof node.rotatable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Node rotatable must be boolean.");
   if (typeof node.labelEditable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Node labelEditable must be boolean.");
@@ -761,7 +916,7 @@ function upsertNode(s, raw) {
   if (node.groupId) (s.nodesByGroup.get(node.groupId) ?? s.nodesByGroup.set(node.groupId, new Set()).get(node.groupId)).add(node.id);
   s.nodes.set(node.id, node); if (!s.portsByNode.has(node.id)) s.portsByNode.set(node.id, new Set());
 }
-function upsertPort(s, raw) { requireId(raw, "port"); if (!s.nodes.has(raw.nodeId)) throw new GhostagramError("MISSING_REFERENCE", `Port '${raw.id}' references missing node '${raw.nodeId}'.`); const prior = s.ports.get(raw.id); if (prior && prior.nodeId !== raw.nodeId) s.portsByNode.get(prior.nodeId)?.delete(raw.id); const port = { ...prior, ...raw, direction: raw.direction ?? prior?.direction ?? "both", endpoint: raw.endpoint ?? prior?.endpoint ?? "dot", scope: raw.scope ?? prior?.scope ?? "*", maxConnections: raw.maxConnections ?? prior?.maxConnections ?? -1, enabled: raw.enabled ?? prior?.enabled ?? true, connectionPolicy: Object.hasOwn(raw, "connectionPolicy") ? raw.connectionPolicy : prior?.connectionPolicy }; if (!["source", "target", "both"].includes(port.direction)) throw new GhostagramError("INVALID_MODEL", "Port direction must be source, target, or both."); if (typeof port.scope !== "string" || !port.scope) throw new GhostagramError("INVALID_MODEL", "Port scope must be a non-empty string."); if (typeof port.enabled !== "boolean") throw new GhostagramError("INVALID_MODEL", "Port enabled must be boolean."); validateConnectionPolicy(port.connectionPolicy); validateEndpoint(port.endpoint); s.ports.set(port.id, port); (s.portsByNode.get(port.nodeId) ?? s.portsByNode.set(port.nodeId, new Set()).get(port.nodeId)).add(port.id); if (!s.edgesByPort.has(port.id)) s.edgesByPort.set(port.id, new Set()); }
+function upsertPort(s, raw) { requireId(raw, "port"); if (!s.nodes.has(raw.nodeId)) throw new GhostagramError("MISSING_REFERENCE", `Port '${raw.id}' references missing node '${raw.nodeId}'.`); const prior = s.ports.get(raw.id); if (prior && prior.nodeId !== raw.nodeId) s.portsByNode.get(prior.nodeId)?.delete(raw.id); const port = { ...prior, ...raw, direction: raw.direction ?? prior?.direction ?? "both", endpoint: raw.endpoint ?? prior?.endpoint ?? "dot", scope: raw.scope ?? prior?.scope ?? "*", maxConnections: raw.maxConnections ?? prior?.maxConnections ?? -1, enabled: raw.enabled ?? prior?.enabled ?? true, connectionPolicy: Object.hasOwn(raw, "connectionPolicy") ? raw.connectionPolicy : prior?.connectionPolicy, propertyId: Object.hasOwn(raw, "propertyId") ? raw.propertyId : prior?.propertyId ?? null, label: Object.hasOwn(raw, "label") ? raw.label : prior?.label ?? null, order: raw.order ?? prior?.order ?? 0 }; if (!["source", "target", "both"].includes(port.direction)) throw new GhostagramError("INVALID_MODEL", "Port direction must be source, target, or both."); if (typeof port.scope !== "string" || !port.scope) throw new GhostagramError("INVALID_MODEL", "Port scope must be a non-empty string."); if (typeof port.enabled !== "boolean") throw new GhostagramError("INVALID_MODEL", "Port enabled must be boolean."); if (port.propertyId !== null && typeof port.propertyId !== "string") throw new GhostagramError("INVALID_MODEL", "Port propertyId must be a string or null."); if (port.label !== null && typeof port.label !== "string") throw new GhostagramError("INVALID_MODEL", "Port label must be a string or null."); if (!Number.isSafeInteger(port.order)) throw new GhostagramError("INVALID_MODEL", "Port order must be an integer."); validateConnectionPolicy(port.connectionPolicy); validateEndpoint(port.endpoint); s.ports.set(port.id, port); (s.portsByNode.get(port.nodeId) ?? s.portsByNode.set(port.nodeId, new Set()).get(port.nodeId)).add(port.id); if (!s.edgesByPort.has(port.id)) s.edgesByPort.set(port.id, new Set()); }
 function upsertEdgeType(s, raw) { requireId(raw, "edge type"); validateEdgeTypeDescriptor(raw); s.edgeTypes.set(raw.id, { ...raw }); }
 function removeEdgeType(s, id, dirty) { if (!s.edgeTypes.delete(id)) return; for (const edge of s.edges.values()) if (edge.type === id) dirty.edges.add(edge.id); }
 function upsertEdge(s, raw) { requireId(raw, "edge"); const prior = s.edges.get(raw.id), source = s.ports.get(raw.sourcePortId), target = s.ports.get(raw.targetPortId); if (!source || !target) throw new GhostagramError("MISSING_REFERENCE", "Edge references a missing source or target port."); if (source.direction === "target" || target.direction === "source") throw new GhostagramError("INVALID_MODEL", "Port directions do not permit this connection."); if (!scopesCompatible(source, target)) throw new GhostagramError("SCOPE_MISMATCH", `Port scopes '${source.scope}' and '${target.scope}' are incompatible.`); if ((!prior || prior.sourcePortId !== source.id || prior.targetPortId !== target.id) && !connectionPoliciesCompatible(source, target)) throw new GhostagramError("CONNECTION_REJECTED", `Port policy rejects '${source.id}' to '${target.id}'.`); for (const portId of [prior?.sourcePortId, prior?.targetPortId]) if (portId) s.edgesByPort.get(portId)?.delete(raw.id); for (const port of [source, target]) { const used = s.edgesByPort.get(port.id)?.size ?? 0; if (port.maxConnections >= 0 && used >= port.maxConnections && (!prior || ![prior.sourcePortId, prior.targetPortId].includes(port.id))) throw new GhostagramError("PORT_FULL", `Port '${port.id}' is at its connection limit.`); }
@@ -822,7 +977,11 @@ function validateState(s) {
     while (ancestorId) { if (ancestors.has(ancestorId)) throw new GhostagramError("INVALID_MODEL", "Group nesting contains a cycle."); ancestors.add(ancestorId); ancestorId = s.groups.get(ancestorId)?.parentGroupId; }
   }
   for (const node of s.nodes.values()) if (node.groupId && !s.groups.has(node.groupId)) throw new GhostagramError("MISSING_REFERENCE", `Node '${node.id}' references missing group '${node.groupId}'.`);
-  for (const port of s.ports.values()) if (!s.nodes.has(port.nodeId)) throw new GhostagramError("MISSING_REFERENCE", `Port '${port.id}' references a missing node.`);
+  for (const port of s.ports.values()) {
+    const node = s.nodes.get(port.nodeId);
+    if (!node) throw new GhostagramError("MISSING_REFERENCE", `Port '${port.id}' references a missing node.`);
+    if (port.propertyId && !(node.properties ?? []).some(property => property.id === port.propertyId)) throw new GhostagramError("MISSING_REFERENCE", `Port '${port.id}' references missing node property '${port.propertyId}'.`);
+  }
   for (const edge of s.edges.values()) {
     resolveEdgeDescriptor(edge, s.edgeTypes);
     const source = s.ports.get(edge.sourcePortId), target = s.ports.get(edge.targetPortId);
@@ -867,9 +1026,10 @@ function edgeGeometry(state, edge, previewNodes = new Map()) {
   const sourceProxy = collapsedProxyGroupForNode(state, sourceNode), targetProxy = collapsedProxyGroupForNode(state, targetNode);
   if (sourceProxy?.id && sourceProxy.id === targetProxy?.id) return { hidden: true, proxied: true, sourcePoint: { x: 0, y: 0 }, targetPoint: { x: 0, y: 0 }, sourceProxy, targetProxy, sourceSide: null, targetSide: null };
   const sourceItem = sourceProxy ?? sourceNode, targetItem = targetProxy ?? targetNode, sourceProxyAnchor = sourceProxy ? groupProxyAnchor(sourceProxy, targetItem) : null, targetProxyAnchor = targetProxy ? groupProxyAnchor(targetProxy, sourceItem) : null;
-  const sourcePoint = sourceProxyAnchor?.point ?? anchorPoint(sourceNode, source.anchor, targetItem);
-  const targetPoint = targetProxyAnchor?.point ?? anchorPoint(targetNode, target.anchor, sourceItem);
-  return { hidden: false, proxied: Boolean(sourceProxy || targetProxy), sourcePoint, targetPoint, sourceProxy, targetProxy, sourceSide: sourceProxyAnchor?.side ?? portAnchorSide(source.anchor ?? "right"), targetSide: targetProxyAnchor?.side ?? portAnchorSide(target.anchor ?? "right") };
+  const sourceAnchor = resolvePortAnchor(state, source), targetAnchor = resolvePortAnchor(state, target);
+  const sourcePoint = sourceProxyAnchor?.point ?? anchorPoint(sourceNode, sourceAnchor, targetItem);
+  const targetPoint = targetProxyAnchor?.point ?? anchorPoint(targetNode, targetAnchor, sourceItem);
+  return { hidden: false, proxied: Boolean(sourceProxy || targetProxy), sourcePoint, targetPoint, sourceProxy, targetProxy, sourceSide: sourceProxyAnchor?.side ?? portAnchorSide(sourceAnchor), targetSide: targetProxyAnchor?.side ?? portAnchorSide(targetAnchor) };
 }
 function groupDepth(s, groupId) { let depth = 0, parentId = s.groups.get(groupId)?.parentGroupId; while (parentId) { depth += 1; parentId = s.groups.get(parentId)?.parentGroupId; } return depth; }
 function groupsForRender(s) { return [...s.groups.values()].sort((left, right) => groupDepth(s, left.id) - groupDepth(s, right.id) || left.id.localeCompare(right.id)); }
@@ -899,10 +1059,14 @@ function connectionPolicyAllows(port, peer) {
 function connectionPoliciesCompatible(source, target) { return connectionPolicyAllows(source, target) && connectionPolicyAllows(target, source); }
 function canConnect(state, source, target) { return source.enabled !== false && target.enabled !== false && scopesCompatible(source, target) && connectionPoliciesCompatible(source, target) && [source, target].every(port => port.maxConnections < 0 || (state.edgesByPort.get(port.id)?.size ?? 0) < port.maxConnections); }
 function canReconnect(state, edge, source, target) { return scopesCompatible(source, target) && connectionPoliciesCompatible(source, target) && [source, target].every(port => port.maxConnections < 0 || (state.edgesByPort.get(port.id)?.size ?? 0) - (port.id === edge.sourcePortId || port.id === edge.targetPortId ? 1 : 0) < port.maxConnections); }
-function route(edge, a, b, geometry) { const custom = connectorRegistry.get(edge.connector); if (custom) return custom(a, b, edge); if (edge.waypoints?.length) return `M ${a.x} ${a.y}${edge.waypoints.map(point => ` L ${point.x} ${point.y}`).join("")} L ${b.x} ${b.y}`; if (edge.connector === "straight") return `M ${a.x} ${a.y} L ${b.x} ${b.y}`; if (edge.connector === "bezier" || edge.connector === "state-machine") { const dx = Math.max(48, Math.abs(b.x - a.x) * .45); return `M ${a.x} ${a.y} C ${a.x + dx} ${a.y}, ${b.x - dx} ${b.y}, ${b.x} ${b.y}`; } return flowchartPath(edgeRoutePoints(edge, a, b, geometry), flowchartOptions(edge.connectorOptions).cornerRadius); }
+function route(edge, a, b, geometry) { const custom = connectorRegistry.get(edge.connector); if (custom) return custom(a, b, edge); if (edge.waypoints?.length) return `M ${a.x} ${a.y}${edge.waypoints.map(point => ` L ${point.x} ${point.y}`).join("")} L ${b.x} ${b.y}`; if (edge.connector === "straight") return `M ${a.x} ${a.y} L ${b.x} ${b.y}`; if (edge.connector === "bezier" || edge.connector === "state-machine") return bezierPath(a, b); return flowchartPath(edgeRoutePoints(edge, a, b, geometry), flowchartOptions(edge.connectorOptions).cornerRadius); }
+function bezierControlDistance(a, b) { return Math.max(48, Math.abs(b.x - a.x) * .45, Math.abs(b.y - a.y) * .28); }
+function bezierPath(a, b) { const distance = bezierControlDistance(a, b), sourceControlX = svgCoordinate(a.x + distance), targetControlX = svgCoordinate(b.x - distance); return `M ${a.x} ${a.y} C ${sourceControlX} ${a.y}, ${targetControlX} ${b.y}, ${b.x} ${b.y}`; }
+function svgCoordinate(value) { return Number(value.toFixed(3)); }
 function anchorPoint(node, anchor, peerNode) {
   let point;
-  if (Array.isArray(anchor) && anchor.length === 2 && anchor.every(Number.isFinite)) point = { x: node.x + node.width * anchor[0], y: node.y + node.height * anchor[1] };
+  if (isPixelSideAnchor(anchor)) point = { x: node.x + (anchor.side === "left" ? 0 : node.width), y: node.y + anchor.offsetY };
+  else if (Array.isArray(anchor) && anchor.length === 2 && anchor.every(Number.isFinite)) point = { x: node.x + node.width * anchor[0], y: node.y + node.height * anchor[1] };
   else if (anchor && typeof anchor === "object" && Number.isFinite(anchor.x) && Number.isFinite(anchor.y)) point = { x: node.x + node.width * anchor.x, y: node.y + node.height * anchor.y };
   if (point) return rotateAnchorPoint(node, point);
   let side = typeof anchor === "object" ? anchor?.type : anchor ?? "right";
@@ -914,6 +1078,7 @@ function anchorPoint(node, anchor, peerNode) {
   return rotateAnchorPoint(node, { x: node.x + (side === "left" ? 0 : side === "right" ? node.width : node.width / 2), y: node.y + (side === "top" ? 0 : side === "bottom" ? node.height : node.height / 2) });
 }
 function portAnchorSide(anchor) {
+  if (isPixelSideAnchor(anchor)) return anchor.side;
   const relative = Array.isArray(anchor) && anchor.length === 2 && anchor.every(Number.isFinite) ? anchor : anchor && typeof anchor === "object" && Number.isFinite(anchor.x) && Number.isFinite(anchor.y) ? [anchor.x, anchor.y] : null;
   if (relative) return relative[1] === 0 ? "top" : relative[1] === 1 ? "bottom" : relative[0] === 0 ? "left" : relative[0] === 1 ? "right" : null;
   const side = typeof anchor === "object" ? anchor?.type : anchor;
@@ -935,7 +1100,7 @@ function groupProxyAnchor(group, peer) {
 function previewPointForPort(state, previewNodes, port, peerNode) {
   const node = previewNodes.get(port.nodeId) ?? state.nodes.get(port.nodeId);
   const effectivePeer = peerNode ? (previewNodes.get(peerNode.id) ?? peerNode) : undefined;
-  return anchorPoint(node, port.anchor, effectivePeer);
+  return anchorPoint(node, resolvePortAnchor(state, port), effectivePeer);
 }
 function viewportPoint(pointer, bounds, viewport) {
   return { x: (pointer.clientX - bounds.left) / viewport.zoom + viewport.x, y: (pointer.clientY - bounds.top) / viewport.zoom + viewport.y };
@@ -1238,8 +1403,18 @@ function exportSvgDocument(state, options = {}) {
   const groups = visibleGroups.map(group => `<rect x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" fill="rgba(148,163,184,.08)" stroke="#64748b" stroke-dasharray="4 3"/><text x="${group.x + 6}" y="${group.y + 18}" fill="#334155" font-size="12" font-weight="600">${xml(group.label ?? group.id)}</text>`).join("");
   const markerIds = { arrow: "ghostagram-export-arrow", "plain-arrow": "ghostagram-export-plain-arrow", diamond: "ghostagram-export-diamond" };
   const edges = [...state.edges.values()].map(rawEdge => { const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge); if (geometry.hidden) return ""; const { sourcePoint, targetPoint } = geometry, style = edgeStyleDescriptor(edge.style), label = edgeLabelPlacement(edge, sourcePoint, targetPoint, geometry), markerStart = markerFor(edge.overlays, markerIds, "start"), markerEnd = markerFor(edge.overlays, markerIds, "end"); return `<path d="${route(edge, sourcePoint, targetPoint, geometry)}" fill="none" stroke="${xml(style.stroke)}" stroke-width="${style.strokeWidth}"${svgOptionalAttribute("stroke-dasharray", style.dash)}${svgOptionalAttribute("stroke-linecap", style.lineCap)}${svgOptionalAttribute("stroke-linejoin", style.lineJoin)}${svgOptionalAttribute("opacity", style.opacity)}${markerStart ? ` marker-start="${markerStart}"` : ""}${markerEnd ? ` marker-end="${markerEnd}"` : ""}/>${label ? `<text x="${label.x}" y="${label.y}" fill="${xml(style.labelColor)}" font-size="${label.fontSize}">${xml(label.text)}</text>` : ""}`; }).join("");
-  const nodes = visibleNodes.map(node => `<g transform="rotate(${node.rotation ?? 0} ${node.x + node.width / 2} ${node.y + node.height / 2})"><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${xml(node.style?.background ?? "#f8fafc")}" stroke="${xml(node.style?.borderColor ?? "#334155")}"/><text x="${node.x + 6}" y="${node.y + 22}" fill="#0f172a" font-size="14">${xml(node.label ?? node.id)}</text></g>`).join("");
+  const nodes = visibleNodes.map(exportSvgNode).join("");
   return `<svg xmlns="${SVG_NS}" viewBox="${left} ${top} ${right - left} ${bottom - top}" role="img"><defs>${Object.entries(markerIds).map(([type, id]) => exportMarker(id, type)).join("")}</defs>${groups}${edges}${nodes}</svg>`;
+}
+function exportSvgNode(node) {
+  const properties = (node.properties ?? []).filter(property => property.mode !== "hidden"), color = node.style?.color ?? "#0f172a";
+  const labelY = properties.length ? node.y + 21 : node.y + node.height / 2 + 5;
+  const rows = properties.map((property, index) => {
+    const y = node.y + 49 + index * 21;
+    return `<text x="${node.x + 8}" y="${y}" fill="${xml(color)}" fill-opacity=".7" font-size="11">${xml(property.label ?? property.name ?? property.id)}</text><text x="${node.x + node.width - 8}" y="${y}" fill="${xml(color)}" font-size="11" text-anchor="end">${xml(propertyDisplayValue(property))}</text>`;
+  }).join("");
+  const icon = iconifyIconName(node.icon) ? `<text x="${node.x + node.width - 8}" y="${node.y + 20}" fill="${xml(color)}" font-size="12" text-anchor="end">◇</text>` : "";
+  return `<g transform="rotate(${node.rotation ?? 0} ${node.x + node.width / 2} ${node.y + node.height / 2})"><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${xml(node.style?.background ?? "#f8fafc")}" stroke="${xml(node.style?.borderColor ?? "#334155")}"/><text x="${node.x + 8}" y="${labelY}" fill="${xml(color)}" font-size="14">${xml(node.label ?? node.id)}</text>${icon}${rows}</g>`;
 }
 function exportMarker(id, type) {
   const path = type === "plain-arrow" ? `<path d="M 0 0 L 10 5 L 0 10" fill="none" stroke="context-stroke" stroke-width="1.5"/>` : `<path d="${type === "diamond" ? "M 0 5 L 5 0 L 10 5 L 5 10 z" : "M 0 0 L 10 5 L 0 10 z"}" fill="context-stroke"/>`;
@@ -1283,11 +1458,17 @@ function createMarker(id, type) {
 function setBox(el, item) { el.style.position = "absolute"; el.style.left = `${item.x}px`; el.style.top = `${item.y}px`; el.style.width = `${item.width}px`; el.style.height = `${item.height}px`; }
 function applyStyle(el, style, defaults) { Object.assign(el.style, defaults, style ?? {}); }
 function portAnchorStyle(anchor, size = 12, strokeWidth = 1) {
+  if (isPixelSideAnchor(anchor)) {
+    const offset = -(size / 2 + strokeWidth);
+    return `${anchor.side}:${offset}px;top:${anchor.offsetY}px;transform:translateY(-50%);`;
+  }
   const relative = Array.isArray(anchor) && anchor.length === 2 && anchor.every(Number.isFinite) ? anchor : anchor && typeof anchor === "object" && Number.isFinite(anchor.x) && Number.isFinite(anchor.y) ? [anchor.x, anchor.y] : null;
   if (relative) return `left:${relative[0] * 100}%;top:${relative[1] * 100}%;transform:translate(-50%,-50%);`;
   return sideStyle(typeof anchor === "object" ? anchor?.type : anchor, size, strokeWidth);
 }
 function sideStyle(side, size = 12, strokeWidth = 1) { const offset = -(size / 2 + strokeWidth); return side === "left" ? `left:${offset}px;top:50%;transform:translateY(-50%);` : side === "top" ? `top:${offset}px;left:50%;transform:translateX(-50%);` : side === "bottom" ? `bottom:${offset}px;left:50%;transform:translateX(-50%);` : `right:${offset}px;top:50%;transform:translateY(-50%);`; }
+function isPixelSideAnchor(anchor) { return ["property", "ordered"].includes(anchor?.type) && ["left", "right"].includes(anchor.side) && Number.isFinite(anchor.offsetY); }
+function isInteractiveNodeTarget(target) { return Boolean(target?.closest?.(NODE_INTERACTIVE_SELECTOR)); }
 function requireObject(value, code, message) { if (!value || typeof value !== "object" || Array.isArray(value)) throw new GhostagramError(code, message); }
 function requireId(value, kind) { requireObject(value, "INVALID_MODEL", `${kind} must be an object.`); if (!value.id || typeof value.id !== "string") throw new GhostagramError("INVALID_MODEL", `${kind} requires a string id.`); }
 function number(value, code, message) { if (!Number.isFinite(value)) throw new GhostagramError(code, message); return value; }
@@ -1303,4 +1484,4 @@ function asProblem(error) {
 function ok(requestId, renderedRevision, stats) { return { ok: true, requestId, renderedRevision, stats }; }
 function failed(request, code, message, renderedRevision, details) { return { ok: false, requestId: request?.requestId ?? null, renderedRevision, stats: {}, problem: { code, message, details } }; }
 
-export const __testing = { anchorPoint, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupVisibilityDescriptor, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isNodeHiddenByCollapsedGroup, markerFor, multiDragPositions, nodesInRectangle, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, previewPointForPort, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };
+export const __testing = { anchorPoint, bezierControlDistance, bezierPath, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupVisibilityDescriptor, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerFor, multiDragPositions, nodeContentMinimumHeight, nodesInRectangle, normaliseNodeProperties, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyValueSignature, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };

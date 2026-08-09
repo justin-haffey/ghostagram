@@ -18,6 +18,8 @@ public sealed record DiagramDocument(
     public IReadOnlyList<DiagramEdgeType> EdgeTypes { get; init; } = EdgeTypes ?? [];
     public IReadOnlyList<string> Selection { get; init; } = Selection ?? [];
     public DiagramViewport Viewport { get; init; } = Viewport ?? new();
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
 }
 
 public sealed record DiagramNode(
@@ -33,7 +35,57 @@ public sealed record DiagramNode(
     bool Rotatable = true,
     bool LabelEditable = true,
     string? Icon = null,
-    DiagramNodeStyle? Style = null);
+    DiagramNodeStyle? Style = null,
+    string? TypeId = null,
+    int TypeVersion = 1,
+    IReadOnlyList<DiagramNodeProperty>? Properties = null)
+{
+    public IReadOnlyList<DiagramNodeProperty> Properties { get; init; } = Properties ?? [];
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+
+/// <summary>
+/// A serializable property value attached to a node. <see cref="JsonElement"/> deliberately
+/// preserves primitive, null, array, and custom object values without coupling the diagram
+/// datatype to an application's runtime CLR type.
+/// </summary>
+public sealed record DiagramNodeProperty(
+    string Id,
+    string Name,
+    string Type = DiagramPropertyTypes.String,
+    JsonElement? Value = null,
+    string Mode = DiagramPropertyModes.Display,
+    string? Label = null,
+    string? Description = null,
+    bool Required = false,
+    bool Connectable = false,
+    IReadOnlyList<string>? Options = null,
+    JsonElement? Metadata = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+
+public static class DiagramPropertyTypes
+{
+    public const string String = "string";
+    public const string Boolean = "boolean";
+    public const string Integer = "integer";
+    public const string Decimal = "decimal";
+    public const string Date = "date";
+    public const string DateTime = "dateTime";
+    public const string Enum = "enum";
+    public const string Json = "json";
+}
+
+public static class DiagramPropertyModes
+{
+    public const string Display = "display";
+    public const string Edit = "edit";
+    public const string DisplayAndEdit = "displayAndEdit";
+    public const string Hidden = "hidden";
+}
 
 public sealed record DiagramPort(
     string Id,
@@ -44,7 +96,14 @@ public sealed record DiagramPort(
     bool Enabled = true,
     object? Anchor = null,
     DiagramEndpoint? Endpoint = null,
-    DiagramConnectionPolicy? ConnectionPolicy = null);
+    DiagramConnectionPolicy? ConnectionPolicy = null,
+    string? PropertyId = null,
+    string? Label = null,
+    int Order = 0)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
 
 public sealed record DiagramEdge(
     string Id,

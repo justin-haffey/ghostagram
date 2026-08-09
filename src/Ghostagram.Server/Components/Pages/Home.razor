@@ -94,6 +94,7 @@
                 <div class="toolbar-group toolbar-edge">
                     <MudSelect T="string" Value="_edgeConnector" ValueChanged="OnEdgeConnectorChangedAsync" Label="Edge shape" Dense="true" Variant="Variant.Outlined" Class="toolbar-select edge-select">
                         <MudSelectItem T="string" Value="@("flowchart")">Square</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("straight")">Straight</MudSelectItem>
                         <MudSelectItem T="string" Value="@("bezier")">Curved</MudSelectItem>
                     </MudSelect>
                     <MudSwitch T="bool" Value="_edgeAnimated" ValueChanged="OnEdgeAnimatedChangedAsync" Color="Color.Secondary" Label="Animated" />
@@ -163,11 +164,24 @@
                 <MudItem xs="12">
                     <MudTextField @bind-Value="_draft.Label" Label="Node name" Variant="Variant.Outlined" Immediate="true" />
                 </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="string" @bind-Value="_draft.Icon" Label="Node icon preset" Variant="Variant.Outlined" aria-label="Choose an Iconify node icon preset">
+                        <MudSelectItem T="string" Value="@("mdi:shape-outline")">Generic shape</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("mdi:account-voice")">Voice agent</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("mdi:robot-outline")">Agent</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("mdi:database-outline")">Data</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("mdi:form-textbox")">Capture</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("mdi:message-processing-outline")">Message</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_draft.Icon" Label="Iconify icon name" Variant="Variant.Outlined" Immediate="true" HelperText="For example: mdi:robot-outline" aria-label="Iconify icon name" />
+                </MudItem>
                 <MudItem xs="6">
                     <MudNumericField T="double" @bind-Value="_draft.Width" Label="Width" Min="96" Max="360" Step="8" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="6">
-                    <MudNumericField T="double" @bind-Value="_draft.Height" Label="Height" Min="48" Max="240" Step="8" Variant="Variant.Outlined" />
+                    <MudNumericField T="double" @bind-Value="_draft.Height" Label="Height" Min="48" Max="420" Step="8" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="6">
                     <MudSelect T="string" @bind-Value="_draft.Category" Label="Palette group" Variant="Variant.Outlined">
@@ -219,6 +233,56 @@
                     </MudSelect>
                 </MudItem>
             </MudGrid>
+
+            <section class="designer-properties" aria-label="Node properties">
+                <div class="designer-properties-header">
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Node properties</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Primitive values can be shown or edited directly on each node. Connectable properties receive left/right ports.</MudText>
+                    </div>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="AddDraftProperty">Add property</MudButton>
+                </div>
+                @if (_draftProperties.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">No properties yet. Add one to expose a typed value on nodes created from this type.</MudText>
+                }
+                @foreach (var property in _draftProperties)
+                {
+                    <div class="designer-property-row" @key="property.Id">
+                        <MudTextField @bind-Value="property.Name" Label="Name" Variant="Variant.Outlined" Immediate="true" />
+                        <MudSelect T="string" @bind-Value="property.Type" Label="Type" Dense="true" Variant="Variant.Outlined">
+                            <MudSelectItem T="string" Value="@DiagramPropertyTypes.String">Text</MudSelectItem>
+                            <MudSelectItem T="string" Value="@DiagramPropertyTypes.Boolean">Boolean</MudSelectItem>
+                            <MudSelectItem T="string" Value="@DiagramPropertyTypes.Integer">Integer</MudSelectItem>
+                            <MudSelectItem T="string" Value="@DiagramPropertyTypes.Decimal">Number</MudSelectItem>
+                            <MudSelectItem T="string" Value="@DiagramPropertyTypes.Date">Date</MudSelectItem>
+                            <MudSelectItem T="string" Value="@DiagramPropertyTypes.DateTime">Date/time</MudSelectItem>
+                            <MudSelectItem T="string" Value="@DiagramPropertyTypes.Enum">Choice</MudSelectItem>
+                            <MudSelectItem T="string" Value="@DiagramPropertyTypes.Json">JSON</MudSelectItem>
+                        </MudSelect>
+                        <MudSelect T="string" @bind-Value="property.Mode" Label="Node mode" Dense="true" Variant="Variant.Outlined">
+                            <MudSelectItem T="string" Value="@DiagramPropertyModes.Display">Display</MudSelectItem>
+                            <MudSelectItem T="string" Value="@DiagramPropertyModes.Edit">Edit</MudSelectItem>
+                            <MudSelectItem T="string" Value="@DiagramPropertyModes.DisplayAndEdit">Display and edit</MudSelectItem>
+                        </MudSelect>
+                        <MudTextField @bind-Value="property.DefaultValue" Label="Default" Variant="Variant.Outlined" Immediate="true" />
+                        @if (property.Type == DiagramPropertyTypes.Enum)
+                        {
+                            <MudTextField @bind-Value="property.Options" Label="Choices (comma separated)" Variant="Variant.Outlined" Immediate="true" />
+                        }
+                        <MudCheckBox @bind-Value="property.Connectable" Label="Connectable" Dense="true" />
+                        @if (property.Connectable)
+                        {
+                            <MudSelect T="string" @bind-Value="property.Direction" Label="Port" Dense="true" Variant="Variant.Outlined">
+                                <MudSelectItem T="string" Value="@("source")">Output (right)</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("target")">Input (left)</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("both")">Both</MudSelectItem>
+                            </MudSelect>
+                        }
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveDraftProperty(property.Id))" aria-label="Remove property" />
+                    </div>
+                }
+            </section>
 
             <div class="node-designer-preview" style="@($"--node-outline:{NormalizeColor(_draft.Outline, "#d24686")};--node-background:{NormalizeColor(_draft.Background, "#ffffff")};--node-text:{NormalizeColor(_draft.TextColor, "#172033")};--node-align:{NormalizeTextAlign(_draft.TextAlign)}")">
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-top" OnClick="AddTopConnectionPoint" aria-label="Add top connection point" />

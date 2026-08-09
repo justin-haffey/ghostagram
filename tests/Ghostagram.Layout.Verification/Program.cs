@@ -16,8 +16,11 @@ var checks = new List<(string Name, Action Check)>
     ("nested compound containment", VerifyNestedGroups),
     ("group removal preserves and ungroups content", VerifyGroupRemoval),
     ("explicit group assignment supports reparenting and ungrouping", VerifyGroupAssignment),
+    ("server rejects duplicate ids and cyclic group hierarchies", VerifyReducerStructuralValidation),
+    ("property ports require an existing property on their node", VerifyPropertyPortValidation),
     ("cycles, components, and non-overlap", VerifyCyclesAndComponents),
     ("large sparse graph performance", VerifyPerformance),
+    ("SVG preserves properties, property ports, and connector geometry", VerifyEnhancedSvgExport),
     ("layout, collaborative session, export, and replay", () => VerifyCommandPipeline().GetAwaiter().GetResult())
 };
 
@@ -98,6 +101,49 @@ static void VerifyGroupAssignment()
     True(custom.GetProperty("groupId").ValueKind == JsonValueKind.Null, "an explicit null assignment must remove group membership");
 }
 
+static void VerifyPropertyPortValidation()
+{
+    var model = Model([Node("property-node", 20, 20)], []);
+    var invalidPort = DiagramOperations.Create("port.upsert", new
+    {
+        id = "property-node-value",
+        nodeId = "property-node",
+        direction = "source",
+        propertyId = "missing"
+    });
+    try
+    {
+        GhostagramDocumentReducer.Apply(model, [invalidPort]);
+        throw new InvalidOperationException("A dangling property port was accepted.");
+    }
+    catch (DiagramCommandException exception)
+    {
+        Equal("MISSING_REFERENCE", exception.Code, "dangling property ports must fail with a reference diagnostic");
+    }
+}
+
+static void VerifyReducerStructuralValidation()
+{
+    var duplicate = Model([Node("same", 0, 0), Node("same", 100, 0)], []);
+    ExpectDiagramError(duplicate, [], "DUPLICATE_ID", "duplicate node IDs must be rejected");
+
+    var cyclic = Model([], [], [Group("outer", "inner"), Group("inner", "outer")]);
+    ExpectDiagramError(cyclic, [], "INVALID_GROUP_HIERARCHY", "cyclic group parents must be rejected");
+}
+
+static void ExpectDiagramError(JsonElement model, IReadOnlyList<GhostagramOperation> operations, string code, string message)
+{
+    try
+    {
+        GhostagramDocumentReducer.Apply(model, operations);
+        throw new InvalidOperationException(message);
+    }
+    catch (DiagramCommandException exception)
+    {
+        Equal(code, exception.Code, message);
+    }
+}
+
 static void VerifyCyclesAndComponents()
 {
     var model = Model(
@@ -125,6 +171,44 @@ static void VerifyPerformance()
     timer.Stop();
     Equal(count, result.Metrics.NodeCount, "all nodes must be included");
     True(timer.Elapsed < TimeSpan.FromSeconds(5), $"5,000-node sparse graph layout took {timer.Elapsed.TotalMilliseconds:F0} ms");
+}
+
+static void VerifyEnhancedSvgExport()
+{
+    var model = new JsonObject
+    {
+        ["nodes"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "source", ["label"] = "Agent", ["icon"] = "mdi:robot-outline",
+                ["x"] = 0, ["y"] = 0, ["width"] = 180, ["height"] = 100,
+                ["properties"] = new JsonArray
+                {
+                    new JsonObject { ["id"] = "prompt", ["name"] = "prompt", ["label"] = "Prompt", ["value"] = "Hello" }
+                }
+            },
+            new JsonObject { ["id"] = "target", ["label"] = "Output", ["x"] = 300, ["y"] = 0, ["width"] = 160, ["height"] = 80 }
+        },
+        ["ports"] = new JsonArray
+        {
+            new JsonObject { ["id"] = "source-prompt", ["nodeId"] = "source", ["direction"] = "source", ["propertyId"] = "prompt", ["order"] = 0 },
+            new JsonObject { ["id"] = "source-next", ["nodeId"] = "source", ["direction"] = "source", ["order"] = 1 },
+            new JsonObject { ["id"] = "target-in", ["nodeId"] = "target", ["direction"] = "target", ["anchor"] = "left" }
+        },
+        ["edges"] = new JsonArray
+        {
+            new JsonObject { ["id"] = "edge", ["sourcePortId"] = "source-prompt", ["targetPortId"] = "target-in", ["connector"] = "bezier" }
+        },
+        ["groups"] = new JsonArray()
+    };
+    var artifact = new SvgDiagramExporter().Export(new("svg", 3, JsonSerializer.SerializeToElement(model)));
+    True(artifact.Content.Contains(">Prompt</text>", StringComparison.Ordinal), "property label must be exported");
+    True(artifact.Content.Contains(">Hello</text>", StringComparison.Ordinal), "property value must be exported");
+    True(artifact.Content.Contains(" C ", StringComparison.Ordinal), "Bezier connector must remain curved in SVG");
+    True(artifact.Content.Contains("M 180 40 C", StringComparison.Ordinal), "property-bound edge must originate at the rendered property row");
+    True(artifact.Content.Contains("data-port-id=\"source-prompt\"", StringComparison.Ordinal), "property-bound port must be exported");
+    True(artifact.Content.Contains("data-port-id=\"source-next\" cx=\"180\" cy=\"61\"", StringComparison.Ordinal), "ordered complex-node ports must retain their row slot instead of using node height");
 }
 
 static async Task VerifyCommandPipeline()

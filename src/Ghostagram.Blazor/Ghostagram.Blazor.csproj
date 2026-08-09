@@ -12,4 +12,7 @@
     <Content Include="..\Ghostagram\ghostagram.js" Link="wwwroot\ghostagram\ghostagram.js" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\Ghostagram\runtime\**\*.js" Link="wwwroot\ghostagram\runtime\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" Version="9.8.0" />
+  </ItemGroup>
 </Project>

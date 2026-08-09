@@ -40,6 +40,102 @@ test("nullable optional .NET fields behave as omitted descriptors", () => {
   assert.deepEqual(edge.style, {});
 });
 
+test("dynamic node properties retain explicit null and provide stable property-port anchors", () => {
+  const state = __testing.buildState({
+    ...base,
+    nodes: [{ ...base.nodes[0], height: 120, properties: [
+      { id: "customer", name: "customer", type: "string", value: null, mode: "edit", label: "Customer" },
+      { id: "priority", name: "priority", type: "enum", value: "high", options: ["low", "high"], mode: "display" }
+    ] }, base.nodes[1]],
+    ports: [{ id: "customer-in", nodeId: "a", direction: "target", propertyId: "customer" }, { id: "customer-out", nodeId: "a", direction: "source", propertyId: "customer" }, { id: "priority-out", nodeId: "a", direction: "source", propertyId: "priority" }, base.ports[1]],
+    edges: [{ id: "edge-1", sourcePortId: "priority-out", targetPortId: "b-in", connector: "straight" }]
+  });
+  assert.equal(state.nodes.get("a").properties[0].value, null);
+  assert.deepEqual(__testing.serialiseState(state).nodes[0].properties[0].value, null);
+  const customerInputAnchor = { type: "property", side: "left", offsetY: 40 };
+  const customerOutputAnchor = { type: "property", side: "right", offsetY: 40 };
+  assert.deepEqual(__testing.resolvePortAnchor(state, state.ports.get("customer-in")), customerInputAnchor);
+  assert.deepEqual(__testing.resolvePortAnchor(state, state.ports.get("customer-out")), customerOutputAnchor);
+  assert.deepEqual(__testing.resolvePortAnchor(state, state.ports.get("priority-out")), { type: "property", side: "right", offsetY: 61 });
+  assert.equal(__testing.anchorPoint(state.nodes.get("a"), customerInputAnchor).y, __testing.anchorPoint(state.nodes.get("a"), customerOutputAnchor).y);
+  assert.match(__testing.portAnchorStyle(customerInputAnchor, 10, 2), /left:-7px;top:40px/);
+  const geometry = __testing.edgeGeometry(state, state.edges.get("edge-1"));
+  assert.deepEqual(geometry.sourcePoint, { x: 80, y: 61 });
+  assert.equal(geometry.sourceSide, "right");
+  const hidden = __testing.buildState({
+    ...base,
+    nodes: [{ ...base.nodes[0], height: 120, properties: [
+      { id: "internal", name: "Internal", type: "string", mode: "hidden", value: "secret" },
+      { id: "visible", name: "Visible", type: "string", value: "shown", connectable: true }
+    ] }, base.nodes[1]],
+    ports: [{ id: "visible-both", nodeId: "a", direction: "both", propertyId: "visible" }, base.ports[1]],
+    edges: []
+  });
+  assert.deepEqual(__testing.resolvePortAnchor(hidden, hidden.ports.get("visible-both")), { type: "property", side: "right", offsetY: 40 });
+});
+
+test("ordered side ports on complex nodes retain pixel positions when node height changes", () => {
+  const model = height => ({
+    ...base,
+    nodes: [{ ...base.nodes[0], height, properties: [{ id: "condition", type: "string", mode: "edit", value: "ready" }] }, base.nodes[1]],
+    ports: [
+      { id: "a-in", nodeId: "a", direction: "target", order: 0 },
+      { id: "a-true", nodeId: "a", direction: "source", order: 1 },
+      { id: "a-false", nodeId: "a", direction: "source", order: 2 },
+      base.ports[1]
+    ],
+    edges: []
+  });
+  const before = __testing.buildState(model(136)), after = __testing.buildState(model(260));
+  const expected = [
+    { id: "a-in", anchor: { type: "ordered", side: "left", offsetY: 40 } },
+    { id: "a-true", anchor: { type: "ordered", side: "right", offsetY: 61 } },
+    { id: "a-false", anchor: { type: "ordered", side: "right", offsetY: 82 } }
+  ];
+  for (const item of expected) {
+    assert.deepEqual(__testing.resolvePortAnchor(before, before.ports.get(item.id)), item.anchor);
+    assert.deepEqual(__testing.resolvePortAnchor(after, after.ports.get(item.id)), item.anchor);
+  }
+  assert.equal(__testing.anchorPoint(before.nodes.get("a"), expected[1].anchor).y, __testing.anchorPoint(after.nodes.get("a"), expected[1].anchor).y);
+  assert.equal(__testing.nodeContentMinimumHeight(before, before.nodes.get("a")), 90);
+});
+
+test("interactive property controls do not trigger node selection or dragging", () => {
+  const interactive = { closest: selector => selector.includes("select") ? {} : null };
+  const passive = { closest: () => null };
+  assert.equal(__testing.isInteractiveNodeTarget(interactive), true);
+  assert.equal(__testing.isInteractiveNodeTarget(passive), false);
+  assert.equal(__testing.isInteractiveNodeTarget(null), false);
+});
+
+test("property editors retain a neutral control palette instead of inheriting node text color", () => {
+  const style = __testing.propertyEditorStyle();
+  assert.match(style, /color:#0f172a/);
+  assert.match(style, /border:1px solid #94a3b8/);
+  assert.match(style, /background:rgba\(255,255,255,\.92\)/);
+  assert.doesNotMatch(style, /color:inherit|currentColor/);
+});
+
+test("dynamic property validation permits extension types and rejects invalid references", () => {
+  const custom = __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], properties: [{ id: "attachment", type: "sample/file", value: "a.txt" }] }, base.nodes[1]] });
+  assert.equal(custom.nodes.get("a").properties[0].type, "sample/file");
+  assert.throws(() => __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], properties: [{ id: "bad", type: "" }] }, base.nodes[1]] }), /type identifier/i);
+  assert.throws(() => __testing.buildState({ ...base, ports: [{ ...base.ports[0], propertyId: "missing" }, base.ports[1]] }), /missing node property/i);
+  assert.equal(__testing.propertyDisplayValue({ type: "boolean", value: false }), "No");
+  assert.equal(__testing.propertyDisplayValue({ type: "json", value: { a: 1 } }), '{"a":1}');
+  assert.match(__testing.dateTimeInputValue("2026-08-08T12:00:00Z"), /^2026-08-08T\d{2}:00$/);
+  assert.throws(() => __testing.propertyInputValue({ value: "{" }, { type: "json", value: null }), /valid JSON/i);
+});
+
+test("property commit signatures deduplicate change blur and Enter while retaining null", () => {
+  const initial = __testing.propertyValueSignature(null);
+  const first = __testing.propertyCommitDecision(initial, "Ada");
+  assert.equal(first.commit, true);
+  assert.equal(__testing.propertyCommitDecision(first.signature, "Ada").commit, false);
+  assert.equal(__testing.propertyCommitDecision(first.signature, null).commit, true);
+  assert.equal(__testing.propertyCommitDecision(__testing.propertyValueSignature({ approved: false }), { approved: false }).commit, false);
+});
+
 test("protocol revisions are non-negative integers and client deltas cannot skip a revision", () => {
   assert.equal(__testing.revision(0, "INVALID", "invalid"), 0);
   assert.equal(__testing.revision(42, "INVALID", "invalid"), 42);
@@ -335,6 +431,13 @@ test("routing supports the four interop-safe connector profiles", () => {
   }
 });
 
+test("tall backward Bezier curves keep their horizontal port tangents longer", () => {
+  const source = { x: 256, y: 240 }, target = { x: 112, y: 605 };
+  assert.equal(__testing.bezierControlDistance(source, target), 102.2);
+  assert.equal(__testing.bezierPath(source, target), "M 256 240 C 358.2 240, 9.8 605, 112 605");
+  assert.equal(__testing.bezierControlDistance({ x: 0, y: 0 }, { x: 100, y: 80 }), 48);
+});
+
 test("flowchart connector options merge through edge types, preserve stubs, and round right-angle paths", () => {
   const state = __testing.buildState({ ...base, edgeTypes: [{ id: "rounded", connector: "flowchart", connectorOptions: { stub: 48, cornerRadius: 10 } }], edges: [{ ...base.edges[0], type: "rounded", connectorOptions: { cornerRadius: 6 } }] });
   const edge = __testing.resolveEdgeDescriptor(state.edges.get("edge-1"), state.edgeTypes);
@@ -618,10 +721,13 @@ test("label commits normalize whitespace without creating invisible labels", () 
 });
 
 test("SVG export is standalone and escapes model text", () => {
-  const state = __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], label: "A < B" }, base.nodes[1] ], edges: [{ ...base.edges[0], animation: true, overlays: [{ type: "arrow" }, { type: "plain-arrow", location: 0 }] }] });
+  const state = __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], label: "A < B", icon: "mdi:robot-outline", style: { color: "#123456" }, properties: [{ id: "prompt", name: "Prompt", value: "Hello", mode: "display" }] }, base.nodes[1] ], edges: [{ ...base.edges[0], animation: true, overlays: [{ type: "arrow" }, { type: "plain-arrow", location: 0 }] }] });
   const svg = __testing.exportSvgDocument(state);
   assert.match(svg, /^<svg /);
   assert.match(svg, /A &lt; B/);
+  assert.match(svg, />Prompt<\/text>/);
+  assert.match(svg, />Hello<\/text>/);
+  assert.match(svg, /fill="#123456"/);
   assert.match(svg, /<path /);
   assert.match(svg, /marker-start="url\(#ghostagram-export-plain-arrow\)"/);
   assert.match(svg, /marker-end="url\(#ghostagram-export-arrow\)"/);

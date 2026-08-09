@@ -6,6 +6,8 @@
     <ProjectReference Include="..\Ghostagram.Blazor\Ghostagram.Blazor.csproj" />
     <ProjectReference Include="..\Ghostagram.Contracts\Ghostagram.Contracts.csproj" />
     <ProjectReference Include="..\Ghostagram.Core\Ghostagram.Core.csproj" />
+    <ProjectReference Include="..\Ghostagram.Execution\Ghostagram.Execution.csproj" />
+    <ProjectReference Include="..\Ghostagram.NodeSets.Maf\Ghostagram.NodeSets.Maf.csproj" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.4.1" />
     <PackageReference Include="MudBlazor" Version="9.8.0" />
   </ItemGroup>

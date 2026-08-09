@@ -3,6 +3,7 @@ using System.Text.Json;
 using Ghostagram.Blazor;
 using Ghostagram.Contracts;
 using Ghostagram.Core;
+using Ghostagram.Execution;
 using Ghostagram.Server.Layout;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -14,14 +15,18 @@ public partial class Home : IAsyncDisposable
     private const string DocumentId = "laboratory-design";
     private const string ActorId = "ghostagram-laboratory";
     private const int GridSize = 16;
+    private const int MaxDesignedProperties = 17;
 
     [Inject] private DiagramCommandService Commands { get; set; } = default!;
     [Inject] private DiagramLayoutService Layouts { get; set; } = default!;
+    [Inject] private INodeTypeRegistry NodeTypes { get; set; } = default!;
+    [Inject] private INodeFactory NodeFactory { get; set; } = default!;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260808.2");
+    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260808.3");
     private readonly List<PaletteCategory> _paletteCategories = CreatePaletteCategories();
     private readonly List<NodeTemplate> _templates = CreateBuiltInTemplates();
     private readonly List<DraftPort> _draftPorts = [];
+    private readonly List<DraftProperty> _draftProperties = [];
     private readonly HashSet<string> _expandedCategories = new(StringComparer.Ordinal) { "Workflow" };
     private readonly Stack<DiagramDocument> _undo = new();
     private readonly Stack<DiagramDocument> _redo = new();
@@ -53,10 +58,12 @@ public partial class Home : IAsyncDisposable
     private long _revision;
     private int _templateSequence;
     private int _portSequence;
+    private int _propertySequence;
     private long _lastBrowserEventId;
 
     protected override async Task OnInitializedAsync()
     {
+        AddRegisteredNodeSets();
         await LoadOrCreateDocumentAsync();
         SyncEdgeControlsFromDocument();
     }
@@ -345,14 +352,31 @@ public partial class Home : IAsyncDisposable
             var x = Snap(point.X - template.Width / 2);
             var y = Snap(point.Y - template.Height / 2);
             var groupId = DiagramGroupMembership.ResolveGroupId(_document.Groups, x, y, template.Width, template.Height);
-            var node = new DiagramNode(id, x, y, template.Width, template.Height, template.Label, GroupId: groupId, Icon: template.Icon,
-                Style: new DiagramNodeStyle(template.Background, template.Outline, template.TextColor, template.TextAlign));
-            var ports = template.Ports.Select((port, index) => new DiagramPort(
-                $"{id}-{port.Id}-{index + 1}", id, port.Direction, Anchor: port.Side,
-                Endpoint: new DiagramEndpoint("dot", 11, template.Outline, "#ffffff", 2))).ToArray();
-            var operations = new List<GhostagramOperation> { DiagramOperations.Upsert(node) };
-            operations.AddRange(ports.Select(DiagramOperations.Upsert));
-            await SubmitOperationsAsync(operations, $"Added {template.Label}");
+            if (template.RegisteredTypeId is not null)
+            {
+                var created = NodeFactory.Create(new(id, template.RegisteredTypeId, x, y, template.RegisteredTypeVersion, GroupId: groupId));
+                var styledPorts = created.Ports.Select(port => port with
+                {
+                    Endpoint = new DiagramEndpoint("dot", 10, template.Outline, "#ffffff", 2)
+                });
+                await SubmitOperationsAsync(
+                    [DiagramOperations.Upsert(created.Node), .. styledPorts.Select(DiagramOperations.Upsert)],
+                    $"Added {template.Label}");
+            }
+            else
+            {
+                var properties = template.Properties.Select(property => property.Property with { Value = property.Value?.Clone() }).ToArray();
+                var node = new DiagramNode(id, x, y, template.Width, template.Height, template.Label, GroupId: groupId, Icon: template.Icon,
+                    Style: new DiagramNodeStyle(template.Background, template.Outline, template.TextColor, template.TextAlign), Properties: properties);
+                var ports = template.Ports.Select((port, index) => new DiagramPort(
+                    $"{id}-{port.Id}-{index + 1}", id, port.Direction, Anchor: port.Side,
+                    Endpoint: new DiagramEndpoint("dot", 11, template.Outline, "#ffffff", 2))).ToArray();
+                var operations = new List<GhostagramOperation> { DiagramOperations.Upsert(node) };
+                operations.AddRange(ports.Select(DiagramOperations.Upsert));
+                operations.AddRange(properties.Where(property => property.Connectable).SelectMany((property, index) =>
+                    PropertyPorts(id, property, template.Properties.Single(templateProperty => templateProperty.Id == property.Id).Direction, index, template.Outline)).Select(DiagramOperations.Upsert));
+                await SubmitOperationsAsync(operations, $"Added {template.Label}");
+            }
         }
 
         if (!_palettePinned) _paletteOpen = false;
@@ -364,6 +388,16 @@ public partial class Home : IAsyncDisposable
     private void AddBottomConnectionPoint() => AddConnectionPoint("bottom");
     private void AddLeftConnectionPoint() => AddConnectionPoint("left");
     private void RemoveConnectionPoint(string id) => _draftPorts.RemoveAll(port => port.Id == id);
+    private void AddDraftProperty()
+    {
+        if (_draftProperties.Count >= MaxDesignedProperties)
+        {
+            _activity = $"Node types support up to {MaxDesignedProperties} visible properties.";
+            return;
+        }
+        _draftProperties.Add(new DraftProperty($"property-{++_propertySequence}"));
+    }
+    private void RemoveDraftProperty(string id) => _draftProperties.RemoveAll(property => property.Id == id);
 
     private void AddCustomTemplate()
     {
@@ -374,11 +408,14 @@ public partial class Home : IAsyncDisposable
         var textAlign = NormalizeTextAlign(_draft.TextAlign);
         var category = _paletteCategories.Any(item => item.Name == _draft.Category) ? _draft.Category : "Custom";
         var ports = _draftPorts.Select((port, index) => new PortTemplate($"port-{index + 1}", port.Side, port.Direction)).ToArray();
+        var properties = _draftProperties.Select(CreatePropertyTemplate).ToArray();
+        var minimumPropertyHeight = properties.Count(property => property.Mode != DiagramPropertyModes.Hidden) * 21 + 48;
         _templates.Add(new NodeTemplate($"custom-{++_templateSequence}", category, label, "Custom component",
-            Math.Clamp(_draft.Width, 96, 360), Math.Clamp(_draft.Height, 48, 240), outline, background, textColor, textAlign,
-            ports, false, "mdi:shape-outline", true));
+            Math.Clamp(_draft.Width, 96, 360), Math.Clamp(Math.Max(_draft.Height, minimumPropertyHeight), 48, 420), outline, background, textColor, textAlign,
+            ports, false, NormalizeIcon(_draft.Icon) ?? "mdi:shape-outline", true, properties));
         _draft = new NodeDraft();
         _draftPorts.Clear();
+        _draftProperties.Clear();
         _isDesignerOpen = false;
         _paletteOpen = true;
         _expandedCategories.Add(category);
@@ -419,6 +456,7 @@ public partial class Home : IAsyncDisposable
             case "node.resize.commit": await CommitNodeAsync(envelope.Payload, node => node with { Width = Number(envelope.Payload, "width"), Height = Number(envelope.Payload, "height") }, "Resized node"); break;
             case "node.rotate.commit": await CommitNodeAsync(envelope.Payload, node => node with { Rotation = Number(envelope.Payload, "rotation") }, "Rotated node"); break;
             case "node.label.commit": await CommitNodeAsync(envelope.Payload, node => node with { Label = NullableLabel(envelope.Payload, "label") }, "Updated node label"); break;
+            case "node.property.commit": await CommitNodePropertyAsync(envelope.Payload); break;
             case "nodes.move.commit": await CommitNodePositionsAsync(envelope.Payload, "nodes", "Moved nodes"); break;
             case "selection.move.commit": await CommitNodeAndGroupPositionsAsync(envelope.Payload, "Moved selection"); break;
             case "group.move.commit": await CommitGroupMoveAsync(envelope.Payload); break;
@@ -446,6 +484,16 @@ public partial class Home : IAsyncDisposable
     {
         var current = _document.Nodes.SingleOrDefault(node => node.Id == String(payload, "nodeId"));
         if (current is not null) await SubmitOperationsAsync([DiagramOperations.Upsert(update(current))], activity);
+    }
+
+    private async Task CommitNodePropertyAsync(JsonElement payload)
+    {
+        var node = _document.Nodes.SingleOrDefault(item => item.Id == String(payload, "nodeId"));
+        var propertyId = String(payload, "propertyId");
+        if (node is null || string.IsNullOrWhiteSpace(propertyId) || !payload.TryGetProperty("value", out var value)) return;
+        var properties = node.Properties.Select(property => property.Id == propertyId ? property with { Value = value.Clone() } : property).ToArray();
+        if (properties.SequenceEqual(node.Properties)) return;
+        await SubmitOperationsAsync([DiagramOperations.Upsert(node with { Properties = properties })], $"Updated {properties.Single(property => property.Id == propertyId).Label ?? propertyId}");
     }
 
     private async Task CommitNodeMoveAsync(JsonElement payload)
@@ -914,7 +962,7 @@ public partial class Home : IAsyncDisposable
 
     private void SyncEdgeControls(DiagramEdge edge)
     {
-        _edgeConnector = edge.Connector is "bezier" ? "bezier" : "flowchart";
+        _edgeConnector = edge.Connector is "straight" or "bezier" ? edge.Connector : "flowchart";
         _edgeAnimated = AnimationEnabled(edge.Animation);
     }
 
@@ -963,6 +1011,47 @@ public partial class Home : IAsyncDisposable
         _ => "mdi:shape-outline"
     };
 
+    private static PropertyTemplate CreatePropertyTemplate(DraftProperty draft)
+    {
+        var name = string.IsNullOrWhiteSpace(draft.Name) ? draft.Id : draft.Name.Trim();
+        var type = draft.Type is DiagramPropertyTypes.Boolean or DiagramPropertyTypes.Integer or DiagramPropertyTypes.Decimal or DiagramPropertyTypes.Date or DiagramPropertyTypes.DateTime or DiagramPropertyTypes.Enum or DiagramPropertyTypes.Json ? draft.Type : DiagramPropertyTypes.String;
+        var options = type == DiagramPropertyTypes.Enum
+            ? draft.Options.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal).ToArray()
+            : [];
+        return new PropertyTemplate(draft.Id, name, type, ParsePropertyValue(draft.DefaultValue, type), draft.Mode, name, draft.Connectable, options, draft.Direction);
+    }
+
+    private static JsonElement? ParsePropertyValue(string? raw, string type)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        try
+        {
+            return type switch
+            {
+                DiagramPropertyTypes.Boolean when bool.TryParse(raw, out var boolean) => JsonSerializer.SerializeToElement(boolean),
+                DiagramPropertyTypes.Integer when long.TryParse(raw, out var integer) => JsonSerializer.SerializeToElement(integer),
+                DiagramPropertyTypes.Decimal when decimal.TryParse(raw, out var number) => JsonSerializer.SerializeToElement(number),
+                DiagramPropertyTypes.Json => JsonDocument.Parse(raw).RootElement.Clone(),
+                _ => JsonSerializer.SerializeToElement(raw)
+            };
+        }
+        catch (JsonException) { return JsonSerializer.SerializeToElement(raw); }
+    }
+
+    private static IEnumerable<DiagramPort> PropertyPorts(string nodeId, DiagramNodeProperty property, string direction, int index, string outline)
+    {
+        var endpoint = new DiagramEndpoint("dot", 10, outline, "#ffffff", 2);
+        if (!property.Connectable || property.Mode == DiagramPropertyModes.Hidden) yield break;
+        if (direction is "target" or "both")
+        {
+            yield return new DiagramPort($"{nodeId}-{property.Id}-in", nodeId, "target", Anchor: "left", Endpoint: endpoint, PropertyId: property.Id, Label: property.Label, Order: index);
+        }
+        if (direction is "source" or "both")
+        {
+            yield return new DiagramPort($"{nodeId}-{property.Id}-out", nodeId, "source", Anchor: "right", Endpoint: endpoint, PropertyId: property.Id, Label: property.Label, Order: index);
+        }
+    }
+
     private static DiagramDocument Deserialize(DiagramSnapshot snapshot) =>
         JsonSerializer.Deserialize<DiagramDocument>(snapshot.Model.GetRawText(), JsonOptions)
         ?? throw new InvalidOperationException("The saved diagram could not be read.");
@@ -1002,6 +1091,63 @@ public partial class Home : IAsyncDisposable
         new("Containers", true),
         new("Custom", true)
     ];
+
+    private void AddRegisteredNodeSets()
+    {
+        foreach (var set in NodeTypes.NodeSets)
+        {
+            foreach (var descriptor in set.NodeTypes)
+            {
+                if (_paletteCategories.All(category => !string.Equals(category.Name, descriptor.PaletteGroup, StringComparison.Ordinal)))
+                    _paletteCategories.Add(new(descriptor.PaletteGroup, true));
+                if (_templates.Any(template => string.Equals(template.RegisteredTypeId, descriptor.TypeId, StringComparison.Ordinal) && template.RegisteredTypeVersion == descriptor.Version)) continue;
+                var properties = descriptor.Properties.Select(property => new PropertyTemplate(
+                    property.Id,
+                    property.Name,
+                    property.Type,
+                    property.DefaultValue?.Clone(),
+                    property.Mode,
+                    property.Label,
+                    property.Connectable,
+                    property.Options ?? [],
+                    PropertyDirection(descriptor, property.Id))).ToArray();
+                var ports = descriptor.Ports
+                    .Where(port => port.PropertyId is null)
+                    .Select(port => new PortTemplate(port.Id, PortSide(port.Direction), port.Direction))
+                    .ToArray();
+                _templates.Add(new(
+                    $"registered:{descriptor.TypeId}@{descriptor.Version}",
+                    descriptor.PaletteGroup,
+                    descriptor.DisplayName,
+                    descriptor.Metadata.TryGetValue("description", out var description) && description.ValueKind == JsonValueKind.String
+                        ? description.GetString() ?? set.Description ?? "Registered node type"
+                        : set.Description ?? "Registered node type",
+                    descriptor.Width,
+                    descriptor.Height,
+                    descriptor.Style?.BorderColor ?? "#5b5bd6",
+                    descriptor.Style?.Background ?? "#ffffff",
+                    descriptor.Style?.Color ?? "#172033",
+                    descriptor.Style?.TextAlign ?? "left",
+                    ports,
+                    false,
+                    NormalizeIcon(descriptor.Icon) ?? "mdi:shape-outline",
+                    Properties: properties,
+                    RegisteredTypeId: descriptor.TypeId,
+                    RegisteredTypeVersion: descriptor.Version));
+            }
+        }
+    }
+
+    private static string PropertyDirection(NodeTypeDescriptor descriptor, string propertyId)
+    {
+        var directions = descriptor.Ports.Where(port => string.Equals(port.PropertyId, propertyId, StringComparison.Ordinal))
+            .Select(port => port.Direction).ToHashSet(StringComparer.Ordinal);
+        return directions.Contains("both") || directions.Contains("source") && directions.Contains("target")
+            ? "both"
+            : directions.Contains("target") ? "target" : "source";
+    }
+
+    private static string PortSide(string direction) => direction == "target" ? "left" : "right";
 
     private static string CommandId(string kind) => $"{kind}-{Guid.NewGuid():N}";
     private static string NextId(string prefix) => $"{prefix}-{Guid.NewGuid():N}";
@@ -1060,6 +1206,7 @@ public partial class Home : IAsyncDisposable
         public string TextAlign { get; set; } = "center";
         public string Category { get; set; } = "Custom";
         public string Direction { get; set; } = "both";
+        public string Icon { get; set; } = "mdi:shape-outline";
     }
 
     private sealed class NodeStyleDraft
@@ -1076,6 +1223,17 @@ public partial class Home : IAsyncDisposable
         public string Side { get; } = side;
         public string Direction { get; set; } = direction;
     }
+    private sealed class DraftProperty(string id)
+    {
+        public string Id { get; } = id;
+        public string Name { get; set; } = "Value";
+        public string Type { get; set; } = DiagramPropertyTypes.String;
+        public string Mode { get; set; } = DiagramPropertyModes.Display;
+        public string DefaultValue { get; set; } = string.Empty;
+        public string Options { get; set; } = string.Empty;
+        public bool Connectable { get; set; }
+        public string Direction { get; set; } = "both";
+    }
 
     private sealed record NodeTemplate(
         string Id,
@@ -1091,9 +1249,19 @@ public partial class Home : IAsyncDisposable
         IReadOnlyList<PortTemplate> Ports,
         bool IsGroup,
         string Icon,
-        bool IsCustom = false);
+        bool IsCustom = false,
+        IReadOnlyList<PropertyTemplate>? Properties = null,
+        string? RegisteredTypeId = null,
+        int? RegisteredTypeVersion = null)
+    {
+        public IReadOnlyList<PropertyTemplate> Properties { get; init; } = Properties ?? [];
+    }
     private sealed record PaletteCategory(string Name, bool IsSystem);
     private sealed record PortTemplate(string Id, string Side, string Direction);
+    private sealed record PropertyTemplate(string Id, string Name, string Type, JsonElement? Value, string Mode, string? Label, bool Connectable, IReadOnlyList<string> Options, string Direction)
+    {
+        public DiagramNodeProperty Property => new(Id, Name, Type: Type, Value: Value, Mode: Mode, Label: Label, Connectable: Connectable, Options: Options);
+    }
     private sealed record NodePosition(string Id, double X, double Y, string? GroupId, bool HasGroupId);
     private sealed record GroupPosition(string Id, double X, double Y);
 }

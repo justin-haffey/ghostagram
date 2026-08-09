@@ -87,13 +87,35 @@ public static class GhostagramDocumentReducer
     private static void Validate(JsonObject root)
     {
         foreach (var name in Collections) Collection(root, name);
+        var nodes = Collection(root, "nodes").OfType<JsonObject>().ToArray();
         var nodeIds = Ids(Collection(root, "nodes"), "node");
+        var propertyIdsByNode = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        foreach (var node in nodes)
+        {
+            var propertyIds = new HashSet<string>(StringComparer.Ordinal);
+            if (node["properties"] is not null and not JsonArray)
+                throw new DiagramCommandException("INVALID_MODEL", $"Node '{IdOf(node)}' properties must be an array.");
+            foreach (var property in (node["properties"] as JsonArray ?? []).OfType<JsonObject>())
+            {
+                var propertyId = IdOf(property, "node property");
+                if (!propertyIds.Add(propertyId))
+                    throw new DiagramCommandException("DUPLICATE_ID", $"Node '{IdOf(node)}' contains duplicate property id '{propertyId}'.");
+            }
+            propertyIdsByNode[IdOf(node)] = propertyIds;
+        }
         var portIds = Ids(Collection(root, "ports"), "port");
         var groupIds = Ids(Collection(root, "groups"), "group");
         var edgeTypeIds = Ids(Collection(root, "edgeTypes"), "edge type");
-        foreach (var port in Collection(root, "ports").OfType<JsonObject>()) if (!nodeIds.Contains(String(port, "nodeId"))) throw new DiagramCommandException("MISSING_REFERENCE", $"Port '{IdOf(port)}' references a missing node.");
-        foreach (var node in Collection(root, "nodes").OfType<JsonObject>()) if (OptionalString(node, "groupId") is { } groupId && !groupIds.Contains(groupId)) throw new DiagramCommandException("MISSING_REFERENCE", $"Node '{IdOf(node)}' references a missing group.");
+        foreach (var port in Collection(root, "ports").OfType<JsonObject>())
+        {
+            var nodeId = String(port, "nodeId");
+            if (!nodeIds.Contains(nodeId)) throw new DiagramCommandException("MISSING_REFERENCE", $"Port '{IdOf(port)}' references a missing node.");
+            if (OptionalString(port, "propertyId") is { } propertyId && !propertyIdsByNode[nodeId].Contains(propertyId))
+                throw new DiagramCommandException("MISSING_REFERENCE", $"Port '{IdOf(port)}' references missing property '{propertyId}' on node '{nodeId}'.");
+        }
+        foreach (var node in nodes) if (OptionalString(node, "groupId") is { } groupId && !groupIds.Contains(groupId)) throw new DiagramCommandException("MISSING_REFERENCE", $"Node '{IdOf(node)}' references a missing group.");
         foreach (var group in Collection(root, "groups").OfType<JsonObject>()) if (OptionalString(group, "parentGroupId") is { } parent && !groupIds.Contains(parent)) throw new DiagramCommandException("MISSING_REFERENCE", $"Group '{IdOf(group)}' references a missing parent group.");
+        ValidateGroupCycles(Collection(root, "groups").OfType<JsonObject>());
         foreach (var edge in Collection(root, "edges").OfType<JsonObject>())
         {
             if (!portIds.Contains(String(edge, "sourcePortId")) || !portIds.Contains(String(edge, "targetPortId"))) throw new DiagramCommandException("MISSING_REFERENCE", $"Edge '{IdOf(edge)}' references a missing port.");
@@ -108,7 +130,32 @@ public static class GhostagramDocumentReducer
         root[name] = items;
         return items;
     }
-    private static HashSet<string> Ids(JsonArray items, string kind) => items.OfType<JsonObject>().Select(item => IdOf(item, kind)).ToHashSet(StringComparer.Ordinal);
+    private static HashSet<string> Ids(JsonArray items, string kind)
+    {
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var item in items.OfType<JsonObject>())
+        {
+            var id = IdOf(item, kind);
+            if (!ids.Add(id)) throw new DiagramCommandException("DUPLICATE_ID", $"Duplicate {kind} id '{id}'.");
+        }
+        return ids;
+    }
+
+    private static void ValidateGroupCycles(IEnumerable<JsonObject> groups)
+    {
+        var parentById = groups.ToDictionary(group => IdOf(group), group => OptionalString(group, "parentGroupId"), StringComparer.Ordinal);
+        foreach (var start in parentById.Keys)
+        {
+            var visited = new HashSet<string>(StringComparer.Ordinal);
+            var current = start;
+            while (parentById.TryGetValue(current, out var parent) && parent is not null)
+            {
+                if (!visited.Add(current))
+                    throw new DiagramCommandException("INVALID_GROUP_HIERARCHY", $"Group hierarchy contains a cycle involving '{current}'.");
+                current = parent;
+            }
+        }
+    }
     private static string Id(GhostagramOperation operation, JsonObject value) => operation.Id ?? IdOf(value);
     private static string IdOf(JsonObject item, string kind = "item") => String(item, "id", kind);
     private static string String(JsonObject item, string key, string kind = "item") => OptionalString(item, key) ?? throw new DiagramCommandException("INVALID_MODEL", $"{kind} requires a string '{key}'.");

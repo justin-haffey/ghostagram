@@ -43,6 +43,24 @@ Use exactly one mode: either the controlled `Document` shown above, or a declara
 </GhostDiagram>
 ```
 
+`GhostNode` also accepts `TypeId`, `TypeVersion`, and an ordered `Properties` collection. Associate a declarative port with a property row through `PropertyId`; input ports render on the left and output ports on the right.
+
+```razor
+<GhostNode Id="capture" TypeId="sample.capture" Label="Capture customer" X="100" Y="100"
+           Width="240" Height="132" Properties="properties">
+    <GhostPort Id="capture-name-in" Direction="target" PropertyId="customer-name" Label="Customer name" />
+    <GhostPort Id="capture-name-out" Direction="source" PropertyId="customer-name" Label="Customer name" />
+</GhostNode>
+
+@code {
+    private readonly IReadOnlyList<DiagramNodeProperty> properties =
+    [
+        new("customer-name", "customerName", Value: System.Text.Json.JsonSerializer.SerializeToElement(""),
+            Mode: DiagramPropertyModes.DisplayAndEdit, Label: "Customer name", Connectable: true)
+    ];
+}
+```
+
 ## Reusable node palette
 
 `GhostPalette` is a dependency-free, folder-style Blazor control. The component owns accessible rendering, pointer and keyboard activation, dragging between palette groups, and canvas-drop signaling. The host supplies its groups and items, persists any changes, and decides how a dropped item becomes a diagram node.

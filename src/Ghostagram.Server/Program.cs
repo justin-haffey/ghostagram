@@ -4,6 +4,8 @@ using Ghostagram.Server;
 using Ghostagram.Server.Export;
 using Ghostagram.Server.Layout;
 using Ghostagram.Server.Sessions;
+using Ghostagram.Execution;
+using Ghostagram.NodeSets.Maf;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.FileProviders;
@@ -33,6 +35,10 @@ builder.Services.AddSingleton<IDiagramLayoutStrategyResolver, DiagramLayoutStrat
 builder.Services.AddSingleton<DiagramLayoutService>();
 builder.Services.AddSingleton<IDiagramExporter, SvgDiagramExporter>();
 builder.Services.AddSingleton<DiagramSessionService>();
+builder.Services.AddSingleton<INodeTypeRegistry>(_ => new NodeTypeRegistry([MafOrchestrationNodeSet.Descriptor]));
+builder.Services.AddSingleton<INodeFactory, DeterministicNodeFactory>();
+builder.Services.AddSingleton<IGraphCompiler, GraphCompiler>();
+builder.Services.AddSingleton<IGraphExecutionEngine, GraphExecutionEngine>();
 builder.Services.AddMcpServer()
     .WithHttpTransport()
     .WithToolsFromAssembly();
@@ -54,7 +60,7 @@ app.Use(async (context, next) =>
 {
     // MudBlazor emits its theme variables and Ghostagram emits instance-scoped
     // animation keyframes as inline style elements. Scripts remain self-only.
-    context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'";
+    context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; connect-src 'self' https://api.iconify.design; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' https://code.iconify.design";
     await next();
 });
 
