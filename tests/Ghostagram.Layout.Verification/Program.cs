@@ -198,9 +198,33 @@ static void VerifyEnhancedSvgExport()
         },
         ["edges"] = new JsonArray
         {
-            new JsonObject { ["id"] = "edge", ["sourcePortId"] = "source-prompt", ["targetPortId"] = "target-in", ["connector"] = "bezier" }
+            new JsonObject
+            {
+                ["id"] = "edge", ["sourcePortId"] = "source-prompt", ["targetPortId"] = "target-in", ["connector"] = "bezier",
+                ["overlays"] = new JsonArray
+                {
+                    new JsonObject { ["type"] = "diamond-open", ["location"] = 0 },
+                    new JsonObject { ["type"] = "erd-zero-many", ["location"] = 1 }
+                }
+            },
+            new JsonObject
+            {
+                ["id"] = "typed-edge", ["sourcePortId"] = "source-next", ["targetPortId"] = "target-in", ["type"] = "uml-aggregation"
+            }
         },
-        ["groups"] = new JsonArray()
+        ["groups"] = new JsonArray(),
+        ["edgeTypes"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "uml-aggregation", ["connector"] = "straight",
+                ["overlays"] = new JsonArray
+                {
+                    new JsonObject { ["type"] = "diamond-open", ["location"] = 0 },
+                    new JsonObject { ["type"] = "plain-arrow", ["location"] = 1 }
+                }
+            }
+        }
     };
     var artifact = new SvgDiagramExporter().Export(new("svg", 3, JsonSerializer.SerializeToElement(model)));
     True(artifact.Content.Contains(">Prompt</text>", StringComparison.Ordinal), "property label must be exported");
@@ -209,6 +233,13 @@ static void VerifyEnhancedSvgExport()
     True(artifact.Content.Contains("M 180 40 C", StringComparison.Ordinal), "property-bound edge must originate at the rendered property row");
     True(artifact.Content.Contains("data-port-id=\"source-prompt\"", StringComparison.Ordinal), "property-bound port must be exported");
     True(artifact.Content.Contains("data-port-id=\"source-next\" cx=\"180\" cy=\"61\"", StringComparison.Ordinal), "ordered complex-node ports must retain their row slot instead of using node height");
+    True(artifact.Content.Contains("marker-start=\"url(#gp-diamond-open)\"", StringComparison.Ordinal), "server SVG must preserve the selected UML source marker");
+    True(artifact.Content.Contains("marker-end=\"url(#gp-erd-zero-many)\"", StringComparison.Ordinal), "server SVG must preserve the selected crow's-foot target marker");
+    True(artifact.Content.Contains("id=\"gp-erd-zero-many\"", StringComparison.Ordinal) && artifact.Content.Contains("<circle cx=\"9\"", StringComparison.Ordinal), "server SVG must define the composite zero-to-many marker");
+    True(artifact.Content.Contains("data-edge-id=\"typed-edge\"><path d=\"M 180 61 L 300 40\"", StringComparison.Ordinal), "server SVG must inherit connector geometry from a reusable edge type");
+    True(artifact.Content.Contains("data-edge-id=\"typed-edge\"><path", StringComparison.Ordinal)
+        && artifact.Content.Contains("marker-start=\"url(#gp-diamond-open)\" marker-end=\"url(#gp-plain-arrow)\"", StringComparison.Ordinal),
+        "server SVG must inherit both endpoint markers from a reusable edge type");
 }
 
 static async Task VerifyCommandPipeline()

@@ -18,6 +18,23 @@ public partial class Home : IAsyncDisposable
     private const string ActorId = "ghostagram-laboratory";
     private const int GridSize = 16;
     private const int MaxDesignedProperties = 17;
+    private static readonly EdgeMarkerChoice[] EdgeMarkerChoices =
+    [
+        new("none", "None"),
+        new("arrow", "Filled arrow"),
+        new("plain-arrow", "Open arrow"),
+        new("triangle-open", "Generalization"),
+        new("diamond-open", "Aggregation"),
+        new("diamond", "Composition"),
+        new("erd-one", "Exactly one"),
+        new("erd-zero-one", "Zero or one"),
+        new("erd-one-many", "One or many"),
+        new("erd-zero-many", "Zero or many")
+    ];
+    private static readonly HashSet<string> EdgeMarkerTypes = EdgeMarkerChoices
+        .Where(choice => choice.Id != "none")
+        .Select(choice => choice.Id)
+        .ToHashSet(StringComparer.Ordinal);
 
     [Inject] private DiagramCommandService Commands { get; set; } = default!;
     [Inject] private IDocumentCatalog Documents { get; set; } = default!;
@@ -27,7 +44,7 @@ public partial class Home : IAsyncDisposable
     [Inject] private INodeTypeRegistry NodeTypes { get; set; } = default!;
     [Inject] private INodeFactory NodeFactory { get; set; } = default!;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260808.3");
+    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260809.4");
     private readonly List<PaletteCategory> _paletteCategories = CreatePaletteCategories();
     private readonly List<NodeTemplate> _templates = CreateBuiltInTemplates();
     private readonly List<DraftPort> _draftPorts = [];
@@ -62,6 +79,8 @@ public partial class Home : IAsyncDisposable
     private string _activity = "Loading saved design…";
     private string _layoutDirection = "right";
     private string _edgeConnector = "flowchart";
+    private string _edgeStartMarker = "none";
+    private string _edgeEndMarker = "arrow";
     private bool _edgeAnimated;
     private string? _exportedSvg;
     private string _documentId = DefaultDocumentId;
@@ -1205,6 +1224,7 @@ public partial class Home : IAsyncDisposable
             Connector = _edgeConnector,
             ConnectorOptions = _edgeConnector == "flowchart" ? new DiagramFlowchartOptions(32, 0) : null,
             Waypoints = edge.Connector == _edgeConnector ? edge.Waypoints : [],
+            Overlays = WithEdgeMarkers(edge, _edgeStartMarker, _edgeEndMarker),
             Animation = _edgeAnimated
         })).ToArray();
         await SubmitOperationsAsync(operations, $"Updated {edges.Length} edge{(edges.Length == 1 ? string.Empty : "s")}");
@@ -1231,6 +1251,28 @@ public partial class Home : IAsyncDisposable
         if (edges.Length == 0) return;
         var operations = edges.Select(edge => DiagramOperations.Upsert(edge with { Animation = value })).ToArray();
         await SubmitOperationsAsync(operations, $"{(value ? "Animated" : "Stopped animating")} {SelectedEdgeDescription(edges.Length)}");
+    }
+
+    private Task OnEdgeStartMarkerChangedAsync(string value)
+    {
+        _edgeStartMarker = NormalizeEdgeMarker(value, "none");
+        return ApplySelectedEdgeMarkersAsync();
+    }
+
+    private Task OnEdgeEndMarkerChangedAsync(string value)
+    {
+        _edgeEndMarker = NormalizeEdgeMarker(value, "arrow");
+        return ApplySelectedEdgeMarkersAsync();
+    }
+
+    private async Task ApplySelectedEdgeMarkersAsync()
+    {
+        var edges = SelectedEdges();
+        if (edges.Length == 0) return;
+        var operations = edges
+            .Select(edge => DiagramOperations.Upsert(edge with { Overlays = WithEdgeMarkers(edge, _edgeStartMarker, _edgeEndMarker) }))
+            .ToArray();
+        await SubmitOperationsAsync(operations, $"Updated markers on {SelectedEdgeDescription(edges.Length)}");
     }
 
     private DiagramEdge[] SelectedEdges()
@@ -1549,7 +1591,7 @@ public partial class Home : IAsyncDisposable
 
     private DiagramEdge StyledEdge(string id, string source, string target, string label) => new(
         id, source, target, label, _edgeConnector,
-        Overlays: [new DiagramOverlay("arrow")],
+        Overlays: WithEdgeMarkers([], _edgeStartMarker, _edgeEndMarker),
         ConnectorOptions: _edgeConnector == "flowchart" ? new DiagramFlowchartOptions(32, 0) : null,
         Style: new DiagramEdgeStyle("#7455dd", 2.5, null, .9),
         Animation: _edgeAnimated);
@@ -1569,8 +1611,33 @@ public partial class Home : IAsyncDisposable
     private void SyncEdgeControls(DiagramEdge edge)
     {
         _edgeConnector = edge.Connector is "straight" or "bezier" ? edge.Connector : "flowchart";
+        var overlays = EffectiveOverlays(edge);
+        _edgeStartMarker = MarkerAt(overlays, 0);
+        _edgeEndMarker = MarkerAt(overlays, 1);
         _edgeAnimated = AnimationEnabled(edge.Animation);
     }
+
+    private IReadOnlyList<DiagramOverlay> EffectiveOverlays(DiagramEdge edge) =>
+        edge.Overlays ?? _document.EdgeTypes.SingleOrDefault(type => type.Id == edge.Type)?.Overlays ?? [];
+
+    private IReadOnlyList<DiagramOverlay> WithEdgeMarkers(DiagramEdge edge, string startMarker, string endMarker) =>
+        WithEdgeMarkers(EffectiveOverlays(edge), startMarker, endMarker);
+
+    private static IReadOnlyList<DiagramOverlay> WithEdgeMarkers(IEnumerable<DiagramOverlay> overlays, string startMarker, string endMarker)
+    {
+        var result = overlays.Where(overlay => !EdgeMarkerTypes.Contains(overlay.Type)).ToList();
+        startMarker = NormalizeEdgeMarker(startMarker, "none");
+        endMarker = NormalizeEdgeMarker(endMarker, "none");
+        if (startMarker != "none") result.Add(new DiagramOverlay(startMarker, Location: 0));
+        if (endMarker != "none") result.Add(new DiagramOverlay(endMarker, Location: 1));
+        return result;
+    }
+
+    private static string MarkerAt(IEnumerable<DiagramOverlay> overlays, double location) =>
+        overlays.FirstOrDefault(overlay => EdgeMarkerTypes.Contains(overlay.Type) && (overlay.Location ?? 1) == location)?.Type ?? "none";
+
+    private static string NormalizeEdgeMarker(string? marker, string fallback) =>
+        marker == "none" || (marker is not null && EdgeMarkerTypes.Contains(marker)) ? marker : fallback;
 
     private static bool AnimationEnabled(object? animation) => animation switch
     {
@@ -1887,4 +1954,5 @@ public partial class Home : IAsyncDisposable
     }
     private sealed record NodePosition(string Id, double X, double Y, string? GroupId, bool HasGroupId);
     private sealed record GroupPosition(string Id, double X, double Y);
+    private sealed record EdgeMarkerChoice(string Id, string Label);
 }

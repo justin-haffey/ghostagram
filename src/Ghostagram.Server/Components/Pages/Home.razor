@@ -107,6 +107,18 @@
                         <MudSelectItem T="string" Value="@("straight")">Straight</MudSelectItem>
                         <MudSelectItem T="string" Value="@("bezier")">Curved</MudSelectItem>
                     </MudSelect>
+                    <MudSelect T="string" Value="_edgeStartMarker" ValueChanged="OnEdgeStartMarkerChangedAsync" Label="Start marker" Dense="true" Variant="Variant.Outlined" Class="toolbar-select marker-select">
+                        @foreach (var marker in EdgeMarkerChoices)
+                        {
+                            <MudSelectItem T="string" Value="@marker.Id">@marker.Label</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudSelect T="string" Value="_edgeEndMarker" ValueChanged="OnEdgeEndMarkerChangedAsync" Label="End marker" Dense="true" Variant="Variant.Outlined" Class="toolbar-select marker-select">
+                        @foreach (var marker in EdgeMarkerChoices)
+                        {
+                            <MudSelectItem T="string" Value="@marker.Id">@marker.Label</MudSelectItem>
+                        }
+                    </MudSelect>
                     <MudSwitch T="bool" Value="_edgeAnimated" ValueChanged="OnEdgeAnimatedChangedAsync" Color="Color.Secondary" Label="Animated" />
                     <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Timeline" OnClick="ApplyEdgeSettingsAsync" Disabled="@(!_document.Edges.Any())">
                         @EdgeApplyLabel

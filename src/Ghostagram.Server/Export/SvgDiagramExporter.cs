@@ -9,6 +9,7 @@ namespace Ghostagram.Server.Export;
 /// <summary>Deterministic, dependency-free SVG projection for server and MCP exports.</summary>
 public sealed class SvgDiagramExporter : IDiagramExporter
 {
+    private static readonly string[] MarkerTypes = ["arrow", "plain-arrow", "triangle-open", "diamond", "diamond-open", "erd-one", "erd-zero-one", "erd-one-many", "erd-zero-many"];
     public string Format => "svg";
 
     public DiagramExportArtifact Export(DiagramSnapshot snapshot)
@@ -17,7 +18,10 @@ public sealed class SvgDiagramExporter : IDiagramExporter
         var nodes = Items(root, "nodes").Select(Node.Parse).ToDictionary(item => item.Id, StringComparer.Ordinal);
         var groups = Items(root, "groups").Select(Box.Parse).ToArray();
         var ports = Items(root, "ports").Select(Port.Parse).ToDictionary(item => item.Id, StringComparer.Ordinal);
-        var edges = Items(root, "edges").Select(Edge.Parse).ToArray();
+        var edgeTypes = Items(root, "edgeTypes")
+            .Where(item => !string.IsNullOrWhiteSpace(S(item, "id")))
+            .ToDictionary(item => S(item, "id"), item => item, StringComparer.Ordinal);
+        var edges = Items(root, "edges").Select(item => Edge.Parse(item, edgeTypes)).ToArray();
         var boxes = groups.Concat(nodes.Values.Select(item => item.Box)).ToArray();
         var minX = boxes.Length == 0 ? 0 : boxes.Min(item => item.X);
         var minY = boxes.Length == 0 ? 0 : boxes.Min(item => item.Y);
@@ -31,8 +35,9 @@ public sealed class SvgDiagramExporter : IDiagramExporter
         svg.Append("<svg xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"")
             .Append(Escape($"Ghostagram diagram {snapshot.DocumentId}"))
             .Append("\" viewBox=\"").Append(N(minX - padding)).Append(' ').Append(N(minY - padding)).Append(' ')
-            .Append(N(width)).Append(' ').Append(N(height)).Append("\">")
-            .Append("<defs><marker id=\"gp-arrow\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M 0 0 L 10 5 L 0 10 z\" fill=\"#0f766e\"/></marker></defs>")
+            .Append(N(width)).Append(' ').Append(N(height)).Append("\"><defs>");
+        foreach (var markerType in MarkerTypes) svg.Append(MarkerSvg(markerType));
+        svg.Append("</defs>")
             .Append("<rect x=\"").Append(N(minX - padding)).Append("\" y=\"").Append(N(minY - padding))
             .Append("\" width=\"").Append(N(width)).Append("\" height=\"").Append(N(height)).Append("\" fill=\"#f8fafc\"/>");
 
@@ -49,7 +54,10 @@ public sealed class SvgDiagramExporter : IDiagramExporter
             if (!TryPoint(edge.SourcePortId, ports, nodes, out var source) ||
                 !TryPoint(edge.TargetPortId, ports, nodes, out var target)) continue;
             svg.Append("<g data-edge-id=\"").Append(Escape(edge.Id)).Append("\"><path d=\"").Append(EdgePath(edge.Connector, source, target))
-                .Append("\" fill=\"none\" stroke=\"#0f766e\" stroke-width=\"2\" marker-end=\"url(#gp-arrow)\"/>");
+                .Append("\" fill=\"none\" stroke=\"#0f766e\" stroke-width=\"2\"");
+            if (!string.IsNullOrWhiteSpace(edge.StartMarker)) svg.Append(" marker-start=\"url(#gp-").Append(edge.StartMarker).Append(")\"");
+            if (!string.IsNullOrWhiteSpace(edge.EndMarker)) svg.Append(" marker-end=\"url(#gp-").Append(edge.EndMarker).Append(")\"");
+            svg.Append("/>");
             if (!string.IsNullOrWhiteSpace(edge.Label))
                 svg.Append(Text((source.X + target.X) / 2, (source.Y + target.Y) / 2 - 6, edge.Label, 12, "#334155", "middle"));
             svg.Append("</g>");
@@ -172,6 +180,40 @@ public sealed class SvgDiagramExporter : IDiagramExporter
     private static int I(JsonElement item, string name, int fallback)
         => item.TryGetProperty(name, out var value) && value.TryGetInt32(out var number) ? number : fallback;
 
+    private static string MarkerSvg(string type)
+    {
+        var openPath = "fill=\"white\" stroke=\"#0f766e\" stroke-width=\"1.35\" stroke-linecap=\"round\" stroke-linejoin=\"round\"";
+        var linePath = "fill=\"none\" stroke=\"#0f766e\" stroke-width=\"1.35\" stroke-linecap=\"round\" stroke-linejoin=\"round\"";
+        var (viewBox, refX, refY, width, height, shape) = type switch
+        {
+            "plain-arrow" => ("0 0 10 10", "9", "5", "7", "7", $"<path d=\"M 0 0 L 10 5 L 0 10\" {linePath}/>") ,
+            "triangle-open" => ("0 0 10 10", "9", "5", "7", "7", $"<path d=\"M 0 0 L 10 5 L 0 10 z\" {openPath}/>") ,
+            "diamond" => ("0 0 10 10", "9", "5", "7", "7", "<path d=\"M 0 5 L 5 0 L 10 5 L 5 10 z\" fill=\"#0f766e\"/>") ,
+            "diamond-open" => ("0 0 10 10", "9", "5", "7", "7", $"<path d=\"M 0 5 L 5 0 L 10 5 L 5 10 z\" {openPath}/>") ,
+            "erd-one" => Cardinality($"<path d=\"M 15 1 L 15 11 M 20 1 L 20 11\" {linePath}/>") ,
+            "erd-zero-one" => Cardinality($"<circle cx=\"12\" cy=\"6\" r=\"3.25\" fill=\"white\" stroke=\"#0f766e\" stroke-width=\"1.35\"/><path d=\"M 20 1 L 20 11\" {linePath}/>") ,
+            "erd-one-many" => Cardinality($"<path d=\"M 9 1 L 9 11 M 14 6 L 22 1 M 14 6 L 22 6 M 14 6 L 22 11\" {linePath}/>") ,
+            "erd-zero-many" => Cardinality($"<circle cx=\"9\" cy=\"6\" r=\"3.25\" fill=\"white\" stroke=\"#0f766e\" stroke-width=\"1.35\"/><path d=\"M 14 6 L 22 1 M 14 6 L 22 6 M 14 6 L 22 11\" {linePath}/>") ,
+            _ => ("0 0 10 10", "9", "5", "7", "7", "<path d=\"M 0 0 L 10 5 L 0 10 z\" fill=\"#0f766e\"/>")
+        };
+        return $"<marker id=\"gp-{type}\" viewBox=\"{viewBox}\" refX=\"{refX}\" refY=\"{refY}\" markerWidth=\"{width}\" markerHeight=\"{height}\" orient=\"auto-start-reverse\">{shape}</marker>";
+    }
+
+    private static (string ViewBox, string RefX, string RefY, string Width, string Height, string Shape) Cardinality(string shape) =>
+        ("0 0 24 12", "22", "6", "14", "8", shape);
+
+    private static string MarkerAt(IEnumerable<JsonElement> overlays, double location)
+    {
+        foreach (var overlay in overlays)
+        {
+            var type = overlay.ValueKind == JsonValueKind.String ? overlay.GetString() ?? string.Empty : S(overlay, "type");
+            if (!MarkerTypes.Contains(type, StringComparer.Ordinal)) continue;
+            var candidateLocation = overlay.ValueKind == JsonValueKind.Object ? D(overlay, "location", 1) : 1;
+            if (candidateLocation == location) return type;
+        }
+        return string.Empty;
+    }
+
     private readonly record struct Point(double X, double Y);
     private sealed record Box(string Id, string Label, double X, double Y, double Width, double Height)
     {
@@ -211,9 +253,25 @@ public sealed class SvgDiagramExporter : IDiagramExporter
         public static Port Parse(JsonElement item) => new(
             S(item, "id"), S(item, "nodeId"), S(item, "anchor"), S(item, "direction", "both"), S(item, "propertyId"), I(item, "order", 0));
     }
-    private sealed record Edge(string Id, string SourcePortId, string TargetPortId, string Label, string Connector)
+    private sealed record Edge(string Id, string SourcePortId, string TargetPortId, string Label, string Connector, string StartMarker, string EndMarker)
     {
-        public static Edge Parse(JsonElement item) => new(
-            S(item, "id"), S(item, "sourcePortId"), S(item, "targetPortId"), S(item, "label"), S(item, "connector", "flowchart"));
+        public static Edge Parse(JsonElement item, IReadOnlyDictionary<string, JsonElement> edgeTypes)
+        {
+            edgeTypes.TryGetValue(S(item, "type"), out var edgeType);
+            var overlays = item.TryGetProperty("overlays", out var directOverlays) && directOverlays.ValueKind == JsonValueKind.Array
+                ? directOverlays.EnumerateArray()
+                : edgeType.ValueKind == JsonValueKind.Object
+                    ? Items(edgeType, "overlays")
+                    : [];
+            var connector = item.TryGetProperty("connector", out var directConnector) && directConnector.ValueKind == JsonValueKind.String
+                ? directConnector.GetString() ?? "flowchart"
+                : edgeType.ValueKind == JsonValueKind.Object
+                    ? S(edgeType, "connector", "flowchart")
+                    : "flowchart";
+            var resolvedOverlays = overlays.ToArray();
+            return new(
+                S(item, "id"), S(item, "sourcePortId"), S(item, "targetPortId"), S(item, "label"), connector,
+                MarkerAt(resolvedOverlays, 0), MarkerAt(resolvedOverlays, 1));
+        }
     }
 }

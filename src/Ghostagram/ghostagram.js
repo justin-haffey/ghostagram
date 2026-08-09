@@ -20,12 +20,17 @@ const NODE_PROPERTY_GAP = 1;
 const NODE_PROPERTY_EDITOR_COLOR = "#0f172a";
 const NODE_PROPERTY_EDITOR_BORDER = "#94a3b8";
 const NODE_INTERACTIVE_SELECTOR = "button,input,select,textarea,[contenteditable='true'],[data-ghostagram-interactive]";
+const ROUTE_OBSTACLE_PADDING = 12;
+const ROUTE_CORRIDOR_CLEARANCE = 24;
+const ROUTE_LANE_SPACING = 8;
+const ROUTE_SPATIAL_CELL = 128;
+const markerTypes = Object.freeze(["arrow", "plain-arrow", "triangle-open", "diamond", "diamond-open", "erd-one", "erd-zero-one", "erd-one-many", "erd-zero-many"]);
 let iconifyScriptRequested = false;
 const supported = Object.freeze({
   protocolVersion: PROTOCOL_VERSION,
   connectors: ["straight", "flowchart", "bezier", "state-machine"],
   endpoints: ["blank", "dot", "rectangle"],
-  overlays: ["label", "arrow", "plain-arrow", "diamond"],
+  overlays: ["label", ...markerTypes],
   features: {
     batchedDeltas: true, groups: "nested-membership-resizable", incrementalRendering: true,
     multiInstance: true, multiSelection: true, portConnectionLimits: true, connectionScopes: true, directNodeRotation: true,
@@ -95,6 +100,7 @@ class GhostagramEngine {
     this.pending = { all: false, nodes: new Set(), edges: new Set(), groups: new Set(), viewport: false, selection: false };
     this.renderer = new RenderScheduler(() => this.flush());
     this.eventId = 0;
+    this.interopDelivery = new InteropEventQueue(event => this.options.eventSink.invokeMethodAsync(this.options.eventMethod ?? "OnGhostagramEvent", event));
     this.abort = new AbortController();
     this.previewNodes = new Map();
     this.previewGroups = new Map();
@@ -102,6 +108,7 @@ class GhostagramEngine {
     this.previewLabelOffsets = new Map();
     this.previewSelection = null;
     this.labelEditor = null;
+    this.routingContext = null;
     this.dom = buildRoot(host);
     this.interactions = new InteractionController(this);
     this.interactions.bind();
@@ -202,6 +209,7 @@ class GhostagramEngine {
   schedule() { this.renderer.request(); }
   flush() {
     try {
+      if (!this.routingContext || this.pending.all || this.pending.nodes.size || this.pending.groups.size || this.pending.edges.size) this.routingContext = buildRoutingContext(this.state, this.previewNodes, this.previewGroups);
       if (this.pending.all) this.renderAll(); else this.renderDirty();
       this.pending = newDirty();
     } catch (error) {
@@ -368,14 +376,15 @@ class GhostagramEngine {
     }
     const geometry = edgeGeometry(this.state, visualEdge, this.previewNodes);
     const { sourcePoint, targetPoint } = geometry;
-    path.setAttribute("d", route(visualEdge, sourcePoint, targetPoint, geometry));
+    const routePoints = edgeRoutePoints(visualEdge, sourcePoint, targetPoint, geometry, this.routingContext);
+    path.setAttribute("d", route(visualEdge, sourcePoint, targetPoint, geometry, routePoints));
     const edgeStyle = edgeStyleDescriptor(edge.style);
     path.setAttribute("fill", "none"); path.setAttribute("stroke", edgeStyle.stroke); path.setAttribute("stroke-width", String(edgeStyle.strokeWidth));
     setOptionalSvgAttribute(path, "stroke-dasharray", edgeStyle.dash); setOptionalSvgAttribute(path, "stroke-linecap", edgeStyle.lineCap); setOptionalSvgAttribute(path, "stroke-linejoin", edgeStyle.lineJoin); setOptionalSvgAttribute(path, "opacity", edgeStyle.opacity); this.applyFlowAnimation(path, edge.animation);
     path.setAttribute("marker-start", markerFor(edge.overlays, this.dom.markerIds, "start"));
     path.setAttribute("marker-end", markerFor(edge.overlays, this.dom.markerIds, "end"));
     path.style.display = geometry.hidden ? "none" : "";
-    const labelPlacement = edgeLabelPlacement(edge, sourcePoint, targetPoint, geometry);
+    const labelPlacement = edgeLabelPlacement(edge, sourcePoint, targetPoint, geometry, routePoints);
     let label = this.dom.labelById.get(edge.id);
     if (labelPlacement) {
       if (!label) {
@@ -389,13 +398,13 @@ class GhostagramEngine {
     } else if (label) { label.remove(); this.dom.labelById.delete(edge.id); }
     if (this.labelEditor?.kind === "edge" && this.labelEditor.id === edge.id) {
       if (label) label.style.visibility = "hidden";
-      this.positionEdgeLabelEditor(this.labelEditor, labelPlacement ?? this.edgeLabelPoint(edge, sourcePoint, targetPoint, geometry));
+      this.positionEdgeLabelEditor(this.labelEditor, labelPlacement ?? this.edgeLabelPoint(edge, sourcePoint, targetPoint, geometry, routePoints));
     }
-    this.renderCustomOverlays(edge, sourcePoint, targetPoint, geometry.hidden, geometry);
+    this.renderCustomOverlays(edge, sourcePoint, targetPoint, geometry.hidden, geometry, routePoints);
     this.renderReconnectHandles(edge, sourcePoint, targetPoint, geometry.hidden || geometry.proxied || edge.reconnectable === false);
     this.renderWaypointHandles(edge, visualEdge.waypoints, geometry.hidden || geometry.proxied);
   }
-  renderCustomOverlays(edge, sourcePoint, targetPoint, hidden, geometry) {
+  renderCustomOverlays(edge, sourcePoint, targetPoint, hidden, geometry, routePoints) {
     const active = new Set();
     for (const [index, overlay] of edge.overlays.entries()) {
       const type = overlay?.type ?? overlay, renderer = overlayRegistry.get(type);
@@ -403,7 +412,7 @@ class GhostagramEngine {
       const key = `${edge.id}:${index}`; active.add(key);
       let element = this.dom.customOverlayByKey.get(key);
       if (!element) { element = document.createElementNS(SVG_NS, "g"); element.classList.add("ghostagram-custom-overlay"); element.dataset.edgeId = edge.id; element.dataset.overlayIndex = String(index); this.dom.edges.append(element); this.dom.customOverlayByKey.set(key, element); }
-      const location = typeof overlay === "object" ? overlay.location ?? .5 : .5, point = pointAlongPolyline(edgeRoutePoints(edge, sourcePoint, targetPoint, geometry), location);
+      const location = typeof overlay === "object" ? overlay.location ?? .5 : .5, point = pointAlongPolyline(routePoints ?? edgeRoutePoints(edge, sourcePoint, targetPoint, geometry, this.routingContext), location);
       element.setAttribute("transform", `translate(${point.x} ${point.y})`); element.style.display = hidden ? "none" : "";
       renderer({ element, overlay, edge, point, sourcePoint, targetPoint, emit: (name, payload = {}) => this.emit("overlay.event", { edgeId: edge.id, overlayIndex: index, type, name, payload }, "browser") });
     }
@@ -494,7 +503,7 @@ class GhostagramEngine {
     for (const [id, handles] of this.dom.edgeHandlesById) for (const handle of [handles.source, handles.target]) handle.style.display = selection.has(id) && !handles.hidden ? "" : "none";
     for (const [id, handles] of this.dom.waypointHandlesById) for (const handle of handles) handle.style.display = selection.has(id) && !handles.hidden ? "" : "none";
   }
-  edgeLabelPoint(edge, sourcePoint, targetPoint, geometry) { return pointAlongPolyline(edgeRoutePoints(edge, sourcePoint, targetPoint, geometry), .5); }
+  edgeLabelPoint(edge, sourcePoint, targetPoint, geometry, routePoints) { return pointAlongPolyline(routePoints ?? edgeRoutePoints(edge, sourcePoint, targetPoint, geometry, this.routingContext), .5); }
   positionEdgeLabelEditor(editor, point) { editor.input.style.left = `${point.x}px`; editor.input.style.top = `${point.y}px`; }
   startLabelEdit(kind, id) {
     const items = kind === "node" ? this.state.nodes : kind === "group" ? this.state.groups : this.state.edges, item = items.get(id), el = kind === "node" ? this.dom.nodeById.get(id) : kind === "group" ? this.dom.groupById.get(id) : this.dom.editors;
@@ -563,14 +572,14 @@ class GhostagramEngine {
       frame = 0;
       const rect = rectangleForPoints(start, this.canvasPoint(latestPointer));
       setBox(box, rect);
-      const ids = selectionIdsInRectangle(this.state, rect);
+      const ids = selectionIdsInRectangle(this.state, rect, this.routingContext);
       this.previewSelection = new Set(ids); this.pending.selection = true; this.schedule();
       this.emit("selection.changing", { kind: "lasso", ids, rect }, "browser", true);
     };
     const move = pointer => { latestPointer = pointer; if (!frame) frame = requestAnimationFrame(update); };
     const up = pointer => {
       window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); if (frame) cancelAnimationFrame(frame); box.hidden = true;
-      const rect = rectangleForPoints(start, this.canvasPoint(pointer)), ids = selectionIdsInRectangle(this.state, rect);
+      const rect = rectangleForPoints(start, this.canvasPoint(pointer)), ids = selectionIdsInRectangle(this.state, rect, this.routingContext);
       this.previewSelection = new Set(ids); this.pending.selection = true; this.schedule();
       this.emit("selection.changed", { kind: "lasso", ids, rect }, "browser");
     };
@@ -617,7 +626,7 @@ class GhostagramEngine {
     };
     event.preventDefault();
     const move = e => { const positions = positionsAt(e), primary = positions.nodes.find(position => position.id === node.id); applyPreview(positions); this.setGroupDropTarget(draggedGroups.length ? null : primary?.groupId); const type = positions.groups.length ? "selection.move.preview" : positions.nodes.length === 1 ? "node.move.preview" : "nodes.move.preview"; this.emit(type, positions.groups.length ? { nodeId: node.id, ...positions } : positions.nodes.length === 1 ? { nodeId: node.id, ...primary } : { nodeId: node.id, nodes: positions.nodes }, "browser", true); };
-    const up = e => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, e); const positions = positionsAt(e), primary = positions.nodes.find(position => position.id === node.id); this.setGroupDropTarget(null); if (positions.groups.length) this.emit("selection.move.commit", { nodeId: node.id, ...positions }, "browser"); else if (positions.nodes.length === 1) this.emit("node.move.commit", { nodeId: node.id, ...primary }, "browser"); else this.emit("nodes.move.commit", { nodeId: node.id, nodes: positions.nodes }, "browser"); };
+    const up = e => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, e); this.setGroupDropTarget(null); if (isClickGesture(start, e)) return; const positions = positionsAt(e), primary = positions.nodes.find(position => position.id === node.id); if (positions.groups.length) this.emit("selection.move.commit", { nodeId: node.id, ...positions }, "browser"); else if (positions.nodes.length === 1) this.emit("node.move.commit", { nodeId: node.id, ...primary }, "browser"); else this.emit("nodes.move.commit", { nodeId: node.id, nodes: positions.nodes }, "browser"); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up, { once: true });
   }
   startGroupDrag(groupId, event) {
@@ -634,7 +643,7 @@ class GhostagramEngine {
       for (const member of members) { const preview = { ...member, x: member.x + dx, y: member.y + dy }; this.previewNodes.set(member.id, preview); const el = this.dom.nodeById.get(member.id); if (el) { el.style.left = `${preview.x}px`; el.style.top = `${preview.y}px`; } for (const edgeId of incident(this.state, member.id)) { const edge = this.state.edges.get(edgeId); if (edge) this.renderEdge(edge); } }
       this.setGroupDropTarget(targetGroup?.id); this.emit("group.move.preview", { groupId, parentGroupId: targetGroup?.id ?? null, ...position, dx, dy }, "browser", true);
     };
-    const up = e => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, e); const position = dragPosition(start, e, this.state.viewport.zoom, this.options.gridSize), dx = position.x - initial.x, dy = position.y - initial.y, targetGroup = groupForGroupPosition(this.state, groupId, position); this.setGroupDropTarget(null); this.emit("group.move.commit", groupMovePayload(groupId, targetGroup?.id ?? null, position, dx, dy, childGroups, members), "browser"); };
+    const up = e => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, e); this.setGroupDropTarget(null); if (isClickGesture(start, e)) return; const position = dragPosition(start, e, this.state.viewport.zoom, this.options.gridSize), dx = position.x - initial.x, dy = position.y - initial.y, targetGroup = groupForGroupPosition(this.state, groupId, position); this.emit("group.move.commit", groupMovePayload(groupId, targetGroup?.id ?? null, position, dx, dy, childGroups, members), "browser"); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up, { once: true });
   }
   startSelectedGroupDrag(groupId, event, selection) {
@@ -657,7 +666,7 @@ class GhostagramEngine {
     };
     event.preventDefault();
     const move = pointer => { const positions = positionsAt(pointer); applyPreview(positions); this.emit("selection.move.preview", { groupId, ...positions }, "browser", true); };
-    const up = pointer => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, pointer); const positions = positionsAt(pointer); this.emit("selection.move.commit", { groupId, ...positions }, "browser"); };
+    const up = pointer => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, pointer); if (isClickGesture(start, pointer)) return; const positions = positionsAt(pointer); this.emit("selection.move.commit", { groupId, ...positions }, "browser"); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up, { once: true });
   }
   startGroupResize(groupId, event) {
@@ -751,11 +760,45 @@ class GhostagramEngine {
   canReconnect(edge, source, target) { return canReconnect(this.state, edge, source, target); }
   emit(type, payload, origin, coalesce = false) {
     const event = { protocolVersion: PROTOCOL_VERSION, eventId: ++this.eventId, instanceId: this.instanceId, documentId: this.state.documentId, renderRevision: this.state.revision, type, origin, timestamp: Date.now(), payload };
-    if (coalesce) { this.lastPreview = event; if (this.previewFrame) return; this.previewFrame = requestAnimationFrame(() => { this.previewFrame = 0; this.deliver(this.lastPreview); }); return; }
+    if (coalesce) { this.lastPreview = event; if (this.previewFrame) return; this.previewFrame = requestAnimationFrame(() => { this.previewFrame = 0; this.deliver(this.lastPreview, true); }); return; }
     this.deliver(event);
   }
-  deliver(event) { const sink = this.options.eventSink; if (!sink) return; try { if (typeof sink === "function") sink(event); else if (typeof sink.invokeMethodAsync === "function") Promise.resolve(sink.invokeMethodAsync(this.options.eventMethod ?? "OnGhostagramEvent", event)).catch(() => {}); } catch { /* callback faults cannot break the renderer */ } }
-  dispose() { if (this.lifecycle === "disposed") return { ok: true, instanceId: this.instanceId, disposed: true }; this.lifecycle = "disposing"; this.renderer.cancel(); if (this.previewFrame) cancelAnimationFrame(this.previewFrame); this.interactions.dispose(); this.abort.abort(); this.dom.root.remove(); this.lifecycle = "disposed"; return { ok: true, instanceId: this.instanceId, disposed: true }; }
+  deliver(event, coalesced = false) {
+    const sink = this.options.eventSink;
+    if (!sink) return;
+    try {
+      // JS callbacks remain synchronous. Blazor interop is serialized because independent
+      // invokeMethodAsync calls may reach .NET out of order and invalidate an earlier selection.
+      if (typeof sink === "function") sink(event);
+      else if (typeof sink.invokeMethodAsync === "function") this.interopDelivery.enqueue(event, coalesced);
+    } catch { /* callback faults cannot break the renderer */ }
+  }
+  dispose() { if (this.lifecycle === "disposed") return { ok: true, instanceId: this.instanceId, disposed: true }; this.lifecycle = "disposing"; this.renderer.cancel(); if (this.previewFrame) cancelAnimationFrame(this.previewFrame); this.interopDelivery.dispose(); this.interactions.dispose(); this.abort.abort(); this.dom.root.remove(); this.lifecycle = "disposed"; return { ok: true, instanceId: this.instanceId, disposed: true }; }
+}
+
+class InteropEventQueue {
+  constructor(invoke) { this.invoke = invoke; this.commits = []; this.preview = null; this.running = null; this.disposed = false; }
+  enqueue(event, coalesced = false) {
+    if (this.disposed) return;
+    if (coalesced) this.preview = event;
+    else { this.preview = null; this.commits.push(event); }
+    this.ensureRunning();
+  }
+  ensureRunning() { if (!this.running) this.running = this.drain(); }
+  async drain() {
+    try {
+      while (!this.disposed && (this.commits.length || this.preview)) {
+        const event = this.commits.length ? this.commits.shift() : this.takePreview();
+        try { await this.invoke(event); } catch { /* callback faults cannot break the renderer */ }
+      }
+    } finally {
+      this.running = null;
+      if (!this.disposed && (this.commits.length || this.preview)) this.ensureRunning();
+    }
+  }
+  takePreview() { const event = this.preview; this.preview = null; return event; }
+  async whenIdle() { while (this.running) await this.running; }
+  dispose() { this.disposed = true; this.commits.length = 0; this.preview = null; }
 }
 
 function emptyState() { return { documentId: null, revision: 0, nodes: new Map(), ports: new Map(), edges: new Map(), groups: new Map(), edgeTypes: new Map(), portsByNode: new Map(), edgesByPort: new Map(), nodesByGroup: new Map(), groupsByGroup: new Map(), selection: new Set(), viewport: { x: 0, y: 0, zoom: 1 } }; }
@@ -1029,7 +1072,7 @@ function edgeGeometry(state, edge, previewNodes = new Map()) {
   const sourceAnchor = resolvePortAnchor(state, source), targetAnchor = resolvePortAnchor(state, target);
   const sourcePoint = sourceProxyAnchor?.point ?? anchorPoint(sourceNode, sourceAnchor, targetItem);
   const targetPoint = targetProxyAnchor?.point ?? anchorPoint(targetNode, targetAnchor, sourceItem);
-  return { hidden: false, proxied: Boolean(sourceProxy || targetProxy), sourcePoint, targetPoint, sourceProxy, targetProxy, sourceSide: sourceProxyAnchor?.side ?? portAnchorSide(sourceAnchor), targetSide: targetProxyAnchor?.side ?? portAnchorSide(targetAnchor) };
+  return { hidden: false, proxied: Boolean(sourceProxy || targetProxy), sourcePoint, targetPoint, sourceProxy, targetProxy, sourceNode, targetNode, sourceItem, targetItem, sourceSide: sourceProxyAnchor?.side ?? portAnchorSide(sourceAnchor), targetSide: targetProxyAnchor?.side ?? portAnchorSide(targetAnchor) };
 }
 function groupDepth(s, groupId) { let depth = 0, parentId = s.groups.get(groupId)?.parentGroupId; while (parentId) { depth += 1; parentId = s.groups.get(parentId)?.parentGroupId; } return depth; }
 function groupsForRender(s) { return [...s.groups.values()].sort((left, right) => groupDepth(s, left.id) - groupDepth(s, right.id) || left.id.localeCompare(right.id)); }
@@ -1059,7 +1102,7 @@ function connectionPolicyAllows(port, peer) {
 function connectionPoliciesCompatible(source, target) { return connectionPolicyAllows(source, target) && connectionPolicyAllows(target, source); }
 function canConnect(state, source, target) { return source.enabled !== false && target.enabled !== false && scopesCompatible(source, target) && connectionPoliciesCompatible(source, target) && [source, target].every(port => port.maxConnections < 0 || (state.edgesByPort.get(port.id)?.size ?? 0) < port.maxConnections); }
 function canReconnect(state, edge, source, target) { return scopesCompatible(source, target) && connectionPoliciesCompatible(source, target) && [source, target].every(port => port.maxConnections < 0 || (state.edgesByPort.get(port.id)?.size ?? 0) - (port.id === edge.sourcePortId || port.id === edge.targetPortId ? 1 : 0) < port.maxConnections); }
-function route(edge, a, b, geometry) { const custom = connectorRegistry.get(edge.connector); if (custom) return custom(a, b, edge); if (edge.waypoints?.length) return `M ${a.x} ${a.y}${edge.waypoints.map(point => ` L ${point.x} ${point.y}`).join("")} L ${b.x} ${b.y}`; if (edge.connector === "straight") return `M ${a.x} ${a.y} L ${b.x} ${b.y}`; if (edge.connector === "bezier" || edge.connector === "state-machine") return bezierPath(a, b); return flowchartPath(edgeRoutePoints(edge, a, b, geometry), flowchartOptions(edge.connectorOptions).cornerRadius); }
+function route(edge, a, b, geometry, routePoints) { const custom = connectorRegistry.get(edge.connector); if (custom) return custom(a, b, edge); if (edge.waypoints?.length) return `M ${a.x} ${a.y}${edge.waypoints.map(point => ` L ${point.x} ${point.y}`).join("")} L ${b.x} ${b.y}`; if (edge.connector === "straight") return `M ${a.x} ${a.y} L ${b.x} ${b.y}`; if (edge.connector === "bezier" || edge.connector === "state-machine") return bezierPath(a, b); return flowchartPath(routePoints ?? edgeRoutePoints(edge, a, b, geometry), flowchartOptions(edge.connectorOptions).cornerRadius); }
 function bezierControlDistance(a, b) { return Math.max(48, Math.abs(b.x - a.x) * .45, Math.abs(b.y - a.y) * .28); }
 function bezierPath(a, b) { const distance = bezierControlDistance(a, b), sourceControlX = svgCoordinate(a.x + distance), targetControlX = svgCoordinate(b.x - distance); return `M ${a.x} ${a.y} C ${sourceControlX} ${a.y}, ${targetControlX} ${b.y}, ${b.x} ${b.y}`; }
 function svgCoordinate(value) { return Number(value.toFixed(3)); }
@@ -1164,7 +1207,7 @@ function markerFor(overlays, markerIds, end = "end") { const type = markerTypeFo
 function markerTypeFor(overlays, end = "end") {
   const overlay = overlays?.find(candidate => {
     const type = candidate?.type ?? candidate;
-    if (!["arrow", "plain-arrow", "diamond"].includes(type)) return false;
+    if (!markerTypes.includes(type)) return false;
     const location = typeof candidate === "object" ? candidate.location ?? (candidate.direction === "source" ? 0 : 1) : 1;
     return end === "start" ? location === 0 : location !== 0;
   });
@@ -1189,7 +1232,7 @@ function validateOverlays(overlays) {
       for (const key of ["location", "offsetX", "offsetY", "fontSize"]) if (overlay[key] !== undefined && !Number.isFinite(overlay[key])) throw new GhostagramError("INVALID_MODEL", `Label overlay ${key} must be numeric.`);
       if (overlay.location !== undefined && (overlay.location < 0 || overlay.location > 1)) throw new GhostagramError("INVALID_MODEL", "Label overlay location must be between 0 and 1.");
     }
-    if (["arrow", "plain-arrow", "diamond"].includes(type) && overlay && typeof overlay === "object") {
+    if (markerTypes.includes(type) && overlay && typeof overlay === "object") {
       if (overlay.location !== undefined && overlay.location !== 0 && overlay.location !== 1) throw new GhostagramError("INVALID_MODEL", "Marker overlay location must be 0 or 1.");
       if (overlay.direction !== undefined && !["source", "target"].includes(overlay.direction)) throw new GhostagramError("INVALID_MODEL", "Marker overlay direction must be source or target.");
     }
@@ -1248,19 +1291,46 @@ function edgeStyleDescriptor(style) {
 }
 function edgeLabelText(edge) { const overlay = edge.overlays?.find(item => (item.type ?? item) === "label"); return edge.label ?? (overlay && typeof overlay === "object" ? overlay.label : undefined); }
 function edgeLabelOffsets(edge) { const overlay = edge.overlays?.find(item => (item.type ?? item) === "label"); return { labelOffsetX: edge.labelOffsetX ?? overlay?.offsetX ?? 0, labelOffsetY: edge.labelOffsetY ?? overlay?.offsetY ?? -6 }; }
-function edgeLabelPlacement(edge, source, target, geometry) {
+function edgeLabelPlacement(edge, source, target, geometry, routePoints) {
   const overlay = edge.overlays?.find(item => (item.type ?? item) === "label"), text = edgeLabelText(edge);
   if (!text) return null;
-  const location = overlay && typeof overlay === "object" ? overlay.location ?? .5 : .5, point = pointAlongPolyline(edgeRoutePoints(edge, source, target, geometry), location);
+  const location = overlay && typeof overlay === "object" ? overlay.location ?? .5 : .5, point = pointAlongPolyline(routePoints ?? edgeRoutePoints(edge, source, target, geometry), location);
   const offsets = edgeLabelOffsets(edge);
   return { text: String(text), x: point.x + offsets.labelOffsetX, y: point.y + offsets.labelOffsetY, fontSize: overlay?.fontSize ?? 12 };
 }
-function edgeRoutePoints(edge, source, target, geometry) {
+function edgeRoutePoints(edge, source, target, geometry, routingContext) {
   if (edge.waypoints?.length) return [source, ...edge.waypoints, target];
-  if (edge.connector === "flowchart" || !edge.connector) return flowchartRoutePoints(source, target, geometry?.sourceSide, geometry?.targetSide, flowchartOptions(edge.connectorOptions));
+  if (edge.connector === "flowchart" || !edge.connector) return flowchartRoutePoints(source, target, geometry?.sourceSide, geometry?.targetSide, flowchartOptions(edge.connectorOptions), routingContext, edge, geometry);
   return [source, target];
 }
-function flowchartRoutePoints(source, target, sourceSide, targetSide, options = flowchartOptions()) {
+function flowchartRoutePoints(source, target, sourceSide, targetSide, options = flowchartOptions(), routingContext, edge, geometry) {
+  const baseline = basicFlowchartRoutePoints(source, target, sourceSide, targetSide, options);
+  if (!routingContext || !edge || !geometry || geometry.hidden) return baseline;
+  const sourceVector = anchorVector(sourceSide), targetVector = anchorVector(targetSide);
+  if (!sourceVector || !targetVector) return baseline;
+  const sourceEscape = { x: source.x + sourceVector.x * options.stub, y: source.y + sourceVector.y * options.stub };
+  const targetEscape = { x: target.x + targetVector.x * options.stub, y: target.y + targetVector.y * options.stub };
+  const envelope = routingEnvelope(routingContext, geometry, source, target);
+  const laneOffset = stableRouteLane(edge.id) * ROUTE_LANE_SPACING;
+  const top = envelope.y - ROUTE_CORRIDOR_CLEARANCE - laneOffset;
+  const bottom = envelope.y + envelope.height + ROUTE_CORRIDOR_CLEARANCE + laneOffset;
+  const left = envelope.x - ROUTE_CORRIDOR_CLEARANCE - laneOffset;
+  const right = envelope.x + envelope.width + ROUTE_CORRIDOR_CLEARANCE + laneOffset;
+  const candidates = uniqueRoutes([
+    baseline,
+    simplifyRoutePoints([source, sourceEscape, { x: sourceEscape.x, y: top }, { x: targetEscape.x, y: top }, targetEscape, target]),
+    simplifyRoutePoints([source, sourceEscape, { x: sourceEscape.x, y: bottom }, { x: targetEscape.x, y: bottom }, targetEscape, target]),
+    simplifyRoutePoints([source, sourceEscape, { x: left, y: sourceEscape.y }, { x: left, y: targetEscape.y }, targetEscape, target]),
+    simplifyRoutePoints([source, sourceEscape, { x: right, y: sourceEscape.y }, { x: right, y: targetEscape.y }, targetEscape, target])
+  ]);
+  let best = baseline, bestScore = Number.POSITIVE_INFINITY;
+  for (const [index, candidate] of candidates.entries()) {
+    const score = flowchartRouteScore(candidate, edge, geometry, routingContext) + index / 1000;
+    if (score < bestScore) { best = candidate; bestScore = score; }
+  }
+  return best;
+}
+function basicFlowchartRoutePoints(source, target, sourceSide, targetSide, options = flowchartOptions()) {
   const sourceVector = anchorVector(sourceSide), targetVector = anchorVector(targetSide);
   if (sourceVector && targetVector) {
     const clearance = options.stub, sourceEscape = { x: source.x + sourceVector.x * clearance, y: source.y + sourceVector.y * clearance }, targetEscape = { x: target.x + targetVector.x * clearance, y: target.y + targetVector.y * clearance };
@@ -1278,6 +1348,99 @@ function flowchartRoutePoints(source, target, sourceSide, targetSide, options = 
   const mid = source.x + (target.x - source.x) / 2;
   return simplifyRoutePoints([source, { x: mid, y: source.y }, { x: mid, y: target.y }, target]);
 }
+function buildRoutingContext(state, previewNodes = new Map(), previewGroups = new Map()) {
+  const nodeById = new Map([...state.nodes].map(([id, node]) => [id, previewNodes.get(id) ?? node]));
+  const groupById = new Map([...state.groups].map(([id, group]) => [id, previewGroups.get(id) ?? group]));
+  const groups = [...groupById.values()].filter(group => !isGroupHiddenByCollapsedAncestor(state, group));
+  const obstacles = [...nodeById.values()]
+    .filter(node => !isNodeHiddenByCollapsedGroup(state, node))
+    .map(node => ({ id: node.id, ...expandRectangle(rotatedRectangle(node), ROUTE_OBSTACLE_PADDING) }));
+  const occupiedSegments = [];
+  for (const rawEdge of [...state.edges.values()].sort((left, right) => left.id.localeCompare(right.id))) {
+    const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge, previewNodes);
+    if (geometry.hidden || edge.connector === "bezier" || edge.connector === "state-machine") continue;
+    const points = edge.waypoints?.length
+      ? [geometry.sourcePoint, ...edge.waypoints, geometry.targetPoint]
+      : edge.connector === "straight"
+        ? [geometry.sourcePoint, geometry.targetPoint]
+        : basicFlowchartRoutePoints(geometry.sourcePoint, geometry.targetPoint, geometry.sourceSide, geometry.targetSide, flowchartOptions(edge.connectorOptions));
+    for (let index = 1; index < points.length; index++) if (!samePoint(points[index - 1], points[index])) occupiedSegments.push({ edgeId: edge.id, a: points[index - 1], b: points[index] });
+  }
+  return {
+    groupById,
+    groupIndex: buildSpatialIndex(groups, item => item),
+    obstacleIndex: buildSpatialIndex(obstacles, item => item),
+    segmentIndex: buildSpatialIndex(occupiedSegments, item => segmentBounds(item.a, item.b, 2))
+  };
+}
+function routingEnvelope(context, geometry, source, target) {
+  const rectangles = [rectangleForItem(geometry.sourceItem), rectangleForItem(geometry.targetItem)].filter(Boolean);
+  for (const node of [geometry.sourceNode, geometry.targetNode]) {
+    let groupId = node?.groupId;
+    while (groupId) {
+      const group = context.groupById.get(groupId);
+      if (!group) break;
+      rectangles.push(rectangleForItem(group));
+      groupId = group.parentGroupId;
+    }
+  }
+  const direct = expandRectangle(rectangleForPoints(source, target), ROUTE_CORRIDOR_CLEARANCE);
+  for (const obstacle of querySpatialIndex(context.obstacleIndex, direct)) if (rectanglesIntersect(direct, obstacle)) rectangles.push(obstacle);
+  if (!rectangles.length) return direct;
+  const left = Math.min(...rectangles.map(item => item.x)), top = Math.min(...rectangles.map(item => item.y));
+  const right = Math.max(...rectangles.map(item => item.x + item.width)), bottom = Math.max(...rectangles.map(item => item.y + item.height));
+  return { x: left, y: top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) };
+}
+function flowchartRouteScore(points, edge, geometry, context) {
+  const segments = points.slice(1).map((point, index) => ({ a: points[index], b: point }));
+  const endpointIds = new Set([geometry.sourceNode?.id, geometry.targetNode?.id].filter(Boolean));
+  const obstacleHits = new Set(), relevantGroups = new Set();
+  let overlap = 0, crossings = 0;
+  for (const [index, segment] of segments.entries()) {
+    const bounds = segmentBounds(segment.a, segment.b, 2);
+    for (const obstacle of querySpatialIndex(context.obstacleIndex, bounds)) {
+      const endpointEscape = endpointIds.has(obstacle.id) && (index === 0 || index === segments.length - 1);
+      if (!endpointEscape && segmentIntersectsRectangle(segment.a, segment.b, obstacle)) obstacleHits.add(obstacle.id);
+    }
+    for (const group of querySpatialIndex(context.groupIndex, bounds)) relevantGroups.add(group);
+    if (index === 0 || index === segments.length - 1) continue;
+    for (const occupied of querySpatialIndex(context.segmentIndex, bounds)) {
+      if (occupied.edgeId === edge.id) continue;
+      const shared = collinearOverlapLength(segment.a, segment.b, occupied.a, occupied.b);
+      if (shared > .5) overlap += shared;
+      else if (!sharesEndpoint(segment.a, segment.b, occupied.a, occupied.b) && segmentsIntersect(segment.a, segment.b, occupied.a, occupied.b)) crossings += 1;
+    }
+  }
+  let groupPenalty = 0;
+  for (const group of relevantGroups) {
+    const required = pointInRectangle(points[0], group) === pointInRectangle(points.at(-1), group) ? 0 : 1;
+    const crossingsForGroup = segments.reduce((total, segment) => total + segmentRectangleBoundaryCrossings(segment.a, segment.b, group), 0);
+    groupPenalty += Math.max(0, crossingsForGroup - required) * 600;
+  }
+  return obstacleHits.size * 1_000_000 + overlap * 8 + crossings * 300 + groupPenalty + polylineLength(points) + Math.max(0, points.length - 2) * 24;
+}
+function uniqueRoutes(routes) { const seen = new Set(); return routes.filter(points => { const key = points.map(point => `${point.x},${point.y}`).join(";"); if (seen.has(key)) return false; seen.add(key); return true; }); }
+function stableRouteLane(value = "") { let hash = 0; for (let index = 0; index < value.length; index++) hash = (hash * 31 + value.charCodeAt(index)) >>> 0; return hash % 4; }
+function rotatedRectangle(item) { const angle = (item.rotation ?? 0) * Math.PI / 180; if (!angle) return rectangleForItem(item); const width = Math.abs(Math.cos(angle)) * item.width + Math.abs(Math.sin(angle)) * item.height, height = Math.abs(Math.sin(angle)) * item.width + Math.abs(Math.cos(angle)) * item.height; return { x: item.x + (item.width - width) / 2, y: item.y + (item.height - height) / 2, width, height }; }
+function rectangleForItem(item) { return item && Number.isFinite(item.x) && Number.isFinite(item.y) && Number.isFinite(item.width) && Number.isFinite(item.height) ? { x: item.x, y: item.y, width: item.width, height: item.height } : null; }
+function expandRectangle(rectangle, amount) { return { x: rectangle.x - amount, y: rectangle.y - amount, width: rectangle.width + amount * 2, height: rectangle.height + amount * 2 }; }
+function segmentBounds(a, b, padding = 0) { return { x: Math.min(a.x, b.x) - padding, y: Math.min(a.y, b.y) - padding, width: Math.abs(b.x - a.x) + padding * 2, height: Math.abs(b.y - a.y) + padding * 2 }; }
+function buildSpatialIndex(items, boundsForItem) {
+  const buckets = new Map(), overflow = [];
+  for (const item of items) {
+    const bounds = boundsForItem(item), range = spatialCellRange(bounds), cells = (range.right - range.left + 1) * (range.bottom - range.top + 1);
+    if (cells > 256) { overflow.push(item); continue; }
+    for (let x = range.left; x <= range.right; x++) for (let y = range.top; y <= range.bottom; y++) { const key = `${x}:${y}`, bucket = buckets.get(key) ?? []; bucket.push(item); buckets.set(key, bucket); }
+  }
+  return { buckets, overflow };
+}
+function querySpatialIndex(index, bounds) { const found = new Set(index.overflow), range = spatialCellRange(bounds); for (let x = range.left; x <= range.right; x++) for (let y = range.top; y <= range.bottom; y++) for (const item of index.buckets.get(`${x}:${y}`) ?? []) found.add(item); return found; }
+function spatialCellRange(bounds) { return { left: Math.floor(bounds.x / ROUTE_SPATIAL_CELL), top: Math.floor(bounds.y / ROUTE_SPATIAL_CELL), right: Math.floor((bounds.x + bounds.width) / ROUTE_SPATIAL_CELL), bottom: Math.floor((bounds.y + bounds.height) / ROUTE_SPATIAL_CELL) }; }
+function samePoint(left, right) { return Math.abs(left.x - right.x) < 1e-9 && Math.abs(left.y - right.y) < 1e-9; }
+function sharesEndpoint(a, b, c, d) { return samePoint(a, c) || samePoint(a, d) || samePoint(b, c) || samePoint(b, d); }
+function collinearOverlapLength(a, b, c, d) { if (Math.abs(a.y - b.y) < 1e-9 && Math.abs(c.y - d.y) < 1e-9 && Math.abs(a.y - c.y) < 1e-9) return Math.max(0, Math.min(Math.max(a.x, b.x), Math.max(c.x, d.x)) - Math.max(Math.min(a.x, b.x), Math.min(c.x, d.x))); if (Math.abs(a.x - b.x) < 1e-9 && Math.abs(c.x - d.x) < 1e-9 && Math.abs(a.x - c.x) < 1e-9) return Math.max(0, Math.min(Math.max(a.y, b.y), Math.max(c.y, d.y)) - Math.max(Math.min(a.y, b.y), Math.min(c.y, d.y))); return 0; }
+function segmentRectangleBoundaryCrossings(a, b, rectangle) { const aInside = pointInRectangle(a, rectangle), bInside = pointInRectangle(b, rectangle); if (aInside !== bInside) return 1; return !aInside && segmentIntersectsRectangle(a, b, rectangle) ? 2 : 0; }
+function polylineLength(points) { return points.slice(1).reduce((total, point, index) => total + Math.hypot(point.x - points[index].x, point.y - points[index].y), 0); }
 function anchorVector(side) { return side === "left" ? { x: -1, y: 0 } : side === "right" ? { x: 1, y: 0 } : side === "top" ? { x: 0, y: -1 } : side === "bottom" ? { x: 0, y: 1 } : null; }
 function simplifyRoutePoints(points) {
   const unique = points.filter((point, index) => index === 0 || point.x !== points[index - 1].x || point.y !== points[index - 1].y);
@@ -1363,14 +1526,14 @@ function updateGroupVisibilityControl(element, group, selected) {
   if (slash) slash.style.display = descriptor.icon === "mdi:eye-off-outline" ? "" : "none";
 }
 function nodesInRectangle(state, rectangle) { return [...state.nodes.values()].filter(node => !isNodeHiddenByCollapsedGroup(state, node) && rectanglesIntersect(rectangle, node)).map(node => node.id); }
-function edgesInRectangle(state, rectangle) {
+function edgesInRectangle(state, rectangle, routingContext = buildRoutingContext(state)) {
   return [...state.edges.values()].filter(rawEdge => {
     const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge);
-    return !geometry.hidden && polylineIntersectsRectangle(edgeSelectionPoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry), rectangle);
+    return !geometry.hidden && polylineIntersectsRectangle(edgeSelectionPoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, routingContext), rectangle);
   }).map(edge => edge.id);
 }
-function edgeSelectionPoints(edge, source, target, geometry) {
-  if (edge.connector !== "bezier" && edge.connector !== "state-machine") return edgeRoutePoints(edge, source, target, geometry);
+function edgeSelectionPoints(edge, source, target, geometry, routingContext) {
+  if (edge.connector !== "bezier" && edge.connector !== "state-machine") return edgeRoutePoints(edge, source, target, geometry, routingContext);
   const dx = Math.max(48, Math.abs(target.x - source.x) * .45), points = [];
   for (let index = 0; index <= 12; index++) { const t = index / 12, inverse = 1 - t; points.push({ x: inverse ** 3 * source.x + 3 * inverse ** 2 * t * (source.x + dx) + 3 * inverse * t ** 2 * (target.x - dx) + t ** 3 * target.x, y: inverse ** 3 * source.y + 3 * inverse ** 2 * t * source.y + 3 * inverse * t ** 2 * target.y + t ** 3 * target.y }); }
   return points;
@@ -1379,7 +1542,7 @@ function polylineIntersectsRectangle(points, rectangle) { return points.some(poi
 function pointInRectangle(point, rectangle) { return point.x >= rectangle.x && point.x <= rectangle.x + rectangle.width && point.y >= rectangle.y && point.y <= rectangle.y + rectangle.height; }
 function segmentIntersectsRectangle(a, b, rectangle) { const topLeft = { x: rectangle.x, y: rectangle.y }, topRight = { x: rectangle.x + rectangle.width, y: rectangle.y }, bottomLeft = { x: rectangle.x, y: rectangle.y + rectangle.height }, bottomRight = { x: rectangle.x + rectangle.width, y: rectangle.y + rectangle.height }; return pointInRectangle(a, rectangle) || pointInRectangle(b, rectangle) || [[topLeft, topRight], [topRight, bottomRight], [bottomRight, bottomLeft], [bottomLeft, topLeft]].some(([start, end]) => segmentsIntersect(a, b, start, end)); }
 function segmentsIntersect(a, b, c, d) { const cross = (first, second, third) => (second.x - first.x) * (third.y - first.y) - (second.y - first.y) * (third.x - first.x), abC = cross(a, b, c), abD = cross(a, b, d), cdA = cross(c, d, a), cdB = cross(c, d, b), pointOnSegment = (point, start, end) => Math.abs(cross(start, end, point)) < 1e-9 && point.x >= Math.min(start.x, end.x) && point.x <= Math.max(start.x, end.x) && point.y >= Math.min(start.y, end.y) && point.y <= Math.max(start.y, end.y); if (Math.abs(abC) < 1e-9 && Math.abs(abD) < 1e-9 && Math.abs(cdA) < 1e-9 && Math.abs(cdB) < 1e-9) return pointOnSegment(a, c, d) || pointOnSegment(b, c, d) || pointOnSegment(c, a, b) || pointOnSegment(d, a, b); return abC * abD <= 0 && cdA * cdB <= 0; }
-function selectionIdsInRectangle(state, rectangle) { return [...nodesInRectangle(state, rectangle), ...groupsForRender(state).filter(group => !isGroupHiddenByCollapsedAncestor(state, group) && rectanglesIntersect(rectangle, group)).map(group => group.id), ...edgesInRectangle(state, rectangle)]; }
+function selectionIdsInRectangle(state, rectangle, routingContext) { return [...nodesInRectangle(state, rectangle), ...groupsForRender(state).filter(group => !isGroupHiddenByCollapsedAncestor(state, group) && rectanglesIntersect(rectangle, group)).map(group => group.id), ...edgesInRectangle(state, rectangle, routingContext)]; }
 function deletionPlan(state, selection) {
   const selectedIds = [...selection], groupIds = new Set(selectedIds.filter(id => state.groups.has(id))), nodeIds = new Set(selectedIds.filter(id => state.nodes.has(id))), edgeIds = new Set(selectedIds.filter(id => state.edges.has(id)));
   for (const groupId of [...groupIds]) for (const descendantId of descendantGroupIds(state, groupId)) groupIds.add(descendantId);
@@ -1401,8 +1564,9 @@ function exportSvgDocument(state, options = {}) {
   const items = [...visibleNodes, ...visibleGroups], padding = options.padding ?? 32;
   const left = items.length ? Math.min(...items.map(item => item.x)) - padding : 0, top = items.length ? Math.min(...items.map(item => item.y)) - padding : 0, right = items.length ? Math.max(...items.map(item => item.x + item.width)) + padding : 1, bottom = items.length ? Math.max(...items.map(item => item.y + item.height)) + padding : 1;
   const groups = visibleGroups.map(group => `<rect x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" fill="rgba(148,163,184,.08)" stroke="#64748b" stroke-dasharray="4 3"/><text x="${group.x + 6}" y="${group.y + 18}" fill="#334155" font-size="12" font-weight="600">${xml(group.label ?? group.id)}</text>`).join("");
-  const markerIds = { arrow: "ghostagram-export-arrow", "plain-arrow": "ghostagram-export-plain-arrow", diamond: "ghostagram-export-diamond" };
-  const edges = [...state.edges.values()].map(rawEdge => { const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge); if (geometry.hidden) return ""; const { sourcePoint, targetPoint } = geometry, style = edgeStyleDescriptor(edge.style), label = edgeLabelPlacement(edge, sourcePoint, targetPoint, geometry), markerStart = markerFor(edge.overlays, markerIds, "start"), markerEnd = markerFor(edge.overlays, markerIds, "end"); return `<path d="${route(edge, sourcePoint, targetPoint, geometry)}" fill="none" stroke="${xml(style.stroke)}" stroke-width="${style.strokeWidth}"${svgOptionalAttribute("stroke-dasharray", style.dash)}${svgOptionalAttribute("stroke-linecap", style.lineCap)}${svgOptionalAttribute("stroke-linejoin", style.lineJoin)}${svgOptionalAttribute("opacity", style.opacity)}${markerStart ? ` marker-start="${markerStart}"` : ""}${markerEnd ? ` marker-end="${markerEnd}"` : ""}/>${label ? `<text x="${label.x}" y="${label.y}" fill="${xml(style.labelColor)}" font-size="${label.fontSize}">${xml(label.text)}</text>` : ""}`; }).join("");
+  const markerIds = Object.fromEntries(markerTypes.map(type => [type, `ghostagram-export-${type}`]));
+  const routingContext = buildRoutingContext(state);
+  const edges = [...state.edges.values()].map(rawEdge => { const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge); if (geometry.hidden) return ""; const { sourcePoint, targetPoint } = geometry, routePoints = edgeRoutePoints(edge, sourcePoint, targetPoint, geometry, routingContext), style = edgeStyleDescriptor(edge.style), label = edgeLabelPlacement(edge, sourcePoint, targetPoint, geometry, routePoints), markerStart = markerFor(edge.overlays, markerIds, "start"), markerEnd = markerFor(edge.overlays, markerIds, "end"); return `<path d="${route(edge, sourcePoint, targetPoint, geometry, routePoints)}" fill="none" stroke="${xml(style.stroke)}" stroke-width="${style.strokeWidth}"${svgOptionalAttribute("stroke-dasharray", style.dash)}${svgOptionalAttribute("stroke-linecap", style.lineCap)}${svgOptionalAttribute("stroke-linejoin", style.lineJoin)}${svgOptionalAttribute("opacity", style.opacity)}${markerStart ? ` marker-start="${markerStart}"` : ""}${markerEnd ? ` marker-end="${markerEnd}"` : ""}/>${label ? `<text x="${label.x}" y="${label.y}" fill="${xml(style.labelColor)}" font-size="${label.fontSize}">${xml(label.text)}</text>` : ""}`; }).join("");
   const nodes = visibleNodes.map(exportSvgNode).join("");
   return `<svg xmlns="${SVG_NS}" viewBox="${left} ${top} ${right - left} ${bottom - top}" role="img"><defs>${Object.entries(markerIds).map(([type, id]) => exportMarker(id, type)).join("")}</defs>${groups}${edges}${nodes}</svg>`;
 }
@@ -1417,15 +1581,16 @@ function exportSvgNode(node) {
   return `<g transform="rotate(${node.rotation ?? 0} ${node.x + node.width / 2} ${node.y + node.height / 2})"><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${xml(node.style?.background ?? "#f8fafc")}" stroke="${xml(node.style?.borderColor ?? "#334155")}"/><text x="${node.x + 8}" y="${labelY}" fill="${xml(color)}" font-size="14">${xml(node.label ?? node.id)}</text>${icon}${rows}</g>`;
 }
 function exportMarker(id, type) {
-  const path = type === "plain-arrow" ? `<path d="M 0 0 L 10 5 L 0 10" fill="none" stroke="context-stroke" stroke-width="1.5"/>` : `<path d="${type === "diamond" ? "M 0 5 L 5 0 L 10 5 L 5 10 z" : "M 0 0 L 10 5 L 0 10 z"}" fill="context-stroke"/>`;
-  return `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">${path}</marker>`;
+  const descriptor = markerDescriptor(type);
+  const shapes = descriptor.shapes.map(shape => `<${shape.tag}${Object.entries(shape.attributes).map(([name, value]) => ` ${name}="${xml(value)}"`).join("")}/>`).join("");
+  return `<marker id="${id}" viewBox="${descriptor.viewBox}" refX="${descriptor.refX}" refY="${descriptor.refY}" markerWidth="${descriptor.markerWidth}" markerHeight="${descriptor.markerHeight}" orient="auto-start-reverse">${shapes}</marker>`;
 }
 function xml(value) { return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[character]); }
 function svgOptionalAttribute(name, value) { return value === undefined ? "" : ` ${name}="${xml(value)}"`; }
 function setOptionalSvgAttribute(element, name, value) { if (value === undefined) element.removeAttribute(name); else element.setAttribute(name, String(value)); }
 function buildRoot(host) {
   const root = document.createElement("div"), style = document.createElement("style"), stage = document.createElement("div"), groups = document.createElement("div"), nodes = document.createElement("div"), editors = document.createElement("div"), svg = document.createElementNS(SVG_NS, "svg"), overlay = document.createElementNS(SVG_NS, "svg"), selectionBox = document.createElement("div"), defs = document.createElementNS(SVG_NS, "defs"), edges = document.createElementNS(SVG_NS, "g");
-  const markerIds = Object.fromEntries(["arrow", "plain-arrow", "diamond"].map(type => [type, `ghostagram-${type}-${crypto.randomUUID()}`]));
+  const markerIds = Object.fromEntries(markerTypes.map(type => [type, `ghostagram-${type}-${crypto.randomUUID()}`]));
   const flowAnimationName = `ghostagram-flow-${crypto.randomUUID()}`;
   style.textContent = `@keyframes ${flowAnimationName} { to { stroke-dashoffset: -14; } }
     .ghostagram-node.ghostagram-selected { outline:3px solid #0f766e; outline-offset:2px; box-shadow:0 0 0 5px rgba(13,148,136,.18); }
@@ -1449,11 +1614,31 @@ function buildRoot(host) {
   return { root, stage, groups, nodes, editors, edges, overlay, selectionBox, markerIds, flowAnimationName, nodeById: new Map(), groupById: new Map(), pathById: new Map(), labelById: new Map(), customOverlayByKey: new Map(), edgeHandlesById: new Map(), waypointHandlesById: new Map() };
 }
 function createMarker(id, type) {
-  const marker = document.createElementNS(SVG_NS, "marker"), shape = document.createElementNS(SVG_NS, "path");
-  marker.id = id; marker.setAttribute("viewBox", "0 0 10 10"); marker.setAttribute("refX", "9"); marker.setAttribute("refY", "5"); marker.setAttribute("markerWidth", "6"); marker.setAttribute("markerHeight", "6"); marker.setAttribute("orient", "auto-start-reverse");
-  if (type === "plain-arrow") { shape.setAttribute("d", "M 0 0 L 10 5 L 0 10"); shape.setAttribute("fill", "none"); shape.setAttribute("stroke", "context-stroke"); shape.setAttribute("stroke-width", "1.5"); }
-  else { shape.setAttribute("d", type === "diamond" ? "M 0 5 L 5 0 L 10 5 L 5 10 z" : "M 0 0 L 10 5 L 0 10 z"); shape.setAttribute("fill", "context-stroke"); }
-  marker.append(shape); return marker;
+  const marker = document.createElementNS(SVG_NS, "marker"), descriptor = markerDescriptor(type);
+  marker.id = id; marker.setAttribute("viewBox", descriptor.viewBox); marker.setAttribute("refX", descriptor.refX); marker.setAttribute("refY", descriptor.refY); marker.setAttribute("markerWidth", descriptor.markerWidth); marker.setAttribute("markerHeight", descriptor.markerHeight); marker.setAttribute("orient", "auto-start-reverse");
+  for (const shape of descriptor.shapes) {
+    const element = document.createElementNS(SVG_NS, shape.tag);
+    for (const [name, value] of Object.entries(shape.attributes)) element.setAttribute(name, value);
+    marker.append(element);
+  }
+  return marker;
+}
+function markerDescriptor(type) {
+  const path = (d, attributes = {}) => ({ tag: "path", attributes: { d, fill: "none", stroke: "context-stroke", "stroke-width": "1.35", "stroke-linecap": "round", "stroke-linejoin": "round", ...attributes } });
+  const circle = (cx, cy, r) => ({ tag: "circle", attributes: { cx, cy, r, fill: "white", stroke: "context-stroke", "stroke-width": "1.35" } });
+  const basic = shapes => ({ viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "7", markerHeight: "7", shapes });
+  const cardinality = shapes => ({ viewBox: "0 0 24 12", refX: "22", refY: "6", markerWidth: "14", markerHeight: "8", shapes });
+  switch (type) {
+    case "plain-arrow": return basic([path("M 0 0 L 10 5 L 0 10", { "stroke-width": "1.5" })]);
+    case "triangle-open": return basic([path("M 0 0 L 10 5 L 0 10 z", { fill: "white" })]);
+    case "diamond": return basic([path("M 0 5 L 5 0 L 10 5 L 5 10 z", { fill: "context-stroke", stroke: "none" })]);
+    case "diamond-open": return basic([path("M 0 5 L 5 0 L 10 5 L 5 10 z", { fill: "white" })]);
+    case "erd-one": return cardinality([path("M 15 1 L 15 11 M 20 1 L 20 11")]);
+    case "erd-zero-one": return cardinality([circle("12", "6", "3.25"), path("M 20 1 L 20 11")]);
+    case "erd-one-many": return cardinality([path("M 9 1 L 9 11 M 14 6 L 22 1 M 14 6 L 22 6 M 14 6 L 22 11")]);
+    case "erd-zero-many": return cardinality([circle("9", "6", "3.25"), path("M 14 6 L 22 1 M 14 6 L 22 6 M 14 6 L 22 11")]);
+    default: return basic([path("M 0 0 L 10 5 L 0 10 z", { fill: "context-stroke", stroke: "none" })]);
+  }
 }
 function setBox(el, item) { el.style.position = "absolute"; el.style.left = `${item.x}px`; el.style.top = `${item.y}px`; el.style.width = `${item.width}px`; el.style.height = `${item.height}px`; }
 function applyStyle(el, style, defaults) { Object.assign(el.style, defaults, style ?? {}); }
@@ -1484,4 +1669,4 @@ function asProblem(error) {
 function ok(requestId, renderedRevision, stats) { return { ok: true, requestId, renderedRevision, stats }; }
 function failed(request, code, message, renderedRevision, details) { return { ok: false, requestId: request?.requestId ?? null, renderedRevision, stats: {}, problem: { code, message, details } }; }
 
-export const __testing = { anchorPoint, bezierControlDistance, bezierPath, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupVisibilityDescriptor, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerFor, multiDragPositions, nodeContentMinimumHeight, nodesInRectangle, normaliseNodeProperties, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyValueSignature, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };
+export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteScore, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupVisibilityDescriptor, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nodeContentMinimumHeight, nodesInRectangle, normaliseNodeProperties, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyValueSignature, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };

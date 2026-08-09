@@ -121,6 +121,10 @@ textarea {
   width: 132px;
 }
 
+.marker-select {
+  width: 150px;
+}
+
 .laboratory-canvas-card {
   height: calc(100vh - 124px);
   margin: 0;
@@ -443,6 +447,7 @@ textarea {
   .laboratory-brand .mud-chip { display: none; }
   .toolbar-edge .mud-switch { display: none; }
   .toolbar-select { width: 140px; }
+  .marker-select { width: 132px; }
   .appbar-revision { display: none; }
 }
 

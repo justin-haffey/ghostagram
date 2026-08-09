@@ -9,6 +9,27 @@ const base = {
   edges: [{ id: "edge-1", sourcePortId: "a-out", targetPortId: "b-in", connector: "flowchart" }]
 };
 
+test("Blazor interop preserves committed event order without preview backlog", async () => {
+  let releaseFirst;
+  const firstDelivery = new Promise(resolve => { releaseFirst = resolve; });
+  const delivered = [];
+  const queue = new __testing.InteropEventQueue(async event => {
+    delivered.push(event.eventId);
+    if (event.eventId === 1) await firstDelivery;
+  });
+
+  queue.enqueue({ eventId: 1, type: "selection.changed" });
+  queue.enqueue({ eventId: 2, type: "element.clicked" });
+  queue.enqueue({ eventId: 3, type: "node.move.preview" }, true);
+  queue.enqueue({ eventId: 4, type: "node.move.preview" }, true);
+  queue.enqueue({ eventId: 5, type: "node.move.commit" });
+
+  assert.deepEqual(delivered, [1]);
+  releaseFirst();
+  await queue.whenIdle();
+  assert.deepEqual(delivered, [1, 2, 5]);
+});
+
 test("buildState indexes a valid graph", () => {
   const state = __testing.buildState(base);
   assert.equal(state.nodes.size, 2);
@@ -200,7 +221,8 @@ test("a lasso rectangle selects visible intersecting nodes, groups, and edges in
   assert.equal(__testing.rectanglesIntersect({ x: 0, y: 0, width: 10, height: 10 }, { x: 10, y: 10, width: 2, height: 2 }), true);
   const grouped = __testing.buildState({ ...base, groups: [{ id: "group", x: 0, y: 0, width: 160, height: 100, collapsed: false }] });
   assert.deepEqual(__testing.selectionIdsInRectangle(grouped, { x: 10, y: 10, width: 80, height: 50 }), ["a", "group", "edge-1"]);
-  assert.deepEqual(__testing.edgesInRectangle(state, { x: 225, y: 50, width: 20, height: 20 }), ["edge-1"]);
+  const edge = state.edges.get("edge-1"), geometry = __testing.edgeGeometry(state, edge), route = __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, __testing.buildRoutingContext(state)), probe = __testing.pointAlongPolyline(route, .5);
+  assert.deepEqual(__testing.edgesInRectangle(state, { x: probe.x - 2, y: probe.y - 2, width: 4, height: 4 }), ["edge-1"]);
   assert.equal(__testing.polylineIntersectsRectangle([{ x: 0, y: 0 }, { x: 100, y: 100 }], { x: 45, y: 45, width: 10, height: 10 }), true);
 });
 
@@ -463,6 +485,72 @@ test("flowchart routing honors the exit and entry direction of every static port
   }
 });
 
+test("obstacle-aware flowchart routing sends a backward loop through the clearest exterior corridor", () => {
+  const outer = { id: "quality", x: 108, y: 245, width: 1064, height: 493, collapsed: false };
+  const model = {
+    documentId: "routing-loop",
+    groups: [outer, { id: "review-loop", parentGroupId: "quality", x: 171, y: 366, width: 390, height: 309, collapsed: false }],
+    nodes: [
+      { id: "review", groupId: "review-loop", x: 236, y: 486, width: 262, height: 124 },
+      { id: "approve", groupId: "quality", x: 875, y: 342, width: 265, height: 123 },
+      { id: "retry", x: 1356, y: 598, width: 256, height: 97 }
+    ],
+    ports: [
+      { id: "review-in", nodeId: "review", direction: "target", anchor: "left" },
+      { id: "review-out", nodeId: "review", direction: "source", anchor: "right" },
+      { id: "retry-in", nodeId: "retry", direction: "target", anchor: "left" },
+      { id: "retry-out", nodeId: "retry", direction: "source", anchor: "right" }
+    ],
+    edges: [
+      { id: "forward", sourcePortId: "review-out", targetPortId: "retry-in", connector: "flowchart" },
+      { id: "return", sourcePortId: "retry-out", targetPortId: "review-in", connector: "flowchart" }
+    ]
+  };
+  const state = __testing.buildState(model), context = __testing.buildRoutingContext(state), edge = state.edges.get("return"), geometry = __testing.edgeGeometry(state, edge);
+  const first = __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, context);
+  const second = __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, __testing.buildRoutingContext(state));
+  assert.deepEqual(first, second, "routing is independent of render order and prior calls");
+  assert.ok(Math.max(...first.map(point => point.y)) > outer.y + outer.height, "the return loop clears the bottom of its containing workflow region");
+  assert.ok(first[1].x > first[0].x, "the source still exits its right port outward");
+  assert.ok(first.at(-2).x < first.at(-1).x, "the target is still approached from its left side");
+});
+
+test("a self-loop clears its own node instead of crossing through it", () => {
+  const node = { id: "loop", x: 100, y: 100, width: 100, height: 100 };
+  const state = __testing.buildState({
+    documentId: "self-loop",
+    nodes: [node],
+    ports: [
+      { id: "loop-out", nodeId: "loop", direction: "source", anchor: [1, .3] },
+      { id: "loop-in", nodeId: "loop", direction: "target", anchor: [0, .7] }
+    ],
+    edges: [{ id: "loop-edge", sourcePortId: "loop-out", targetPortId: "loop-in", connector: "flowchart" }]
+  });
+  const edge = state.edges.get("loop-edge"), geometry = __testing.edgeGeometry(state, edge), points = __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, __testing.buildRoutingContext(state));
+  for (let index = 1; index < points.length - 2; index++) assert.equal(__testing.polylineIntersectsRectangle([points[index], points[index + 1]], node), false, "internal loop segments remain outside the node");
+});
+
+test("routing context remains bounded for an interactive-size graph", () => {
+  const nodes = [], ports = [], edges = [];
+  for (let index = 0; index < 250; index++) {
+    const id = `node-${index}`, column = index % 25, row = Math.floor(index / 25);
+    nodes.push({ id, x: column * 180, y: row * 110, width: 120, height: 64 });
+    ports.push({ id: `${id}-in`, nodeId: id, direction: "target", anchor: "left" }, { id: `${id}-out`, nodeId: id, direction: "source", anchor: "right" });
+    if (index) edges.push({ id: `edge-${index}`, sourcePortId: `node-${index - 1}-out`, targetPortId: `${id}-in`, connector: "flowchart" });
+  }
+  const state = __testing.buildState({ documentId: "routing-scale", nodes, ports, edges }), started = performance.now(), context = __testing.buildRoutingContext(state);
+  for (const edge of state.edges.values()) { const geometry = __testing.edgeGeometry(state, edge); __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, context); }
+  const elapsed = performance.now() - started;
+  assert.ok(elapsed < 500, `250-node routing pass should stay interactive; observed ${elapsed.toFixed(1)}ms`);
+  const previewStarted = performance.now(), moving = state.nodes.get("node-125"), incidentEdges = [state.edges.get("edge-125"), state.edges.get("edge-126")].filter(Boolean);
+  for (let frame = 0; frame < 60; frame++) {
+    const previewNodes = new Map([[moving.id, { ...moving, x: moving.x + frame }]]), previewContext = __testing.buildRoutingContext(state, previewNodes);
+    for (const edge of incidentEdges) { const geometry = __testing.edgeGeometry(state, edge, previewNodes); __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, previewContext); }
+  }
+  const previewElapsed = performance.now() - previewStarted;
+  assert.ok(previewElapsed < 1000, `60 drag-preview frames should stay below a 16.7ms average; observed ${(previewElapsed / 60).toFixed(1)}ms/frame`);
+});
+
 test("programmatic waypoints produce a deterministic edge path", () => {
   const path = __testing.route({ connector: "flowchart", waypoints: [{ x: 40, y: 20 }, { x: 60, y: 80 }] }, { x: 0, y: 0 }, { x: 100, y: 100 });
   assert.equal(path, "M 0 0 L 40 20 L 60 80 L 100 100");
@@ -480,12 +568,17 @@ test("edge interaction policies default to enabled and validate explicit host ru
 });
 
 test("overlay descriptors select distinct marker resources", () => {
-  const markerIds = { arrow: "filled", "plain-arrow": "open", diamond: "diamond" };
+  const markerIds = { arrow: "filled", "plain-arrow": "open", "triangle-open": "generalization", diamond: "diamond", "diamond-open": "aggregation", "erd-one": "one", "erd-zero-one": "zero-one", "erd-one-many": "one-many", "erd-zero-many": "zero-many" };
   assert.equal(__testing.markerFor([{ type: "arrow" }], markerIds), "url(#filled)");
   assert.equal(__testing.markerFor(["plain-arrow"], markerIds), "url(#open)");
   assert.equal(__testing.markerFor([{ type: "diamond" }], markerIds), "url(#diamond)");
+  assert.equal(__testing.markerFor([{ type: "triangle-open" }], markerIds), "url(#generalization)");
+  assert.equal(__testing.markerFor([{ type: "diamond-open", location: 0 }], markerIds, "start"), "url(#aggregation)");
+  assert.equal(__testing.markerFor([{ type: "erd-zero-many" }], markerIds), "url(#zero-many)");
   assert.equal(__testing.markerFor([{ type: "plain-arrow", location: 0 }], markerIds, "start"), "url(#open)");
   assert.equal(__testing.markerFor([{ type: "plain-arrow", location: 0 }], markerIds, "end"), "");
+  assert.equal(__testing.markerDescriptor("triangle-open").shapes[0].attributes.fill, "white");
+  assert.equal(__testing.markerDescriptor("erd-zero-many").shapes[0].tag, "circle");
   assert.throws(() => __testing.buildState({ ...base, edges: [{ ...base.edges[0], overlays: [{ type: "arrow", location: .5 }] }] }), /marker/i);
 });
 
@@ -721,7 +814,7 @@ test("label commits normalize whitespace without creating invisible labels", () 
 });
 
 test("SVG export is standalone and escapes model text", () => {
-  const state = __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], label: "A < B", icon: "mdi:robot-outline", style: { color: "#123456" }, properties: [{ id: "prompt", name: "Prompt", value: "Hello", mode: "display" }] }, base.nodes[1] ], edges: [{ ...base.edges[0], animation: true, overlays: [{ type: "arrow" }, { type: "plain-arrow", location: 0 }] }] });
+  const state = __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], label: "A < B", icon: "mdi:robot-outline", style: { color: "#123456" }, properties: [{ id: "prompt", name: "Prompt", value: "Hello", mode: "display" }] }, base.nodes[1] ], edges: [{ ...base.edges[0], animation: true, overlays: [{ type: "erd-zero-many" }, { type: "triangle-open", location: 0 }] }] });
   const svg = __testing.exportSvgDocument(state);
   assert.match(svg, /^<svg /);
   assert.match(svg, /A &lt; B/);
@@ -729,8 +822,9 @@ test("SVG export is standalone and escapes model text", () => {
   assert.match(svg, />Hello<\/text>/);
   assert.match(svg, /fill="#123456"/);
   assert.match(svg, /<path /);
-  assert.match(svg, /marker-start="url\(#ghostagram-export-plain-arrow\)"/);
-  assert.match(svg, /marker-end="url\(#ghostagram-export-arrow\)"/);
+  assert.match(svg, /marker-start="url\(#ghostagram-export-triangle-open\)"/);
+  assert.match(svg, /marker-end="url\(#ghostagram-export-erd-zero-many\)"/);
+  assert.match(svg, /id="ghostagram-export-erd-zero-many"[^>]*>[\s\S]*?<circle/);
   assert.doesNotMatch(svg, /animation|stroke-dashoffset/);
 });
 
