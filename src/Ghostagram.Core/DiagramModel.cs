@@ -121,7 +121,11 @@ public sealed record DiagramEdge(
     bool Reconnectable = true,
     bool LabelEditable = true,
     double? LabelOffsetX = null,
-    double? LabelOffsetY = null);
+    double? LabelOffsetY = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
 
 public sealed record DiagramGroup(
     string Id,
@@ -134,21 +138,61 @@ public sealed record DiagramGroup(
     bool Collapsed = false,
     bool Resizable = true,
     bool LabelEditable = true,
-    string? Icon = null);
+    string? Icon = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
 
-public sealed record DiagramViewport(double X = 0, double Y = 0, double Zoom = 1);
-public sealed record DiagramPoint(double X, double Y);
+public sealed record DiagramViewport(double X = 0, double Y = 0, double Zoom = 1)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+public sealed record DiagramPoint(double X, double Y)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
 public sealed record DiagramNodeStyle(
     string? Background = null,
     string? BorderColor = null,
     string? Color = null,
-    string? TextAlign = null);
-public sealed record DiagramEdgeStyle(string? Stroke = null, double? StrokeWidth = null, string? Dash = null, double? Opacity = null, string? LabelColor = null);
-public sealed record DiagramEndpoint(string Type = "dot", double? Size = null, string? Fill = null, string? Stroke = null, double? StrokeWidth = null);
-public sealed record DiagramConnectionPolicy(IReadOnlyList<string>? AllowPortIds = null, IReadOnlyList<string>? DenyPortIds = null, IReadOnlyList<string>? AllowNodeIds = null, IReadOnlyList<string>? DenyNodeIds = null);
-public sealed record DiagramFlowchartOptions(double Stub = 32, double CornerRadius = 0);
-public sealed record DiagramOverlay(string Type, string? Label = null, double? Location = null, double? OffsetX = null, double? OffsetY = null, double? FontSize = null);
-public sealed record DiagramEdgeType(string Id, string Connector = "flowchart", DiagramEdgeStyle? Style = null, IReadOnlyList<DiagramOverlay>? Overlays = null, object? Animation = null, bool? Detachable = null, bool? Reconnectable = null);
+    string? TextAlign = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+public sealed record DiagramEdgeStyle(string? Stroke = null, double? StrokeWidth = null, string? Dash = null, double? Opacity = null, string? LabelColor = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+public sealed record DiagramEndpoint(string Type = "dot", double? Size = null, string? Fill = null, string? Stroke = null, double? StrokeWidth = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+public sealed record DiagramConnectionPolicy(IReadOnlyList<string>? AllowPortIds = null, IReadOnlyList<string>? DenyPortIds = null, IReadOnlyList<string>? AllowNodeIds = null, IReadOnlyList<string>? DenyNodeIds = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+public sealed record DiagramFlowchartOptions(double Stub = 32, double CornerRadius = 0)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+public sealed record DiagramOverlay(string Type, string? Label = null, double? Location = null, double? OffsetX = null, double? OffsetY = null, double? FontSize = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+public sealed record DiagramEdgeType(string Id, string Connector = "flowchart", DiagramEdgeStyle? Style = null, IReadOnlyList<DiagramOverlay>? Overlays = null, object? Animation = null, bool? Detachable = null, bool? Reconnectable = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
 
 /// <summary>
 /// Resolves the direct group for a node by the node center. This is the shared

@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Ghostagram.Contracts;
 
 namespace Ghostagram.Server;
@@ -37,6 +38,9 @@ public sealed record StoredCommand(string PayloadHash, long Revision, DateTimeOf
 public sealed class StoredDocument
 {
     public required string DocumentId { get; init; }
+    public string? DisplayName { get; set; }
+    public DateTimeOffset CreatedUtc { get; init; }
+    public DateTimeOffset UpdatedUtc { get; set; }
     public long Revision { get; set; }
     public required JsonElement Model { get; set; }
     public List<DiagramChange> Changes { get; init; } = [];
@@ -66,6 +70,58 @@ public sealed class DiagramCommandService(
         ArgumentNullException.ThrowIfNull(command);
         ValidateCommand(command);
         return queue.EnqueueAsync(command.DocumentId, token => SubmitSerializedAsync(command, token), cancellationToken);
+    }
+
+    public Task<DiagramCommandResult> CreateAsync(
+        string documentId,
+        string displayName,
+        string actorId,
+        string commandId,
+        ImmutableArray<GhostagramOperation> operations,
+        CancellationToken cancellationToken)
+    {
+        DocumentIdRules.Require(documentId);
+        if (string.IsNullOrWhiteSpace(displayName) || displayName.Trim().Length > 160)
+            throw new ArgumentException("A display name of 1-160 characters is required.", nameof(displayName));
+        if (string.IsNullOrWhiteSpace(actorId) || string.IsNullOrWhiteSpace(commandId))
+            throw new ArgumentException("actorId and commandId are required.");
+        if (operations.IsDefaultOrEmpty) throw new ArgumentException("At least one operation is required.", nameof(operations));
+        return queue.EnqueueAsync(documentId, token => CreateSerializedAsync(documentId, displayName.Trim(), actorId, commandId, operations, token), cancellationToken);
+    }
+
+    public Task<DiagramCommandResult> CloneAsync(
+        string sourceDocumentId,
+        string destinationDocumentId,
+        string displayName,
+        CancellationToken cancellationToken)
+    {
+        DocumentIdRules.Require(sourceDocumentId);
+        DocumentIdRules.Require(destinationDocumentId);
+        if (string.IsNullOrWhiteSpace(displayName) || displayName.Trim().Length > 160)
+            throw new ArgumentException("A display name of 1-160 characters is required.", nameof(displayName));
+        return queue.EnqueueAsync(destinationDocumentId, token => CloneSerializedAsync(sourceDocumentId, destinationDocumentId, displayName.Trim(), token), cancellationToken);
+    }
+
+    /// <summary>
+    /// Creates an independent diagram from an already materialized model. This is the recovery-mode
+    /// Save As path and deliberately avoids reconstructing an extensible graph through entity operations.
+    /// </summary>
+    public Task<DiagramCommandResult> CreateFromSnapshotAsync(
+        string destinationDocumentId,
+        string displayName,
+        JsonElement model,
+        CancellationToken cancellationToken)
+    {
+        DocumentIdRules.Require(destinationDocumentId);
+        if (string.IsNullOrWhiteSpace(displayName) || displayName.Trim().Length > 160)
+            throw new ArgumentException("A display name of 1-160 characters is required.", nameof(displayName));
+        if (model.ValueKind != JsonValueKind.Object)
+            throw new ArgumentException("A diagram model object is required.", nameof(model));
+        var detached = model.Clone();
+        return queue.EnqueueAsync(
+            destinationDocumentId,
+            token => CreateFromSnapshotSerializedAsync(destinationDocumentId, displayName.Trim(), detached, token),
+            cancellationToken);
     }
 
     public Task<DiagramCommandResult> SubmitGeneratedAsync(
@@ -106,6 +162,84 @@ public sealed class DiagramCommandService(
         catch (DiagramCommandException error) { return new(false, error.Code, error.Message, document.Revision, Snapshot(document)); }
 
         return await CommitAsync(document, command.ActorId, command.CommandId, payloadHash, command.Operations, command.Metadata, nextModel, cancellationToken);
+    }
+
+    private async Task<DiagramCommandResult> CreateSerializedAsync(
+        string documentId,
+        string displayName,
+        string actorId,
+        string commandId,
+        ImmutableArray<GhostagramOperation> operations,
+        CancellationToken cancellationToken)
+    {
+        if (await store.LoadAsync(documentId, cancellationToken) is { } existing)
+            return new(false, "DOCUMENT_EXISTS", $"A diagram named {existing.DisplayName ?? documentId} already exists.", existing.Revision, Snapshot(existing));
+
+        var document = Create(documentId);
+        document.DisplayName = displayName;
+        JsonElement nextModel;
+        try { nextModel = GhostagramDocumentReducer.Apply(document.Model, operations); }
+        catch (DiagramCommandException error) { return new(false, error.Code, error.Message, document.Revision, Snapshot(document)); }
+
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(operations))));
+        return await CommitAsync(document, actorId, commandId, hash, operations, null, nextModel, cancellationToken);
+    }
+
+    private async Task<DiagramCommandResult> CloneSerializedAsync(
+        string sourceDocumentId,
+        string destinationDocumentId,
+        string displayName,
+        CancellationToken cancellationToken)
+    {
+        if (await store.LoadAsync(destinationDocumentId, cancellationToken) is { } existing)
+            return new(false, "DOCUMENT_EXISTS", $"A diagram named {existing.DisplayName ?? destinationDocumentId} already exists.", existing.Revision, Snapshot(existing));
+        var source = await store.LoadAsync(sourceDocumentId, cancellationToken);
+        if (source is null)
+            return new(false, "DOCUMENT_NOT_FOUND", "The source diagram is no longer available.", 0, null);
+
+        var model = JsonNode.Parse(source.Model.GetRawText())?.AsObject()
+            ?? throw new InvalidDataException("The source diagram model is invalid.");
+        model["documentId"] = destinationDocumentId;
+        var validated = GhostagramDocumentReducer.Apply(JsonSerializer.SerializeToElement(model), []);
+        var now = DateTimeOffset.UtcNow;
+        var clone = new StoredDocument
+        {
+            DocumentId = destinationDocumentId,
+            DisplayName = displayName,
+            CreatedUtc = now,
+            UpdatedUtc = now,
+            Revision = 0,
+            Model = validated
+        };
+        await store.SaveAsync(clone, cancellationToken);
+        return new(true, "DOCUMENT_CREATED", "Diagram copy created.", 0, Snapshot(clone));
+    }
+
+    private async Task<DiagramCommandResult> CreateFromSnapshotSerializedAsync(
+        string destinationDocumentId,
+        string displayName,
+        JsonElement sourceModel,
+        CancellationToken cancellationToken)
+    {
+        if (await store.LoadAsync(destinationDocumentId, cancellationToken) is { } existing)
+            return new(false, "DOCUMENT_EXISTS", $"A diagram named {existing.DisplayName ?? destinationDocumentId} already exists.", existing.Revision, Snapshot(existing));
+
+        var model = JsonNode.Parse(sourceModel.GetRawText())?.AsObject()
+            ?? throw new InvalidDataException("The recovery diagram model is invalid.");
+        model["documentId"] = destinationDocumentId;
+        var validated = GhostagramDocumentReducer.Apply(JsonSerializer.SerializeToElement(model), []);
+        var now = DateTimeOffset.UtcNow;
+        var recovered = new StoredDocument
+        {
+            DocumentId = destinationDocumentId,
+            DisplayName = displayName,
+            CreatedUtc = now,
+            UpdatedUtc = now,
+            Revision = 0,
+            Model = validated
+        };
+        await store.SaveAsync(recovered, cancellationToken);
+        return new(true, "DOCUMENT_CREATED", "Recovered diagram created.", 0, Snapshot(recovered));
     }
 
     private async Task<DiagramCommandResult> SubmitGeneratedSerializedAsync(
@@ -158,6 +292,7 @@ public sealed class DiagramCommandService(
         var change = new DiagramChange(document.DocumentId, document.Revision + 1, actorId, commandId, operations, DateTimeOffset.UtcNow, metadata);
         document.Model = nextModel;
         document.Revision = change.Revision;
+        document.UpdatedUtc = change.CommittedUtc;
         document.Changes.Add(change);
         document.CommandLedger[$"{actorId}:{commandId}"] = new StoredCommand(payloadHash, change.Revision, change.CommittedUtc);
 
@@ -185,7 +320,8 @@ public sealed class DiagramCommandService(
             groups = Array.Empty<object>(), edgeTypes = Array.Empty<object>(), selection = Array.Empty<string>(),
             viewport = new { x = 0, y = 0, zoom = 1 }
         });
-        return new StoredDocument { DocumentId = documentId, Revision = 0, Model = model };
+        var now = DateTimeOffset.UtcNow;
+        return new StoredDocument { DocumentId = documentId, DisplayName = documentId, CreatedUtc = now, UpdatedUtc = now, Revision = 0, Model = model };
     }
 
     private static DiagramSnapshot Snapshot(StoredDocument document) => new(document.DocumentId, document.Revision, document.Model.Clone());

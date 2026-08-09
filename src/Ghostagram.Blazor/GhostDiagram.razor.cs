@@ -19,6 +19,10 @@ public partial class GhostDiagram
     private string? _instanceId;
     private bool _initialized;
     private long _renderedRevision;
+    private string? _renderedDocumentId;
+    private DiagramDocument? _renderedDocument;
+    private long? _incrementallyAppliedRevision;
+    private bool _pendingParameterSync;
 
     [Inject] private IJSRuntime Js { get; set; } = default!;
     [Inject] private ILogger<GhostDiagram> Logger { get; set; } = default!;
@@ -46,15 +50,42 @@ public partial class GhostDiagram
         _composition.InitializeRoot();
     }
 
+    protected override void OnParametersSet()
+    {
+        if (!_initialized || Document is null || ReferenceEquals(Document, _renderedDocument)) return;
+
+        // The host normally advances the browser through ApplyAsync and publishes the resulting
+        // authoritative document on the following render. Adopt that matching parameter without
+        // replacing the canvas a second time.
+        if (_incrementallyAppliedRevision == Revision
+            && string.Equals(_renderedDocumentId, Document.DocumentId, StringComparison.Ordinal))
+        {
+            _renderedDocument = Document;
+            _incrementallyAppliedRevision = null;
+            return;
+        }
+
+        // Async parent initialization can finish after the first interactive render. Schedule a
+        // full sync even when the late document has the same ID/revision as the empty first value.
+        _pendingParameterSync = true;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _initialized) return;
-        _module = await Js.InvokeAsync<IJSObjectReference>("import", Options.ModulePath ?? "./Ghostagram.Blazor/ghostagram/ghostagram.js");
-        _self = DotNetObjectReference.Create(this);
-        var hello = await _module.InvokeAsync<GhostagramHello>("create", _host, Options.ToInteropOptions(_self));
-        _instanceId = hello.InstanceId;
-        _initialized = true;
-        await ReplaceAsync(CurrentDocument, Revision);
+        if (firstRender && !_initialized)
+        {
+            _module = await Js.InvokeAsync<IJSObjectReference>("import", Options.ModulePath ?? "./Ghostagram.Blazor/ghostagram/ghostagram.js");
+            _self = DotNetObjectReference.Create(this);
+            var hello = await _module.InvokeAsync<GhostagramHello>("create", _host, Options.ToInteropOptions(_self));
+            _instanceId = hello.InstanceId;
+            _initialized = true;
+            await ReplaceAsync(CurrentDocument, Revision);
+            return;
+        }
+
+        if (!_initialized || !_pendingParameterSync || Document is null) return;
+        _pendingParameterSync = false;
+        await ReplaceAsync(Document, Revision);
     }
 
     /// <summary>Replaces the visual state with an authoritative document at the given revision.</summary>
@@ -67,6 +98,9 @@ public partial class GhostDiagram
         var result = await module.InvokeAsync<GhostagramResult>("replace", cancellationToken, _instanceId, request);
         ThrowIfFailed(result);
         _renderedRevision = result.RenderedRevision;
+        _renderedDocumentId = document.DocumentId;
+        _renderedDocument = document;
+        _incrementallyAppliedRevision = null;
         return result;
     }
 
@@ -77,6 +111,8 @@ public partial class GhostDiagram
         var result = await RequireModule().InvokeAsync<GhostagramResult>("apply", cancellationToken, _instanceId, request);
         ThrowIfFailed(result);
         _renderedRevision = result.RenderedRevision;
+        _renderedDocumentId = CurrentDocument.DocumentId;
+        _incrementallyAppliedRevision = result.RenderedRevision;
         return result;
     }
 

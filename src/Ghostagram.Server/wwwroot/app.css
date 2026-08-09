@@ -257,6 +257,38 @@ textarea {
   width: min(520px, calc(100vw - 32px));
 }
 
+.studio-modal.library-modal {
+  width: min(660px, calc(100vw - 32px));
+}
+
+.compact-modal > .mud-input-control {
+  width: calc(100% - 40px);
+  margin: 20px;
+}
+
+.library-list {
+  display: grid;
+  gap: 10px;
+  max-height: min(520px, calc(100vh - 190px));
+  padding: 16px 20px 20px;
+  overflow: auto;
+}
+
+.library-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 66px;
+  padding: 10px 12px 10px 16px;
+  border-color: var(--studio-line) !important;
+  border-radius: 10px !important;
+}
+
+.library-item-copy {
+  min-width: 0;
+}
+
 .studio-modal.style-modal {
   width: min(720px, calc(100vw - 32px));
 }

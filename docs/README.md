@@ -11,12 +11,14 @@ This documentation describes the extensibility and execution boundary added to G
 - [Serialization compatibility](architecture/serialization-compatibility.md)
 - [UI and runtime rendering](architecture/ui-runtime.md)
 - [Current solution architecture assessment and roadmap](architecture/solution-architecture-assessment.md)
+- [Server diagram and palette persistence](architecture/server-persistence.md)
 
 ## Decisions
 
 - [ADR-001: heterogeneous persistence and typed extension boundary](adr/ADR-001-typed-extension-boundary.md)
 - [ADR-002: controlled-cycle execution compilation](adr/ADR-002-controlled-cycle-compilation.md)
 - [ADR-003: provider-neutral MAF adapter](adr/ADR-003-provider-neutral-maf-adapter.md)
+- [ADR-004: Server persistence catalogs and the SQLite boundary](adr/ADR-004-server-persistence-catalogs-and-sqlite.md)
 
 ## Verification
 

@@ -4,6 +4,7 @@ using Ghostagram.Server;
 using Ghostagram.Server.Export;
 using Ghostagram.Server.Layout;
 using Ghostagram.Server.Sessions;
+using Ghostagram.Server.Persistence;
 using Ghostagram.Execution;
 using Ghostagram.NodeSets.Maf;
 using Microsoft.AspNetCore.DataProtection;
@@ -27,6 +28,10 @@ builder.Services.AddMudServices();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<FileDocumentStore>();
 builder.Services.AddSingleton<IDocumentStore>(provider => provider.GetRequiredService<FileDocumentStore>());
+builder.Services.AddSingleton<IDocumentCatalog>(provider => provider.GetRequiredService<FileDocumentStore>());
+builder.Services.AddSingleton<FilePaletteCatalogRepository>();
+builder.Services.AddSingleton<IPaletteCatalogRepository>(provider => provider.GetRequiredService<FilePaletteCatalogRepository>());
+builder.Services.AddSingleton<ILaboratoryWorkspaceStore, FileLaboratoryWorkspaceStore>();
 builder.Services.AddSingleton<IDocumentCommandQueue, DocumentCommandQueue>();
 builder.Services.AddSingleton<IDocumentEventPublisher, SignalRDocumentEventPublisher>();
 builder.Services.AddSingleton<DiagramCommandService>();
@@ -65,6 +70,8 @@ app.Use(async (context, next) =>
 });
 
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/api/documents", async (IDocumentCatalog catalog, CancellationToken cancellationToken)
+    => Results.Ok(await catalog.ListAsync(cancellationToken)));
 app.MapGet("/api/documents/{documentId}", async (string documentId, DiagramCommandService commands, CancellationToken cancellationToken)
     => (await commands.GetSnapshotAsync(documentId, cancellationToken)) is { } snapshot ? Results.Ok(snapshot) : Results.NotFound());
 app.MapGet("/api/documents/{documentId}/changes", async (string documentId, long afterRevision, DiagramCommandService commands, CancellationToken cancellationToken)
@@ -78,6 +85,10 @@ app.MapPost("/api/documents/{documentId}/commands", async (string documentId, Di
     return result.Accepted ? Results.Ok(result) : result.Code == "REVISION_CONFLICT" ? Results.Conflict(result) : Results.BadRequest(result);
 });
 app.MapGet("/api/layouts", (DiagramLayoutService layouts) => Results.Ok(layouts.Capabilities()));
+app.MapGet("/api/palettes", async (IPaletteCatalogRepository catalogs, CancellationToken cancellationToken)
+    => Results.Ok(await catalogs.ListAsync(cancellationToken)));
+app.MapGet("/api/palettes/{catalogId}", async (string catalogId, IPaletteCatalogRepository catalogs, CancellationToken cancellationToken)
+    => (await catalogs.GetAsync(catalogId, cancellationToken)) is { } snapshot ? Results.Ok(snapshot) : Results.NotFound());
 app.MapPost("/api/documents/{documentId}/layout", async (string documentId, DiagramLayoutRequest request, DiagramLayoutService layouts, CancellationToken cancellationToken) =>
 {
     if (!string.Equals(documentId, request.DocumentId, StringComparison.Ordinal))

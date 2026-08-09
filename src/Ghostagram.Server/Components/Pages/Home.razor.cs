@@ -5,6 +5,7 @@ using Ghostagram.Contracts;
 using Ghostagram.Core;
 using Ghostagram.Execution;
 using Ghostagram.Server.Layout;
+using Ghostagram.Server.Persistence;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -12,12 +13,16 @@ namespace Ghostagram.Server.Components.Pages;
 
 public partial class Home : IAsyncDisposable
 {
-    private const string DocumentId = "laboratory-design";
+    private const string DefaultDocumentId = "laboratory-design";
+    private const string DefaultPaletteCatalogId = "laboratory-palette";
     private const string ActorId = "ghostagram-laboratory";
     private const int GridSize = 16;
     private const int MaxDesignedProperties = 17;
 
     [Inject] private DiagramCommandService Commands { get; set; } = default!;
+    [Inject] private IDocumentCatalog Documents { get; set; } = default!;
+    [Inject] private IPaletteCatalogRepository PaletteCatalogs { get; set; } = default!;
+    [Inject] private ILaboratoryWorkspaceStore Workspace { get; set; } = default!;
     [Inject] private DiagramLayoutService Layouts { get; set; } = default!;
     [Inject] private INodeTypeRegistry NodeTypes { get; set; } = default!;
     [Inject] private INodeFactory NodeFactory { get; set; } = default!;
@@ -32,8 +37,9 @@ public partial class Home : IAsyncDisposable
     private readonly Stack<DiagramDocument> _redo = new();
     private readonly SemaphoreSlim _eventGate = new(1, 1);
     private readonly SemaphoreSlim _commandGate = new(1, 1);
+    private readonly SemaphoreSlim _paletteGate = new(1, 1);
 
-    private DiagramDocument _document = EmptyDocument();
+    private DiagramDocument _document = EmptyDocument(DefaultDocumentId);
     private NodeDraft _draft = new();
     private NodeStyleDraft _styleDraft = new();
     private GhostDiagram? _diagram;
@@ -47,12 +53,31 @@ public partial class Home : IAsyncDisposable
     private bool _isPaletteGroupEditorOpen;
     private bool _isStyleEditorOpen;
     private bool _isExportOpen;
+    private bool _isDiagramLibraryOpen;
+    private bool _isSaveAsOpen;
+    private bool _isPaletteLibraryOpen;
+    private bool _isPaletteSaveAsOpen;
     private bool _busy;
+    private bool _documentDurable;
     private string _activity = "Loading saved design…";
     private string _layoutDirection = "right";
     private string _edgeConnector = "flowchart";
     private bool _edgeAnimated;
     private string? _exportedSvg;
+    private string _documentId = DefaultDocumentId;
+    private string _documentDisplayName = "Laboratory design";
+    private string _saveAsName = string.Empty;
+    private IReadOnlyList<DiagramDocumentSummary> _documents = [];
+    private string _paletteCatalogId = DefaultPaletteCatalogId;
+    private string _paletteCatalogName = "Laboratory palette";
+    private string? _paletteCatalogDescription = "Ghostagram node palette";
+    private IReadOnlyDictionary<string, JsonElement> _paletteCatalogAttributes = ImmutableDictionary<string, JsonElement>.Empty;
+    private string _paletteSaveAsName = string.Empty;
+    private long _paletteCatalogRevision;
+    private DateTimeOffset _paletteCatalogCreatedUtc = DateTimeOffset.UtcNow;
+    private bool _paletteCatalogDurable;
+    private bool _paletteLoadFailed;
+    private IReadOnlyList<PaletteCatalogSummary> _paletteCatalogSummaries = [];
     private string _paletteGroupName = string.Empty;
     private string? _styleNodeId;
     private long _revision;
@@ -63,10 +88,28 @@ public partial class Home : IAsyncDisposable
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadWorkspaceSelectionAsync();
         AddRegisteredNodeSets();
+        await LoadOrCreatePaletteCatalogAsync();
         await LoadOrCreateDocumentAsync();
+        await RefreshDocumentCatalogAsync();
         SyncEdgeControlsFromDocument();
     }
+
+    private string DocumentId => _documentId;
+
+    private async Task LoadWorkspaceSelectionAsync()
+    {
+        var state = await Workspace.LoadAsync(CancellationToken.None);
+        if (state is null) return;
+        // Resolve availability in the dedicated load paths so a corrupt selected artifact enters recovery mode
+        // instead of aborting component initialization or being silently replaced.
+        _documentId = state.DocumentId;
+        _paletteCatalogId = state.PaletteCatalogId;
+    }
+
+    private Task PersistWorkspaceSelectionAsync() =>
+        Workspace.SaveAsync(new(DocumentId, _paletteCatalogId), CancellationToken.None);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -92,6 +135,7 @@ public partial class Home : IAsyncDisposable
             {
                 _document = Deserialize(snapshot);
                 _revision = snapshot.Revision;
+                _documentDurable = true;
                 await RepairSavedIconsAsync();
             }
 
@@ -110,8 +154,513 @@ public partial class Home : IAsyncDisposable
         {
             _document = CreateStarterDocument();
             _revision = 0;
+            _documentDurable = false;
             _activity = $"Opened a recoverable local design: {exception.Message}";
         }
+    }
+
+    private async Task LoadOrCreatePaletteCatalogAsync()
+    {
+        try
+        {
+            var snapshot = await PaletteCatalogs.GetAsync(_paletteCatalogId, CancellationToken.None);
+            if (snapshot is null)
+            {
+                var initial = CapturePaletteCatalog(
+                    _paletteCatalogId,
+                    _paletteCatalogName,
+                    revision: 1,
+                    _paletteCatalogCreatedUtc);
+                var created = await PaletteCatalogs.CreateAsync(initial, CancellationToken.None);
+                if (created.Accepted && created.Snapshot is not null)
+                {
+                    ApplyPaletteCatalog(created.Snapshot);
+                    _paletteCatalogDurable = true;
+                }
+                else if (await PaletteCatalogs.GetAsync(_paletteCatalogId, CancellationToken.None) is { } current)
+                {
+                    ApplyPaletteCatalog(current);
+                    _paletteCatalogDurable = true;
+                }
+            }
+            else
+            {
+                ApplyPaletteCatalog(snapshot);
+                _paletteCatalogDurable = true;
+            }
+            _paletteLoadFailed = false;
+            await RefreshPaletteCatalogsAsync();
+        }
+        catch (Exception exception)
+        {
+            _paletteCatalogDurable = false;
+            _paletteLoadFailed = true;
+            _activity = $"Opened the default palette after a saved palette error: {exception.Message}";
+        }
+    }
+
+    private async Task RefreshPaletteCatalogsAsync() =>
+        _paletteCatalogSummaries = await PaletteCatalogs.ListAsync(CancellationToken.None);
+
+    private async Task<bool> PersistPaletteCatalogAsync()
+    {
+        await _paletteGate.WaitAsync();
+        try
+        {
+            if (!_paletteCatalogDurable || _paletteLoadFailed)
+            {
+                _activity = _paletteLoadFailed
+                    ? "The saved palette could not be read, so it was left untouched. Use Save as to recover this palette under a new name."
+                    : "This palette has unsaved changes. Use Save as to preserve them under a new name.";
+                return false;
+            }
+
+            var snapshot = CapturePaletteCatalog(
+                _paletteCatalogId,
+                _paletteCatalogName,
+                _paletteCatalogRevision + 1,
+                _paletteCatalogCreatedUtc);
+            var result = await PaletteCatalogs.TrySaveAsync(snapshot, _paletteCatalogRevision, CancellationToken.None);
+            if (!result.Accepted)
+            {
+                _paletteCatalogDurable = false;
+                _activity = result.Code == "REVISION_CONFLICT"
+                    ? "This palette changed in another session. Open the latest version or use Save as to preserve your local changes."
+                    : $"Palette change could not be saved: {result.Message}";
+                return false;
+            }
+
+            ApplyCommittedPaletteSnapshot(result.Snapshot ?? snapshot);
+            _paletteCatalogDurable = true;
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _paletteCatalogDurable = false;
+            _activity = $"Palette change could not be saved: {exception.Message}";
+            return false;
+        }
+        finally { _paletteGate.Release(); }
+    }
+
+    private async Task PersistPaletteAndRenderAsync()
+    {
+        await PersistPaletteCatalogAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private PaletteCatalogSnapshot CapturePaletteCatalog(string catalogId, string name, long revision, DateTimeOffset createdUtc)
+    {
+        var empty = ImmutableDictionary<string, JsonElement>.Empty;
+        var now = DateTimeOffset.UtcNow;
+        var groups = _paletteCategories.Where(category => !category.IsSystem).Select((category, index) =>
+            new PaletteGroupSnapshot(
+                category.Name,
+                category.PersistedGroup?.Label ?? category.Name,
+                category.PersistedGroup?.Description,
+                category.PersistedGroup?.Icon ?? "mdi:folder-outline",
+                index,
+                CloneMetadata(category.PersistedGroup?.Metadata))).ToArray();
+        var customNodes = _templates.Where(template => template.IsCustom).Select(template =>
+        {
+            if (template.PersistedDefinition is { } persisted)
+            {
+                return persisted with
+                {
+                    Label = template.Label,
+                    Description = template.Description,
+                    Width = template.Width,
+                    Height = template.Height,
+                    IsGroup = template.IsGroup,
+                    Icon = template.Icon,
+                    Style = new(template.Outline, template.Background, template.TextColor, template.TextAlign)
+                };
+            }
+
+            return new PaletteNodeDefinitionSnapshot(
+                template.Id,
+                template.Label,
+                template.Description,
+                template.Width,
+                template.Height,
+                template.IsGroup,
+                template.Icon,
+                new(template.Outline, template.Background, template.TextColor, template.TextAlign),
+                template.Ports.Select((port, index) => new PalettePortDefinitionSnapshot(
+                    port.Id, port.Side, port.Direction, port.Side, null, null, index, null, empty)).ToArray(),
+                template.Properties.Select((property, index) => new PalettePropertyDefinitionSnapshot(
+                    property.Id, property.Name, property.Type, property.Value?.Clone(), property.Mode, property.Label,
+                    property.Connectable, property.Options.ToArray(), property.Direction, index, empty)).ToArray(),
+                empty);
+        }).ToArray();
+        var placements = _paletteCategories.SelectMany(category => _templates
+            .Where(template => string.Equals(template.Category, category.Name, StringComparison.Ordinal))
+            .Select((template, index) => new PaletteItemPlacementSnapshot(template.Id, template.Category, index))).ToArray();
+        return new(
+            PaletteCatalogSchema.CurrentVersion,
+            catalogId,
+            new(name, _paletteCatalogDescription, revision, createdUtc, now, CloneMetadata(_paletteCatalogAttributes)),
+            groups,
+            customNodes,
+            placements,
+            _expandedCategories.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
+            _paletteOpen,
+            _palettePinned);
+    }
+
+    private void ApplyPaletteCatalog(PaletteCatalogSnapshot snapshot)
+    {
+        _paletteCategories.RemoveAll(category => !category.IsSystem);
+        _templates.RemoveAll(template => template.IsCustom);
+
+        var names = _paletteCategories.Select(category => category.Name).ToHashSet(StringComparer.Ordinal);
+        foreach (var group in snapshot.CustomGroups.OrderBy(group => group.Order).ThenBy(group => group.Id, StringComparer.Ordinal))
+        {
+            if (!names.Add(group.Id)) continue;
+            _paletteCategories.Add(new(group.Id, false, group));
+        }
+
+        var placementByItem = snapshot.Placements.ToDictionary(placement => placement.ItemId, StringComparer.Ordinal);
+        foreach (var node in snapshot.CustomNodes)
+        {
+            if (_templates.Any(template => string.Equals(template.Id, node.Id, StringComparison.Ordinal))) continue;
+            var category = placementByItem.TryGetValue(node.Id, out var placement) && names.Contains(placement.GroupId)
+                ? placement.GroupId
+                : "Custom";
+            _templates.Add(new(
+                node.Id,
+                category,
+                node.Label,
+                node.Description,
+                node.Width,
+                node.Height,
+                node.Style.BorderColor,
+                node.Style.Background,
+                node.Style.Color,
+                node.Style.TextAlign,
+                node.Ports.Where(port => port.PropertyId is null).OrderBy(port => port.Order).Select(port => new PortTemplate(port.Id, port.Side, port.Direction)).ToArray(),
+                node.IsGroup,
+                NormalizeIcon(node.Icon) ?? "mdi:shape-outline",
+                true,
+                node.Properties.OrderBy(property => property.Order).Select(property => new PropertyTemplate(
+                    property.Id,
+                    property.Name,
+                    property.Type,
+                    property.DefaultValue?.Clone(),
+                    property.Mode,
+                    property.Label,
+                    property.Connectable,
+                    property.Options.ToArray(),
+                    property.Direction)).ToArray(),
+                PersistedDefinition: node));
+        }
+
+        for (var index = 0; index < _templates.Count; index++)
+        {
+            if (!placementByItem.TryGetValue(_templates[index].Id, out var placement) || !names.Contains(placement.GroupId)) continue;
+            _templates[index] = _templates[index] with { Category = placement.GroupId };
+        }
+
+        var categoryOrder = _paletteCategories.Select((category, index) => (category.Name, index))
+            .ToDictionary(item => item.Name, item => item.index, StringComparer.Ordinal);
+        var originalOrder = _templates.Select((template, index) => (template.Id, index))
+            .ToDictionary(item => item.Id, item => item.index, StringComparer.Ordinal);
+        _templates.Sort((left, right) =>
+        {
+            var categoryComparison = categoryOrder.GetValueOrDefault(left.Category, int.MaxValue)
+                .CompareTo(categoryOrder.GetValueOrDefault(right.Category, int.MaxValue));
+            if (categoryComparison != 0) return categoryComparison;
+            var leftOrder = placementByItem.TryGetValue(left.Id, out var leftPlacement) ? leftPlacement.Order : int.MaxValue;
+            var rightOrder = placementByItem.TryGetValue(right.Id, out var rightPlacement) ? rightPlacement.Order : int.MaxValue;
+            var placementComparison = leftOrder.CompareTo(rightOrder);
+            return placementComparison != 0 ? placementComparison : originalOrder[left.Id].CompareTo(originalOrder[right.Id]);
+        });
+
+        _expandedCategories.Clear();
+        foreach (var groupId in snapshot.ExpandedGroupIds.Where(names.Contains)) _expandedCategories.Add(groupId);
+        _paletteOpen = snapshot.IsOpen;
+        _palettePinned = snapshot.IsPinned;
+        _paletteCatalogId = snapshot.CatalogId;
+        _paletteCatalogName = snapshot.Catalog.Name;
+        _paletteCatalogDescription = snapshot.Catalog.Description;
+        _paletteCatalogAttributes = CloneMetadata(snapshot.Catalog.Attributes);
+        _paletteCatalogRevision = snapshot.Catalog.Revision;
+        _paletteCatalogCreatedUtc = snapshot.Catalog.CreatedAtUtc;
+        _draft.Category = names.Contains(_draft.Category) ? _draft.Category : "Custom";
+        UpdateTemplateSequence();
+    }
+
+    private void ApplyCommittedPaletteSnapshot(PaletteCatalogSnapshot snapshot)
+    {
+        _paletteCatalogRevision = snapshot.Catalog.Revision;
+        _paletteCatalogCreatedUtc = snapshot.Catalog.CreatedAtUtc;
+        _paletteCatalogDescription = snapshot.Catalog.Description;
+        _paletteCatalogAttributes = CloneMetadata(snapshot.Catalog.Attributes);
+        var definitions = snapshot.CustomNodes.ToDictionary(node => node.Id, StringComparer.Ordinal);
+        for (var index = 0; index < _templates.Count; index++)
+        {
+            if (_templates[index].IsCustom && definitions.TryGetValue(_templates[index].Id, out var definition))
+                _templates[index] = _templates[index] with { PersistedDefinition = definition };
+        }
+        var groups = snapshot.CustomGroups.ToDictionary(group => group.Id, StringComparer.Ordinal);
+        for (var index = 0; index < _paletteCategories.Count; index++)
+        {
+            if (!_paletteCategories[index].IsSystem && groups.TryGetValue(_paletteCategories[index].Name, out var group))
+                _paletteCategories[index] = _paletteCategories[index] with { PersistedGroup = group };
+        }
+    }
+
+    private static IReadOnlyDictionary<string, JsonElement> CloneMetadata(IReadOnlyDictionary<string, JsonElement>? metadata) =>
+        metadata is null
+            ? ImmutableDictionary<string, JsonElement>.Empty
+            : metadata.ToImmutableDictionary(pair => pair.Key, pair => pair.Value.Clone(), StringComparer.Ordinal);
+
+    private void UpdateTemplateSequence()
+    {
+        _templateSequence = 0;
+        foreach (var template in _templates.Where(template => template.IsCustom && template.Id.StartsWith("custom-", StringComparison.Ordinal)))
+            if (int.TryParse(template.Id.AsSpan("custom-".Length), out var sequence)) _templateSequence = Math.Max(_templateSequence, sequence);
+    }
+
+    private async Task RefreshDocumentCatalogAsync()
+    {
+        _documents = await Documents.ListAsync(CancellationToken.None);
+        var current = _documents.FirstOrDefault(item => string.Equals(item.DocumentId, DocumentId, StringComparison.Ordinal));
+        if (current is not null) _documentDisplayName = current.DisplayName;
+    }
+
+    private Task SaveCurrentAsync()
+    {
+        _activity = _documentDurable
+            ? $"{_documentDisplayName} is saved at revision {_revision}"
+            : $"{_documentDisplayName} is open in recovery mode and is not saved. Use Save as to preserve it under a new name.";
+        return Task.CompletedTask;
+    }
+
+    private void OpenSaveAs()
+    {
+        _saveAsName = $"{_documentDisplayName} copy";
+        _isSaveAsOpen = true;
+    }
+
+    private void CloseSaveAs() => _isSaveAsOpen = false;
+
+    private async Task OpenDiagramLibraryAsync()
+    {
+        await RefreshDocumentCatalogAsync();
+        _isDiagramLibraryOpen = true;
+    }
+
+    private void CloseDiagramLibrary() => _isDiagramLibraryOpen = false;
+
+    private async Task SaveAsAsync()
+    {
+        var name = _saveAsName.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _activity = "Enter a name for the diagram";
+            return;
+        }
+
+        var documentId = SlugifyDocumentId(name);
+        if (_documents.Any(item => string.Equals(item.DocumentId, documentId, StringComparison.Ordinal)))
+        {
+            _activity = $"A diagram named {name} already exists";
+            return;
+        }
+
+        await _eventGate.WaitAsync();
+        await _commandGate.WaitAsync();
+        _busy = true;
+        try
+        {
+            DiagramCommandResult result;
+            if (_documentDurable)
+            {
+                result = await Commands.CloneAsync(DocumentId, documentId, name, CancellationToken.None);
+            }
+            else
+            {
+                var target = _document with { DocumentId = documentId };
+                result = await Commands.CreateFromSnapshotAsync(
+                    documentId,
+                    name,
+                    JsonSerializer.SerializeToElement(target, JsonOptions),
+                    CancellationToken.None);
+            }
+            if (!result.Accepted || result.Snapshot is null)
+            {
+                _activity = $"Diagram was not saved: {result.Message}";
+                return;
+            }
+
+            _documentId = documentId;
+            _documentDisplayName = name;
+            _document = Deserialize(result.Snapshot);
+            _revision = result.Revision;
+            _documentDurable = true;
+            _undo.Clear();
+            _redo.Clear();
+            if (_diagram is not null) await _diagram.ReplaceAsync(_document, _revision);
+            await RefreshDocumentCatalogAsync();
+            _isSaveAsOpen = false;
+            _activity = $"Saved and opened {name}";
+            await PersistWorkspaceSelectionAsync();
+        }
+        catch (Exception exception)
+        {
+            _activity = $"Diagram was not saved: {exception.Message}";
+        }
+        finally
+        {
+            _busy = false;
+            _commandGate.Release();
+            _eventGate.Release();
+        }
+    }
+
+    private async Task OpenDocumentAsync(string documentId)
+    {
+        if (_busy || string.Equals(documentId, DocumentId, StringComparison.Ordinal))
+        {
+            _isDiagramLibraryOpen = false;
+            return;
+        }
+
+        await _eventGate.WaitAsync();
+        await _commandGate.WaitAsync();
+        _busy = true;
+        try
+        {
+            var snapshot = await Commands.GetSnapshotAsync(documentId, CancellationToken.None);
+            if (snapshot is null)
+            {
+                _activity = "That saved diagram is no longer available";
+                await RefreshDocumentCatalogAsync();
+                return;
+            }
+
+            var document = Deserialize(snapshot);
+            _documentId = documentId;
+            _documentDisplayName = _documents.FirstOrDefault(item => item.DocumentId == documentId)?.DisplayName ?? documentId;
+            _document = document;
+            _revision = snapshot.Revision;
+            _documentDurable = true;
+            _undo.Clear();
+            _redo.Clear();
+            _exportedSvg = null;
+            SyncEdgeControlsFromDocument();
+            if (_diagram is not null) await _diagram.ReplaceAsync(_document, _revision);
+            _isDiagramLibraryOpen = false;
+            _activity = $"Opened {_documentDisplayName}";
+            await PersistWorkspaceSelectionAsync();
+        }
+        catch (Exception exception)
+        {
+            _activity = $"Diagram could not be opened: {exception.Message}";
+        }
+        finally
+        {
+            _busy = false;
+            _commandGate.Release();
+            _eventGate.Release();
+        }
+    }
+
+    private async Task SavePaletteAsync()
+    {
+        if (await PersistPaletteCatalogAsync())
+            _activity = $"{_paletteCatalogName} is saved at revision {_paletteCatalogRevision}";
+    }
+
+    private async Task OpenPaletteSaveAsAsync()
+    {
+        await RefreshPaletteCatalogsAsync();
+        _paletteSaveAsName = $"{_paletteCatalogName} copy";
+        _isPaletteSaveAsOpen = true;
+    }
+
+    private void ClosePaletteSaveAs() => _isPaletteSaveAsOpen = false;
+
+    private async Task OpenPaletteLibraryAsync()
+    {
+        await RefreshPaletteCatalogsAsync();
+        _isPaletteLibraryOpen = true;
+    }
+
+    private void ClosePaletteLibrary() => _isPaletteLibraryOpen = false;
+
+    private async Task SavePaletteAsAsync()
+    {
+        var name = _paletteSaveAsName.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _activity = "Enter a name for the palette";
+            return;
+        }
+        var catalogId = SlugifyPaletteCatalogId(name);
+        if (_paletteCatalogSummaries.Any(item => string.Equals(item.CatalogId, catalogId, StringComparison.Ordinal)))
+        {
+            _activity = $"A palette named {name} already exists";
+            return;
+        }
+
+        await _paletteGate.WaitAsync();
+        try
+        {
+            var created = DateTimeOffset.UtcNow;
+            var snapshot = CapturePaletteCatalog(catalogId, name, 1, created);
+            var result = await PaletteCatalogs.CreateAsync(snapshot, CancellationToken.None);
+            if (!result.Accepted || result.Snapshot is null)
+            {
+                _activity = $"Palette was not saved: {result.Message}";
+                return;
+            }
+            ApplyPaletteCatalog(result.Snapshot);
+            _paletteCatalogDurable = true;
+            _paletteLoadFailed = false;
+            await RefreshPaletteCatalogsAsync();
+            _isPaletteSaveAsOpen = false;
+            _activity = $"Saved and opened {name}";
+            await PersistWorkspaceSelectionAsync();
+        }
+        catch (Exception exception)
+        {
+            _activity = $"Palette was not saved: {exception.Message}";
+        }
+        finally { _paletteGate.Release(); }
+    }
+
+    private async Task OpenPaletteCatalogAsync(string catalogId)
+    {
+        if (string.Equals(catalogId, _paletteCatalogId, StringComparison.Ordinal))
+        {
+            _isPaletteLibraryOpen = false;
+            return;
+        }
+
+        await _paletteGate.WaitAsync();
+        try
+        {
+            var snapshot = await PaletteCatalogs.GetAsync(catalogId, CancellationToken.None);
+            if (snapshot is null)
+            {
+                _activity = "That saved palette is no longer available";
+                await RefreshPaletteCatalogsAsync();
+                return;
+            }
+            ApplyPaletteCatalog(snapshot);
+            _paletteCatalogDurable = true;
+            _paletteLoadFailed = false;
+            _isPaletteLibraryOpen = false;
+            _activity = $"Opened {_paletteCatalogName}";
+            await PersistWorkspaceSelectionAsync();
+        }
+        catch (Exception exception)
+        {
+            _activity = $"Palette could not be opened: {exception.Message}";
+        }
+        finally { _paletteGate.Release(); }
     }
 
     private async Task RepairSavedIconsAsync()
@@ -130,21 +679,27 @@ public partial class Home : IAsyncDisposable
         if (operations.Count > 0) await SubmitOperationsAsync(operations, "Repaired saved node metadata", false);
     }
 
-    private void TogglePalette() => _paletteOpen = !_paletteOpen;
+    private async Task TogglePalette()
+    {
+        _paletteOpen = !_paletteOpen;
+        await PersistPaletteCatalogAsync();
+    }
 
-    private void TogglePalettePin()
+    private async Task TogglePalettePin()
     {
         _palettePinned = !_palettePinned;
         _paletteOpen = true;
+        await PersistPaletteCatalogAsync();
     }
 
-    private void SetCategoryExpanded(string category, bool expanded)
+    private async Task SetCategoryExpandedAsync(string category, bool expanded)
     {
         if (expanded) _expandedCategories.Add(category);
         else _expandedCategories.Remove(category);
+        await PersistPaletteCatalogAsync();
     }
 
-    private void SetCategoryExpanded(GhostPaletteGroupToggleRequest request) => SetCategoryExpanded(request.GroupId, request.Expanded);
+    private Task SetCategoryExpanded(GhostPaletteGroupToggleRequest request) => SetCategoryExpandedAsync(request.GroupId, request.Expanded);
 
     private void OpenDesigner()
     {
@@ -168,7 +723,11 @@ public partial class Home : IAsyncDisposable
     private string EdgeApplyLabel => HasSelectedEdges ? "Apply selected" : "Apply all edges";
     private string StyleNodeLabel => _document.Nodes.SingleOrDefault(node => node.Id == _styleNodeId)?.Label ?? "Node style";
     private IReadOnlyList<GhostPaletteGroup> PaletteGroups => _paletteCategories
-        .Select(category => new GhostPaletteGroup(category.Name, category.Name, _expandedCategories.Contains(category.Name), !category.IsSystem))
+        .Select(category => new GhostPaletteGroup(
+            category.Name,
+            category.PersistedGroup?.Label ?? category.Name,
+            _expandedCategories.Contains(category.Name),
+            !category.IsSystem))
         .ToArray();
     private IReadOnlyList<GhostPaletteItem> PaletteItems => _templates
         .Select(template => new GhostPaletteItem(template.Id, template.Category, template.Label, template.Description, template.Outline, template.IsCustom))
@@ -181,7 +740,7 @@ public partial class Home : IAsyncDisposable
         return _document.Nodes.SingleOrDefault(node => selected.Contains(node.Id));
     }
 
-    private void AddPaletteGroup()
+    private async Task AddPaletteGroup()
     {
         var name = _paletteGroupName.Trim();
         if (string.IsNullOrWhiteSpace(name))
@@ -202,9 +761,10 @@ public partial class Home : IAsyncDisposable
         _isPaletteGroupEditorOpen = false;
         _paletteOpen = true;
         _activity = $"Added palette group {name}";
+        await PersistPaletteCatalogAsync();
     }
 
-    private void RemovePaletteGroup(string name)
+    private async Task RemovePaletteGroup(string name)
     {
         var category = _paletteCategories.SingleOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal));
         if (category is null || category.IsSystem) return;
@@ -223,6 +783,7 @@ public partial class Home : IAsyncDisposable
         _activity = moved == 0
             ? $"Removed empty palette group {name}"
             : $"Removed palette group {name} and moved {moved} node type{(moved == 1 ? string.Empty : "s")} to Custom";
+        await PersistPaletteCatalogAsync();
     }
 
     private Task MovePaletteItemAsync(GhostPaletteMoveRequest request)
@@ -237,15 +798,16 @@ public partial class Home : IAsyncDisposable
         _templates[index] = _templates[index] with { Category = categoryName };
         _expandedCategories.Add(categoryName);
         _activity = $"Moved {label} to {categoryName}";
-        return InvokeAsync(StateHasChanged);
+        return PersistPaletteAndRenderAsync();
     }
 
-    private void DeleteCustomTemplate(string templateId)
+    private async Task DeleteCustomTemplate(string templateId)
     {
         var template = _templates.SingleOrDefault(item => item.Id == templateId && item.IsCustom);
         if (template is null) return;
         _templates.Remove(template);
         _activity = $"Deleted custom node type {template.Label} from the palette";
+        await PersistPaletteCatalogAsync();
     }
 
     private void OpenNodeStyleEditor()
@@ -365,16 +927,53 @@ public partial class Home : IAsyncDisposable
             }
             else
             {
-                var properties = template.Properties.Select(property => property.Property with { Value = property.Value?.Clone() }).ToArray();
+                var persistedProperties = template.PersistedDefinition?.Properties
+                    .OrderBy(property => property.Order)
+                    .ToArray();
+                var properties = persistedProperties is null
+                    ? template.Properties.Select(property => property.Property with { Value = property.Value?.Clone() }).ToArray()
+                    : persistedProperties.Select(property => new DiagramNodeProperty(
+                        property.Id,
+                        property.Name,
+                        property.Type,
+                        property.DefaultValue?.Clone(),
+                        property.Mode,
+                        property.Label,
+                        Connectable: property.Connectable,
+                        Options: property.Options.ToArray(),
+                        Metadata: property.Metadata.Count == 0 ? null : JsonSerializer.SerializeToElement(property.Metadata, JsonOptions))).ToArray();
                 var node = new DiagramNode(id, x, y, template.Width, template.Height, template.Label, GroupId: groupId, Icon: template.Icon,
                     Style: new DiagramNodeStyle(template.Background, template.Outline, template.TextColor, template.TextAlign), Properties: properties);
-                var ports = template.Ports.Select((port, index) => new DiagramPort(
-                    $"{id}-{port.Id}-{index + 1}", id, port.Direction, Anchor: port.Side,
-                    Endpoint: new DiagramEndpoint("dot", 11, template.Outline, "#ffffff", 2))).ToArray();
+                var persistedPorts = template.PersistedDefinition?.Ports.OrderBy(port => port.Order).ToArray();
+                var ports = persistedPorts is null
+                    ? template.Ports.Select((port, index) => new DiagramPort(
+                        $"{id}-{port.Id}-{index + 1}", id, port.Direction, Anchor: port.Side,
+                        Endpoint: new DiagramEndpoint("dot", 11, template.Outline, "#ffffff", 2))).ToArray()
+                    : persistedPorts.Select((port, index) => new DiagramPort(
+                        $"{id}-{port.Id}-{index + 1}",
+                        id,
+                        port.Direction,
+                        Anchor: port.Anchor ?? port.Side,
+                        Endpoint: port.Endpoint is null
+                            ? new DiagramEndpoint("dot", 11, template.Outline, "#ffffff", 2)
+                            : new DiagramEndpoint(port.Endpoint.Type, port.Endpoint.Size, port.Endpoint.Stroke, port.Endpoint.Fill, port.Endpoint.StrokeWidth),
+                        PropertyId: port.PropertyId,
+                        Label: port.Label,
+                        Order: port.Order)
+                    {
+                        ExtensionData = CloneMetadata(port.Metadata).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal)
+                    }).ToArray();
                 var operations = new List<GhostagramOperation> { DiagramOperations.Upsert(node) };
                 operations.AddRange(ports.Select(DiagramOperations.Upsert));
-                operations.AddRange(properties.Where(property => property.Connectable).SelectMany((property, index) =>
-                    PropertyPorts(id, property, template.Properties.Single(templateProperty => templateProperty.Id == property.Id).Direction, index, template.Outline)).Select(DiagramOperations.Upsert));
+                var boundPropertyIds = persistedPorts?.Where(port => port.PropertyId is not null)
+                    .Select(port => port.PropertyId!)
+                    .ToHashSet(StringComparer.Ordinal) ?? [];
+                operations.AddRange(properties.Where(property => property.Connectable && !boundPropertyIds.Contains(property.Id)).SelectMany((property, index) =>
+                {
+                    var direction = persistedProperties?.SingleOrDefault(templateProperty => templateProperty.Id == property.Id)?.Direction
+                        ?? template.Properties.Single(templateProperty => templateProperty.Id == property.Id).Direction;
+                    return PropertyPorts(id, property, direction, index, template.Outline);
+                }).Select(DiagramOperations.Upsert));
                 await SubmitOperationsAsync(operations, $"Added {template.Label}");
             }
         }
@@ -399,7 +998,7 @@ public partial class Home : IAsyncDisposable
     }
     private void RemoveDraftProperty(string id) => _draftProperties.RemoveAll(property => property.Id == id);
 
-    private void AddCustomTemplate()
+    private async Task AddCustomTemplate()
     {
         var label = string.IsNullOrWhiteSpace(_draft.Label) ? "Custom node" : _draft.Label.Trim();
         var outline = NormalizeColor(_draft.Outline, "#d24686");
@@ -420,6 +1019,7 @@ public partial class Home : IAsyncDisposable
         _paletteOpen = true;
         _expandedCategories.Add(category);
         _activity = $"Added {label} to {category}";
+        await PersistPaletteCatalogAsync();
     }
 
     private async Task OnGhostagramEvent(GhostagramEvent envelope)
@@ -428,6 +1028,8 @@ public partial class Home : IAsyncDisposable
         await _eventGate.WaitAsync();
         try
         {
+            if (envelope.DocumentId is not null && !string.Equals(envelope.DocumentId, DocumentId, StringComparison.Ordinal)) return;
+            if (envelope.RenderRevision != _revision) return;
             if (envelope.EventId <= _lastBrowserEventId) return;
             _lastBrowserEventId = envelope.EventId;
             await ProcessGhostagramEventAsync(envelope);
@@ -756,6 +1358,7 @@ public partial class Home : IAsyncDisposable
 
             _document = Deserialize(result.Snapshot);
             _revision = result.Revision;
+            _documentDurable = true;
             if (recordHistory)
             {
                 _undo.Push(previous);
@@ -782,6 +1385,7 @@ public partial class Home : IAsyncDisposable
         }
         catch (Exception exception)
         {
+            _documentDurable = false;
             _activity = $"Recovered from a save error: {exception.Message}";
             await ResynchronizeAsync(fetchSnapshot: true);
             return false;
@@ -816,6 +1420,7 @@ public partial class Home : IAsyncDisposable
         {
             _document = Deserialize(result.Snapshot);
             _revision = result.Snapshot.Revision;
+            _documentDurable = true;
         }
         if (_diagram is not null) await _diagram.ReplaceAsync(_document, _revision);
         _activity = $"Change was not saved: {message}";
@@ -829,6 +1434,7 @@ public partial class Home : IAsyncDisposable
             {
                 _document = Deserialize(snapshot);
                 _revision = snapshot.Revision;
+                _documentDurable = true;
             }
             if (_diagram is not null) await _diagram.ReplaceAsync(_document, _revision);
         }
@@ -890,7 +1496,7 @@ public partial class Home : IAsyncDisposable
 
     private async Task ResetAsync()
     {
-        var operations = OperationsToTransform(_document, CreateStarterDocument());
+        var operations = OperationsToTransform(_document, CreateStarterDocument(DocumentId));
         if (await SubmitOperationsAsync(operations, "Restored the starter design")) _exportedSvg = null;
     }
 
@@ -1057,10 +1663,10 @@ public partial class Home : IAsyncDisposable
         ?? throw new InvalidOperationException("The saved diagram could not be read.");
 
     private static bool IsEmpty(DiagramDocument document) => document.Nodes.Count == 0 && document.Groups.Count == 0;
-    private static DiagramDocument EmptyDocument() => new(DocumentId, [], [], [], [], new DiagramViewport(), [], []);
+    private static DiagramDocument EmptyDocument(string documentId) => new(documentId, [], [], [], [], new DiagramViewport(), [], []);
 
-    private static DiagramDocument CreateStarterDocument() => new(
-        DocumentId,
+    private static DiagramDocument CreateStarterDocument(string documentId = DefaultDocumentId) => new(
+        documentId,
         [
             new DiagramNode("node-1", 128, 160, 156, 72, "Discover", GroupId: "group-1", Icon: "mdi:magnify", Style: new DiagramNodeStyle("#ffffff", "#4177de", "#172033")),
             new DiagramNode("node-2", 412, 160, 172, 72, "Shape the flow", GroupId: "group-1", Icon: "mdi:vector-polyline", Style: new DiagramNodeStyle("#ffffff", "#7455dd", "#172033"))
@@ -1150,6 +1756,21 @@ public partial class Home : IAsyncDisposable
     private static string PortSide(string direction) => direction == "target" ? "left" : "right";
 
     private static string CommandId(string kind) => $"{kind}-{Guid.NewGuid():N}";
+    private static string SlugifyDocumentId(string name)
+    {
+        var characters = name.Trim().ToLowerInvariant().Select(character => char.IsLetterOrDigit(character) ? character : '-').ToArray();
+        var slug = string.Join('-', new string(characters).Split('-', StringSplitOptions.RemoveEmptyEntries));
+        if (slug.Length > 96) slug = slug[..96].TrimEnd('-');
+        return string.IsNullOrWhiteSpace(slug) ? $"diagram-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}" : slug;
+    }
+
+    private static string SlugifyPaletteCatalogId(string name)
+    {
+        var characters = name.Trim().ToLowerInvariant().Select(character => char.IsAsciiLetterOrDigit(character) ? character : '-').ToArray();
+        var slug = string.Join('-', new string(characters).Split('-', StringSplitOptions.RemoveEmptyEntries));
+        if (slug.Length > 96) slug = slug[..96].TrimEnd('-');
+        return string.IsNullOrWhiteSpace(slug) ? $"palette-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}" : slug;
+    }
     private static string NextId(string prefix) => $"{prefix}-{Guid.NewGuid():N}";
     private static double Snap(double value) => Math.Round(value / GridSize) * GridSize;
     private static bool ValidColor(string? value) => value is not null && value.Length is 4 or 7 && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit);
@@ -1192,6 +1813,7 @@ public partial class Home : IAsyncDisposable
     {
         _eventGate.Dispose();
         _commandGate.Dispose();
+        _paletteGate.Dispose();
         return ValueTask.CompletedTask;
     }
 
@@ -1252,11 +1874,12 @@ public partial class Home : IAsyncDisposable
         bool IsCustom = false,
         IReadOnlyList<PropertyTemplate>? Properties = null,
         string? RegisteredTypeId = null,
-        int? RegisteredTypeVersion = null)
+        int? RegisteredTypeVersion = null,
+        PaletteNodeDefinitionSnapshot? PersistedDefinition = null)
     {
         public IReadOnlyList<PropertyTemplate> Properties { get; init; } = Properties ?? [];
     }
-    private sealed record PaletteCategory(string Name, bool IsSystem);
+    private sealed record PaletteCategory(string Name, bool IsSystem, PaletteGroupSnapshot? PersistedGroup = null);
     private sealed record PortTemplate(string Id, string Side, string Direction);
     private sealed record PropertyTemplate(string Id, string Name, string Type, JsonElement? Value, string Mode, string? Label, bool Connectable, IReadOnlyList<string> Options, string Direction)
     {

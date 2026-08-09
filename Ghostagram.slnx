@@ -9,6 +9,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Ghostagram.Core.Tests/Ghostagram.Core.Tests.csproj" />
+    <Project Path="tests/Ghostagram.Persistence.Tests/Ghostagram.Persistence.Tests.csproj" />
     <Project Path="tests/Ghostagram.Layout.Verification/Ghostagram.Layout.Verification.csproj" />
     <Project Path="tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj" />
   </Folder>

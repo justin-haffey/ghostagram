@@ -249,6 +249,15 @@ static async Task VerifyCommandPipeline()
     True(exported.Accepted && exported.Revision == 2 && exported.Content?.StartsWith("<svg", StringComparison.Ordinal) == true, "session export must return revision-pinned SVG");
     var closed = await sessions.CloseAsync(sessionId, "agent-one");
     True(closed.Accepted && closed.Code == "SESSION_CLOSED", "session close must remove the participant");
+
+    var copyOperations = ImmutableArray.Create(new GhostagramOperation(
+        "node.upsert",
+        JsonSerializer.SerializeToElement(new { id = "copy-node", x = 12, y = 20, width = 120, height = 60, label = "Copied" }),
+        "copy-node"));
+    var copied = await commands.CreateAsync("pipeline-copy", "Pipeline copy", "tester", "copy-1", copyOperations, default);
+    True(copied.Accepted && copied.Revision == 1 && copied.Snapshot?.DocumentId == "pipeline-copy", "Save As must create an independent revisioned document");
+    var duplicate = await commands.CreateAsync("pipeline-copy", "Duplicate", "tester", "copy-2", copyOperations, default);
+    True(!duplicate.Accepted && duplicate.Code == "DOCUMENT_EXISTS", "Save As must not overwrite an existing document");
 }
 
 static JsonElement Model(

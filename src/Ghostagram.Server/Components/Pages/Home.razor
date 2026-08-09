@@ -16,6 +16,10 @@
             </div>
 
             <MudMenu Label="File" Color="Color.Inherit" Dense="true">
+                <MudMenuItem OnClick="SaveCurrentAsync" Icon="@Icons.Material.Filled.Save">Save</MudMenuItem>
+                <MudMenuItem OnClick="OpenSaveAs" Icon="@Icons.Material.Filled.SaveAs">Save as…</MudMenuItem>
+                <MudMenuItem OnClick="OpenDiagramLibraryAsync" Icon="@Icons.Material.Filled.FolderOpen">Open diagram…</MudMenuItem>
+                <MudDivider />
                 <MudMenuItem OnClick="ExportAsync" Icon="@Icons.Material.Filled.Download">Export SVG</MudMenuItem>
                 <MudMenuItem OnClick="ResetAsync" Icon="@Icons.Material.Filled.RestartAlt">Reset starter design</MudMenuItem>
             </MudMenu>
@@ -23,6 +27,11 @@
                 <MudMenuItem OnClick="OpenDesigner" Icon="@Icons.Material.Filled.AddBox">New node type</MudMenuItem>
                 <MudMenuItem OnClick="OpenPaletteGroupEditor" Icon="@Icons.Material.Filled.CreateNewFolder">Palette group</MudMenuItem>
                 <MudMenuItem OnClick="AddGroupAsync" Icon="@Icons.Material.Filled.SelectAll">Canvas group</MudMenuItem>
+            </MudMenu>
+            <MudMenu Label="Palette" Color="Color.Inherit" Dense="true">
+                <MudMenuItem OnClick="SavePaletteAsync" Icon="@Icons.Material.Filled.Save">Save palette</MudMenuItem>
+                <MudMenuItem OnClick="OpenPaletteSaveAsAsync" Icon="@Icons.Material.Filled.SaveAs">Save palette as…</MudMenuItem>
+                <MudMenuItem OnClick="OpenPaletteLibraryAsync" Icon="@Icons.Material.Filled.FolderOpen">Open palette…</MudMenuItem>
             </MudMenu>
             <MudMenu Label="Edit" Color="Color.Inherit" Dense="true">
                 <MudMenuItem OnClick="OpenNodeStyleEditor" Disabled="@(!CanEditSelectedNode)" Icon="@Icons.Material.Filled.Palette">Node style</MudMenuItem>
@@ -37,7 +46,7 @@
             </MudMenu>
 
             <MudSpacer />
-            <MudText Typo="Typo.caption" Class="appbar-revision">Revision @_revision</MudText>
+            <MudText Typo="Typo.caption" Class="appbar-revision">@_documentDisplayName · Revision @_revision</MudText>
         </MudAppBar>
 
         <MudDrawer @bind-Open="_paletteOpen"
@@ -49,6 +58,7 @@
                    Class="laboratory-palette"
                    Width="320px">
             <GhostPalette @ref="_palette"
+                          Title="@_paletteCatalogName"
                           Groups="PaletteGroups"
                           Items="PaletteItems"
                           ItemDropped="DropPaletteItemAsync"
@@ -147,6 +157,102 @@
             </section>
         </MudMainContent>
     </MudLayout>
+
+    @if (_isSaveAsOpen)
+    {
+        <div class="studio-modal-backdrop" @onclick="CloseSaveAs">
+            <MudPaper Class="studio-modal compact-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Save diagram as" @onclick:stopPropagation="true">
+                <header class="studio-modal-header">
+                    <div><MudText Typo="Typo.h6">Save diagram as</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">Create an independent, fully editable diagram.</MudText></div>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseSaveAs" aria-label="Close save dialog" />
+                </header>
+                <MudTextField @bind-Value="_saveAsName" Label="Diagram name" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
+                <footer class="studio-modal-actions">
+                    <MudButton OnClick="CloseSaveAs">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.SaveAs" OnClick="SaveAsAsync">Save and open</MudButton>
+                </footer>
+            </MudPaper>
+        </div>
+    }
+
+    @if (_isDiagramLibraryOpen)
+    {
+        <div class="studio-modal-backdrop" @onclick="CloseDiagramLibrary">
+            <MudPaper Class="studio-modal library-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Open diagram" @onclick:stopPropagation="true">
+                <header class="studio-modal-header">
+                    <div><MudText Typo="Typo.h6">Open diagram</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">Saved diagrams remain editable, collaborative, and revisioned.</MudText></div>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseDiagramLibrary" aria-label="Close diagram library" />
+                </header>
+                <div class="library-list">
+                    @foreach (var document in _documents)
+                    {
+                        <MudPaper Class="library-item" Outlined="true">
+                            <div class="library-item-copy">
+                                <MudText Typo="Typo.subtitle2">@document.DisplayName</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Revision @document.Revision · @document.UpdatedUtc.LocalDateTime.ToString("g")</MudText>
+                            </div>
+                            @if (document.DocumentId == DocumentId)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">Open</MudChip>
+                            }
+                            else
+                            {
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FolderOpen" OnClick="@(() => OpenDocumentAsync(document.DocumentId))">Open</MudButton>
+                            }
+                        </MudPaper>
+                    }
+                </div>
+            </MudPaper>
+        </div>
+    }
+
+    @if (_isPaletteSaveAsOpen)
+    {
+        <div class="studio-modal-backdrop" @onclick="ClosePaletteSaveAs">
+            <MudPaper Class="studio-modal compact-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Save palette as" @onclick:stopPropagation="true">
+                <header class="studio-modal-header">
+                    <div><MudText Typo="Typo.h6">Save palette as</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">Copy custom groups, node definitions, organization, and open folders.</MudText></div>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="ClosePaletteSaveAs" aria-label="Close palette save dialog" />
+                </header>
+                <MudTextField @bind-Value="_paletteSaveAsName" Label="Palette name" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
+                <footer class="studio-modal-actions">
+                    <MudButton OnClick="ClosePaletteSaveAs">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.SaveAs" OnClick="SavePaletteAsAsync">Save and open</MudButton>
+                </footer>
+            </MudPaper>
+        </div>
+    }
+
+    @if (_isPaletteLibraryOpen)
+    {
+        <div class="studio-modal-backdrop" @onclick="ClosePaletteLibrary">
+            <MudPaper Class="studio-modal library-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Open palette" @onclick:stopPropagation="true">
+                <header class="studio-modal-header">
+                    <div><MudText Typo="Typo.h6">Open palette</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">Switch node libraries without changing the open diagram.</MudText></div>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="ClosePaletteLibrary" aria-label="Close palette library" />
+                </header>
+                <div class="library-list">
+                    @foreach (var palette in _paletteCatalogSummaries)
+                    {
+                        <MudPaper Class="library-item" Outlined="true">
+                            <div class="library-item-copy">
+                                <MudText Typo="Typo.subtitle2">@palette.Name</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@palette.CustomGroupCount custom groups · @palette.CustomNodeCount custom nodes · Revision @palette.Revision</MudText>
+                            </div>
+                            @if (palette.CatalogId == _paletteCatalogId)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">Open</MudChip>
+                            }
+                            else
+                            {
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FolderOpen" OnClick="@(() => OpenPaletteCatalogAsync(palette.CatalogId))">Open</MudButton>
+                            }
+                        </MudPaper>
+                    }
+                </div>
+            </MudPaper>
+        </div>
+    }
 
     @if (_isDesignerOpen)
     {
