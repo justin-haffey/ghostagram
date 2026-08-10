@@ -72,7 +72,7 @@ app.Use(async (context, next) =>
 {
     // MudBlazor emits its theme variables and Ghostagram emits instance-scoped
     // animation keyframes as inline style elements. Scripts remain self-only.
-    context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; connect-src 'self' https://api.iconify.design; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' https://code.iconify.design";
+    context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; connect-src 'self' https://api.iconify.design; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' https://code.iconify.design";
     await next();
 });
 

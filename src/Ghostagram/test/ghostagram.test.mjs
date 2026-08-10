@@ -957,6 +957,14 @@ test("SVG export is standalone and escapes model text", () => {
   assert.doesNotMatch(svg, /animation|stroke-dashoffset/);
 });
 
+test("SVG export can crop to the current viewport bounds", () => {
+  const state = __testing.buildState({ ...base, viewport: { x: 40, y: 80, zoom: 2 } });
+  assert.deepEqual(__testing.viewportExportBounds(state, { width: 800, height: 600 }), { x: 40, y: 80, width: 400, height: 300 });
+  const svg = __testing.exportSvgDocument(state, { bounds: { x: 40, y: 80, width: 400, height: 300 } });
+  assert.match(svg, /viewBox="40 80 400 300"/);
+  assert.throws(() => __testing.exportSvgBounds([], { bounds: { x: 0, y: 0, width: 0, height: 1 } }), /Export bounds/);
+});
+
 test("SVG export top-aligns simple node titles", () => {
   const svg = __testing.exportSvgDocument(__testing.buildState({
     ...base,

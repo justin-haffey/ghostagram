@@ -53,7 +53,7 @@ public partial class Home : IAsyncDisposable
     [Inject] private LaboratoryCircuitState CircuitState { get; set; } = default!;
     [Parameter, SupplyParameterFromQuery(Name = "documentId")] public string? RequestedDocumentId { get; set; }
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260809.4");
+    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260810.1");
     private readonly List<PaletteCategory> _paletteCategories = CreatePaletteCategories();
     private readonly List<NodeTemplate> _templates = CreateBuiltInTemplates();
     private readonly List<DraftPort> _draftPorts = [];
@@ -82,8 +82,10 @@ public partial class Home : IAsyncDisposable
     private bool _isStyleEditorOpen;
     private bool _isPropertiesEditorOpen;
     private bool _isExportOpen;
+    private bool _isImageExportOpen;
     private bool _isDiagramLibraryOpen;
     private bool _isSaveAsOpen;
+    private bool _isNewDiagramOpen;
     private bool _isPaletteLibraryOpen;
     private bool _isPaletteSaveAsOpen;
     private bool _busy;
@@ -95,9 +97,11 @@ public partial class Home : IAsyncDisposable
     private string _edgeEndMarker = "arrow";
     private bool _edgeAnimated;
     private string? _exportedSvg;
+    private string? _exportedImage;
     private string _documentId = DefaultDocumentId;
     private string _documentDisplayName = "Laboratory design";
     private string _saveAsName = string.Empty;
+    private string _newDiagramName = string.Empty;
     private IReadOnlyList<DiagramDocumentSummary> _documents = [];
     private string _paletteCatalogId = DefaultPaletteCatalogId;
     private string _paletteCatalogName = "Laboratory palette";
@@ -608,6 +612,73 @@ public partial class Home : IAsyncDisposable
 
     private void CloseSaveAs() => _isSaveAsOpen = false;
 
+    private void OpenNewDiagram()
+    {
+        _newDiagramName = "Untitled diagram";
+        _isNewDiagramOpen = true;
+    }
+
+    private void CloseNewDiagram() => _isNewDiagramOpen = false;
+
+    private async Task CreateNewDiagramAsync()
+    {
+        var name = _newDiagramName.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _activity = "Enter a name for the diagram";
+            return;
+        }
+
+        var documentId = SlugifyDocumentId(name);
+        if (_documents.Any(item => string.Equals(item.DocumentId, documentId, StringComparison.Ordinal)))
+        {
+            _activity = $"A diagram named {name} already exists";
+            return;
+        }
+
+        await _eventGate.WaitAsync();
+        await _commandGate.WaitAsync();
+        _busy = true;
+        try
+        {
+            var blank = EmptyDocument(documentId);
+            var result = await Commands.CreateFromSnapshotAsync(
+                documentId, name, JsonSerializer.SerializeToElement(blank, JsonOptions), CancellationToken.None);
+            if (!result.Accepted || result.Snapshot is null)
+            {
+                _activity = $"Diagram was not created: {result.Message}";
+                return;
+            }
+
+            _documentId = documentId;
+            _documentDisplayName = name;
+            _document = Deserialize(result.Snapshot);
+            _revision = result.Revision;
+            SubscribeToDocumentChanges();
+            _documentDurable = true;
+            _undo.Clear();
+            _redo.Clear();
+            _exportedSvg = null;
+            _exportedImage = null;
+            SyncEdgeControlsFromDocument();
+            if (_diagram is not null) await _diagram.ReplaceAsync(_document, _revision);
+            await RefreshDocumentCatalogAsync();
+            _isNewDiagramOpen = false;
+            _activity = $"Created and opened {name}";
+            await PersistWorkspaceSelectionAsync();
+        }
+        catch (Exception exception)
+        {
+            _activity = $"Diagram was not created: {exception.Message}";
+        }
+        finally
+        {
+            _busy = false;
+            _commandGate.Release();
+            _eventGate.Release();
+        }
+    }
+
     private async Task OpenDiagramLibraryAsync()
     {
         await RefreshDocumentCatalogAsync();
@@ -882,6 +953,7 @@ public partial class Home : IAsyncDisposable
     private void CloseStyleEditor() => _isStyleEditorOpen = false;
     private void CloseNodePropertiesEditor() => _isPropertiesEditorOpen = false;
     private void CloseExport() => _isExportOpen = false;
+    private void CloseImageExport() => _isImageExportOpen = false;
 
     private bool HasSelectedGroups => _document.Groups.Any(group => _document.Selection.Contains(group.Id, StringComparer.Ordinal));
     private bool HasSelectedEdges => _document.Edges.Any(edge => _document.Selection.Contains(edge.Id, StringComparer.Ordinal));
@@ -2210,6 +2282,35 @@ public partial class Home : IAsyncDisposable
         }
     }
 
+    private async Task ExportImageAsync()
+    {
+        if (_diagram is null) return;
+        try
+        {
+            _exportedImage = await _diagram.ExportPngAsync();
+            _isImageExportOpen = true;
+            _activity = "Generated a PNG of the whole diagram";
+        }
+        catch (Exception exception)
+        {
+            _activity = $"Unable to export image: {exception.Message}";
+        }
+    }
+
+    private async Task CopyViewportAsync()
+    {
+        if (_diagram is null) return;
+        try
+        {
+            await _diagram.CopyViewportPngAsync();
+            _activity = "Copied the visible canvas to the clipboard";
+        }
+        catch (Exception exception)
+        {
+            _activity = $"Unable to copy the viewport: {exception.Message}";
+        }
+    }
+
     private async Task ResetAsync()
     {
         var operations = OperationsToTransform(_document, CreateStarterDocument(DocumentId));
@@ -2420,6 +2521,7 @@ public partial class Home : IAsyncDisposable
 
     private static bool IsEmpty(DiagramDocument document) => document.Nodes.Count == 0 && document.Groups.Count == 0;
     private static DiagramDocument EmptyDocument(string documentId) => new(documentId, [], [], [], [], new DiagramViewport(), [], []);
+    private string ExportImageFileName => $"{SlugifyDocumentId(_documentDisplayName)}.png";
 
     private static DiagramDocument CreateStarterDocument(string documentId = DefaultDocumentId) => new(
         documentId,

@@ -40,7 +40,8 @@ const supported = Object.freeze({
     razorInterop: true, viewport: true, canvasGeometry: true,
     customFactories: true, dynamicAnchors: true, editableWaypoints: true, labelOverlayPlacement: true,
     nestedGroups: true, perimeterAnchors: true, rotation: true, flowAnimation: true, selectionLasso: true, edgeTypes: true, iconifyIcons: true,
-    progressiveNodes: true, nestedNodeSections: true, richPropertyEditors: true, selectorSources: false
+    progressiveNodes: true, nestedNodeSections: true, richPropertyEditors: true, selectorSources: false,
+    imageExport: true, clipboardImage: true
   }
 });
 
@@ -62,6 +63,10 @@ export function canvasCenter(instanceId) { return protocolFacade.canvasCenter(in
 /** Projects a browser point and reports whether it is inside the live canvas. */
 export function hitTestClientPoint(instanceId, clientX, clientY) { return protocolFacade.hitTestClientPoint(instanceId, clientX, clientY); }
 export function exportSvg(instanceId, options = {}) { return protocolFacade.exportSvg(instanceId, options); }
+/** Exports the complete visible diagram as a PNG data URL. */
+export function exportPng(instanceId, options = {}) { return protocolFacade.exportPng(instanceId, options); }
+/** Copies the currently visible canvas region as a PNG image. */
+export function copyViewportPng(instanceId) { return protocolFacade.copyViewportPng(instanceId); }
 export function dispose(instanceId) { return protocolFacade.dispose(instanceId); }
 export function capabilities() { return structuredClone(supported); }
 /** Register a JavaScript-only connector router. C#/Razor stays descriptor-only. */
@@ -199,6 +204,15 @@ class GhostagramEngine {
     return canvasHitDescriptor({ clientX, clientY }, this.dom.root.getBoundingClientRect(), this.state.viewport);
   }
   exportSvg(options = {}) { return exportSvgDocument(this.state, options); }
+  async exportPng(options = {}) { return (await exportPngArtifact(exportSvgArtifact(this.state, options))).dataUrl; }
+  async copyViewportPng() {
+    if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined")
+      throw new GhostagramError("CLIPBOARD_UNAVAILABLE", "This browser cannot copy PNG images to the clipboard.");
+    const artifact = exportSvgArtifact(this.state, { bounds: viewportExportBounds(this.state, this.viewportSize()) });
+    const image = await exportPngArtifact(artifact, Math.min(2, Math.max(1, window.devicePixelRatio || 1)));
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": image.blob })]);
+    return { width: image.width, height: image.height };
+  }
   stats() { return { nodes: this.state.nodes.size, ports: this.state.ports.size, edges: this.state.edges.size, groups: this.state.groups.size, selected: this.state.selection.size, scheduled: this.renderer.scheduled }; }
   remember(id, value) { this.completed.set(id, value); if (this.completed.size > 256) this.completed.delete(this.completed.keys().next().value); }
   clearCommittedPreviews(ops) {
@@ -1773,16 +1787,43 @@ function selectableIds(state) {
 }
 function rectanglesIntersect(a, b) { return a.x <= b.x + b.width && a.x + a.width >= b.x && a.y <= b.y + b.height && a.y + a.height >= b.y; }
 function setViewportCenter(state, centerX, centerY, size, zoom) { state.viewport = { ...state.viewport, zoom, x: centerX - size.width / (2 * zoom), y: centerY - size.height / (2 * zoom) }; }
-function exportSvgDocument(state, options = {}) {
+function exportSvgDocument(state, options = {}) { return exportSvgArtifact(state, options).svg; }
+function exportSvgArtifact(state, options = {}) {
   const visibleGroups = groupsForRender(state).filter(group => !isGroupHiddenByCollapsedAncestor(state, group)), visibleNodes = [...state.nodes.values()].filter(node => !isNodeHiddenByCollapsedGroup(state, node));
-  const items = [...visibleNodes, ...visibleGroups], padding = options.padding ?? 32;
-  const left = items.length ? Math.min(...items.map(item => item.x)) - padding : 0, top = items.length ? Math.min(...items.map(item => item.y)) - padding : 0, right = items.length ? Math.max(...items.map(item => item.x + item.width)) + padding : 1, bottom = items.length ? Math.max(...items.map(item => item.y + item.height)) + padding : 1;
+  const bounds = exportSvgBounds([...visibleNodes, ...visibleGroups], options);
   const groups = visibleGroups.map(group => `<rect x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" fill="rgba(148,163,184,.08)" stroke="#64748b" stroke-dasharray="4 3"/><text x="${group.x + 6}" y="${group.y + 18}" fill="#334155" font-size="12" font-weight="600">${xml(group.label ?? group.id)}</text>`).join("");
   const markerIds = Object.fromEntries(markerTypes.map(type => [type, `ghostagram-export-${type}`]));
   const routingContext = buildRoutingContext(state);
   const edges = [...state.edges.values()].map(rawEdge => { const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge); if (geometry.hidden) return ""; const { sourcePoint, targetPoint } = geometry, routePoints = edgeRoutePoints(edge, sourcePoint, targetPoint, geometry, routingContext), style = edgeStyleDescriptor(edge.style), label = edgeLabelPlacement(edge, sourcePoint, targetPoint, geometry, routePoints), markerStart = markerFor(edge.overlays, markerIds, "start"), markerEnd = markerFor(edge.overlays, markerIds, "end"); return `<path d="${route(edge, sourcePoint, targetPoint, geometry, routePoints)}" fill="none" stroke="${xml(style.stroke)}" stroke-width="${style.strokeWidth}"${svgOptionalAttribute("stroke-dasharray", style.dash)}${svgOptionalAttribute("stroke-linecap", style.lineCap)}${svgOptionalAttribute("stroke-linejoin", style.lineJoin)}${svgOptionalAttribute("opacity", style.opacity)}${markerStart ? ` marker-start="${markerStart}"` : ""}${markerEnd ? ` marker-end="${markerEnd}"` : ""}/>${label ? `<text x="${label.x}" y="${label.y}" fill="${xml(style.labelColor)}" font-size="${label.fontSize}">${xml(label.text)}</text>` : ""}`; }).join("");
   const nodes = visibleNodes.map(exportSvgNode).join("");
-  return `<svg xmlns="${SVG_NS}" viewBox="${left} ${top} ${right - left} ${bottom - top}" role="img"><defs>${Object.entries(markerIds).map(([type, id]) => exportMarker(id, type)).join("")}</defs>${groups}${edges}${nodes}</svg>`;
+  return { bounds, svg: `<svg xmlns="${SVG_NS}" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" role="img"><defs>${Object.entries(markerIds).map(([type, id]) => exportMarker(id, type)).join("")}</defs>${groups}${edges}${nodes}</svg>` };
+}
+function exportSvgBounds(items, options = {}) {
+  if (options.bounds) {
+    const { x, y, width, height } = options.bounds;
+    if ([x, y, width, height].every(Number.isFinite) && width > 0 && height > 0) return { x, y, width, height };
+    throw new GhostagramError("INVALID_MODEL", "Export bounds must be finite with a positive width and height.");
+  }
+  const padding = options.padding ?? 32;
+  if (!items.length) return { x: 0, y: 0, width: 1, height: 1 };
+  const left = Math.min(...items.map(item => item.x)) - padding, top = Math.min(...items.map(item => item.y)) - padding;
+  return { x: left, y: top, width: Math.max(1, Math.max(...items.map(item => item.x + item.width)) + padding - left), height: Math.max(1, Math.max(...items.map(item => item.y + item.height)) + padding - top) };
+}
+function viewportExportBounds(state, size) { return { x: state.viewport.x, y: state.viewport.y, width: size.width / state.viewport.zoom, height: size.height / state.viewport.zoom }; }
+async function exportPngArtifact(artifact, pixelRatio = 2) {
+  const scale = Math.min(pixelRatio, 4096 / artifact.bounds.width, 4096 / artifact.bounds.height);
+  const width = Math.max(1, Math.round(artifact.bounds.width * scale)), height = Math.max(1, Math.round(artifact.bounds.height * scale));
+  const svgBlob = new Blob([artifact.svg], { type: "image/svg+xml;charset=utf-8" }), url = URL.createObjectURL(svgBlob), image = new Image();
+  try {
+    await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = () => reject(new GhostagramError("IMAGE_EXPORT_FAILED", "The diagram SVG could not be rasterized.")); image.src = url; });
+    const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) throw new GhostagramError("IMAGE_EXPORT_FAILED", "This browser could not create an image canvas.");
+    context.fillStyle = "#ffffff"; context.fillRect(0, 0, width, height); context.drawImage(image, 0, 0, width, height);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new GhostagramError("IMAGE_EXPORT_FAILED", "This browser could not encode a PNG image.");
+    return { blob, dataUrl: canvas.toDataURL("image/png"), width, height };
+  } finally { URL.revokeObjectURL(url); }
 }
 function exportSvgNode(node) {
   const layout = nodeLayoutProjection(node), color = node.style?.color ?? "#0f172a";
@@ -1901,4 +1942,4 @@ function asProblem(error) {
 function ok(requestId, renderedRevision, stats) { return { ok: true, requestId, renderedRevision, stats }; }
 function failed(request, code, message, renderedRevision, details) { return { ok: false, requestId: request?.requestId ?? null, renderedRevision, stats: {}, problem: { code, message, details } }; }
 
-export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteScore, gridCssProjection, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupVisibilityDescriptor, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLayoutProjection, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };
+export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgBounds, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteScore, gridCssProjection, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupVisibilityDescriptor, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLayoutProjection, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportExportBounds, viewportPoint };

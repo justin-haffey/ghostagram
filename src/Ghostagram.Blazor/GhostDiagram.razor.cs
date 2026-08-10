@@ -137,6 +137,14 @@ public partial class GhostDiagram
     public Task<string> ExportSvgAsync(CancellationToken cancellationToken = default) =>
         RequireModule().InvokeAsync<string>("exportSvg", cancellationToken, _instanceId).AsTask();
 
+    /// <summary>Exports the complete visible diagram as a PNG data URL.</summary>
+    public Task<string> ExportPngAsync(CancellationToken cancellationToken = default) =>
+        RequireModule().InvokeAsync<string>("exportPng", cancellationToken, _instanceId).AsTask();
+
+    /// <summary>Copies the currently visible canvas region as a PNG image.</summary>
+    public Task CopyViewportPngAsync(CancellationToken cancellationToken = default) =>
+        RequireModule().InvokeVoidAsync("copyViewportPng", cancellationToken, _instanceId).AsTask();
+
     [JSInvokable]
     public async Task OnGhostagramEvent(GhostagramEvent envelope)
     {

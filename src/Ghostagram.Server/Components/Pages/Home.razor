@@ -16,11 +16,14 @@
             </div>
 
             <MudMenu Label="File" Color="Color.Inherit" Dense="true">
+                <MudMenuItem OnClick="OpenNewDiagram" Icon="@Icons.Material.Filled.NoteAdd">New diagram…</MudMenuItem>
                 <MudMenuItem OnClick="SaveCurrentAsync" Icon="@Icons.Material.Filled.Save">Save</MudMenuItem>
                 <MudMenuItem OnClick="OpenSaveAs" Icon="@Icons.Material.Filled.SaveAs">Save as…</MudMenuItem>
                 <MudMenuItem OnClick="OpenDiagramLibraryAsync" Icon="@Icons.Material.Filled.FolderOpen">Open diagram…</MudMenuItem>
                 <MudDivider />
-                <MudMenuItem OnClick="ExportAsync" Icon="@Icons.Material.Filled.Download">Export SVG</MudMenuItem>
+                <MudMenuItem OnClick="ExportImageAsync" Icon="@Icons.Material.Filled.Image">Export image…</MudMenuItem>
+                <MudMenuItem OnClick="CopyViewportAsync" Icon="@Icons.Material.Filled.ContentCopy">Copy viewport</MudMenuItem>
+                <MudMenuItem OnClick="ExportAsync" Icon="@Icons.Material.Filled.Code">Export SVG</MudMenuItem>
                 <MudMenuItem OnClick="ResetAsync" Icon="@Icons.Material.Filled.RestartAlt">Reset starter design</MudMenuItem>
             </MudMenu>
             <MudMenu Label="Insert" Color="Color.Inherit" Dense="true">
@@ -186,6 +189,23 @@
                 <footer class="studio-modal-actions">
                     <MudButton OnClick="CloseSaveAs">Cancel</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.SaveAs" OnClick="SaveAsAsync">Save and open</MudButton>
+                </footer>
+            </MudPaper>
+        </div>
+    }
+
+    @if (_isNewDiagramOpen)
+    {
+        <div class="studio-modal-backdrop" @onclick="CloseNewDiagram">
+            <MudPaper Class="studio-modal compact-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Create new diagram" @onclick:stopPropagation="true">
+                <header class="studio-modal-header">
+                    <div><MudText Typo="Typo.h6">New diagram</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">Start with a blank, saved diagram.</MudText></div>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseNewDiagram" aria-label="Close new diagram dialog" />
+                </header>
+                <MudTextField @bind-Value="_newDiagramName" Label="Diagram name" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
+                <footer class="studio-modal-actions">
+                    <MudButton OnClick="CloseNewDiagram">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.NoteAdd" OnClick="CreateNewDiagramAsync">Create and open</MudButton>
                 </footer>
             </MudPaper>
         </div>
@@ -669,6 +689,17 @@
             <MudTextField T="string" Value="@_exportedSvg" Lines="18" ReadOnly="true" Variant="Variant.Outlined" Class="export-field" />
         </div>
         <footer class="studio-modal-actions"><MudButton OnClick="CloseExport">Close</MudButton></footer>
+        </MudPaper>
+        </div>
+    }
+
+    @if (_isImageExportOpen && _exportedImage is not null)
+    {
+        <div class="studio-modal-backdrop" @onclick="CloseImageExport">
+        <MudPaper Class="studio-modal export-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Export diagram image" @onclick:stopPropagation="true">
+        <header class="studio-modal-header"><div><MudText Typo="Typo.h6">Export diagram image</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">The PNG includes the whole diagram, including content outside the current viewport.</MudText></div></header>
+        <div class="studio-modal-content"><img class="export-image-preview" src="@_exportedImage" alt="Preview of the complete diagram" /></div>
+        <footer class="studio-modal-actions"><MudButton OnClick="CloseImageExport">Close</MudButton><a class="export-image-download" href="@_exportedImage" download="@ExportImageFileName"><MudIcon Icon="@Icons.Material.Filled.Download" Class="mr-1" />Download PNG</a></footer>
         </MudPaper>
         </div>
     }

@@ -25,6 +25,8 @@ export class ProtocolFacade {
   canvasCenter(instanceId) { return this.#require(instanceId).canvasCenter(); }
   hitTestClientPoint(instanceId, clientX, clientY) { return this.#require(instanceId).hitTestClientPoint(clientX, clientY); }
   exportSvg(instanceId, options) { return this.#require(instanceId).exportSvg(options); }
+  exportPng(instanceId, options) { return this.#require(instanceId).exportPng(options); }
+  copyViewportPng(instanceId) { return this.#require(instanceId).copyViewportPng(); }
 
   dispose(instanceId) {
     const engine = this.#require(instanceId);
