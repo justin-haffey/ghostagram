@@ -23,7 +23,7 @@ Do not write a returned artifact to disk unless the user asked for a file. Never
 
 ## Validation
 
-Confirm export did not advance the diagram revision. Browser acknowledgement is unavailable through MCP.
+Confirm export did not advance the diagram revision. Export revision and Laboratory rendered revision are independent; report both only when live-browser state matters.
 
 ## Output
 

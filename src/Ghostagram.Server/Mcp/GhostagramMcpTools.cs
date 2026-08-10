@@ -10,8 +10,36 @@ namespace Ghostagram.Server.Mcp;
 /// and export services used by the HTTP and real-time surfaces.
 /// </summary>
 [McpServerToolType]
-public sealed class GhostagramMcpTools(DiagramSessionService sessions)
+public sealed class GhostagramMcpTools(
+    DiagramSessionService sessions,
+    IDocumentCatalog documents,
+    IDocumentChangeNotifier documentChanges,
+    GhostagramCapabilityCatalog capabilities)
 {
+    [McpServerTool(Name = "describe_capabilities")]
+    [Description("Returns Ghostagram's protocol version, supported authoring vocabulary, recommended collaboration workflow, and full JSON Schema for documents and operation values. Call this before constructing unfamiliar nodes, properties, ports, edge markers, or groups.")]
+    public GhostagramCapabilitiesResult DescribeCapabilities() => capabilities.Describe();
+
+    [McpServerTool(Name = "list_diagrams")]
+    [Description("Lists durable diagrams with authoritative revisions, direct Laboratory URLs, and live browser-view revision acknowledgements. Use this to identify the human's collaboration target instead of guessing a document ID.")]
+    public async Task<DiagramCatalogResult> ListDiagrams(CancellationToken cancellationToken = default)
+    {
+        var summaries = await documents.ListAsync(cancellationToken);
+        return new(summaries.Select(summary =>
+        {
+            var presence = documentChanges.GetPresence(summary.DocumentId);
+            return new DiagramCollaborationSummary(
+                summary.DocumentId,
+                summary.DisplayName,
+                summary.Revision,
+                summary.UpdatedUtc,
+                presence.ViewCount,
+                presence.OldestRevision,
+                presence.LatestRevision,
+                $"http://127.0.0.1:5256/?documentId={Uri.EscapeDataString(summary.DocumentId)}");
+        }).ToArray());
+    }
+
     [McpServerTool(Name = "open_session")]
     [Description("Opens a new collaboration handle for an existing diagram, or joins a known session. Call this before reading or editing a diagram.")]
     public Task<DiagramSessionResult> OpenSession(
@@ -41,7 +69,7 @@ public sealed class GhostagramMcpTools(DiagramSessionService sessions)
         => sessions.ReadAsync(sessionId, actorId, afterRevision, cancellationToken);
 
     [McpServerTool(Name = "apply_operations")]
-    [Description("Atomically applies Ghostagram operations to the shared diagram. Requires the current base revision and a unique command ID; committed changes are broadcast to connected browsers.")]
+    [Description("Atomically applies Ghostagram operations to the shared diagram. Requires the current base revision and a unique command ID; committed changes are broadcast to external SignalR clients and synchronized into open Laboratory browser views.")]
     public Task<DiagramCommandResult> ApplyOperations(
         [Description("The active collaboration session.")] string sessionId,
         [Description("The participant actor performing the edit.")] string actorId,

@@ -71,6 +71,7 @@ public sealed class DeterministicNodeFactory(INodeTypeRegistry registry) : INode
                 port.Direction,
                 port.Scope,
                 port.MaxConnections,
+                Anchor: port.Anchor,
                 PropertyId: port.PropertyId,
                 Label: port.Label,
                 Order: port.Order))

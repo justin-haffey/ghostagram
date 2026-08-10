@@ -19,12 +19,13 @@ Read `../../contracts/mcp-tools.md` before calling tools. A committed layout cha
 4. For dry run, require unchanged server revision and inspect operations/metrics without claiming a commit.
 5. For commit, handle `REVISION_CONFLICT` with the shared conflict protocol. Rebase once only when current topology still supports the same intent.
 6. Verify the committed command through `mcp__ghostagram__get_diagram` with `sessionId`, `actorId`, and the original base revision as `afterRevision`; confirm non-overlapping finite bounds, group containment, and authoritative revision.
+7. For a live human review, verify the committed revision through `mcp__ghostagram__list_diagrams` before opening its returned browser URL for visual inspection.
 
 Do not silently switch algorithms, seeds, directions, or dry-run mode during a retry.
 
 ## Validation
 
-Report algorithm/version, seed, direction, affected count, crossings before/after, elapsed time, bounds, and authoritative revision. Flag degraded metrics rather than calling the result optimal. Browser acknowledgement is unavailable through MCP.
+Report algorithm/version, seed, direction, affected count, crossings before/after, elapsed time, bounds, authoritative revision, and separate browser acknowledgement. Flag degraded metrics rather than calling the result optimal.
 
 ## Output
 

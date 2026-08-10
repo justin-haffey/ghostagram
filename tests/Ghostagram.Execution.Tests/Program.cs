@@ -2,6 +2,7 @@ using System.Text.Json;
 using Ghostagram.Core;
 using Ghostagram.Execution;
 using Ghostagram.NodeSets.Maf;
+using Ghostagram.NodeSets.UML;
 
 var simpleType = new NodeTypeDescriptor(
     "test.node", 1, "Test node", "Tests", "Science", 200, 120,
@@ -15,7 +16,7 @@ var simpleType = new NodeTypeDescriptor(
         new("payload-in", "target", PropertyId: "payload", Label: "Payload", Order: 1),
         new("next", "source", Label: "Next", Order: 2)
     ]);
-var registry = new NodeTypeRegistry([new("tests", "Tests", [simpleType]), MafOrchestrationNodeSet.Descriptor]);
+var registry = new NodeTypeRegistry([new("tests", "Tests", [simpleType]), MafOrchestrationNodeSet.Descriptor, UmlNodeSet.Descriptor]);
 Assert(registry.GetLatest("test.node").Descriptor.Version == 1, "Registry resolves the latest registered version.");
 var mutableOptions = new List<string> { "one", "two" };
 var mutableMetadata = new Dictionary<string, JsonElement>();
@@ -37,6 +38,7 @@ Assert(clonedDescriptor.Metadata["catalog"].GetProperty("owner").GetString() == 
 Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", width: 0), "Node dimensions must be finite and positive.");
 Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", properties: [new("choice", "Choice", DiagramPropertyTypes.Enum)]), "Enum property 'choice' requires at least one option.");
 Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", ports: [new("bad", "sideways")]), "Port 'bad' has invalid direction 'sideways'.");
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", ports: [new("bad", Anchor: "diagonal")]), "Port 'bad' has invalid fixed anchor 'diagonal'.");
 
 Expect<InvalidOperationException>(
     () => new NodeTypeRegistry([new("duplicate", "Duplicate", [simpleType, simpleType])]),
@@ -256,6 +258,66 @@ Assert(maf.NodeTypes.All(type => type.Ports.All(port => port.PropertyId is null 
 Assert(maf.NodeTypes.Single(type => type.TypeId == "maf.join").Properties.Single(property => property.Id == "strategy").Options!.SequenceEqual(["all", "any", "quorum"]), "Join exposes usable all, any, and quorum choices.");
 Assert(maf.NodeTypes.Single(type => type.TypeId == "maf.data-capture").Ports.Count(port => port.PropertyId == "value") == 2, "Data Capture exposes separate input and output property ports.");
 Assert(typeof(MafOrchestrationNodeSet).Assembly.GetReferencedAssemblies().All(name => !name.Name!.Contains("Microsoft.Agents", StringComparison.OrdinalIgnoreCase)), "The MAF node set has no Microsoft Agent Framework binary dependency.");
+
+var uml = UmlNodeSet.Descriptor;
+Assert(uml.Id == "uml-basic" && uml.DisplayName == "UML", "The UML node set has a stable palette identity.");
+var latestUmlTypes = uml.NodeTypes
+    .GroupBy(type => type.TypeId, StringComparer.Ordinal)
+    .Select(versions => versions.OrderByDescending(type => type.Version).First())
+    .ToArray();
+Assert(latestUmlTypes.Select(type => type.TypeId).SequenceEqual([
+    "uml.class", "uml.abstract-class", "uml.interface", "uml.enumeration", "uml.data-type", "uml.object"
+]), "The UML basic set exposes its six structural types in a stable order.");
+Assert(uml.NodeTypes.Count == 12 && latestUmlTypes.All(type => type.Version == 2), "UML retains version 1 schemas while exposing version 2 as latest.");
+Assert(uml.NodeTypes.All(type => type.Metadata.ContainsKey("description") && type.Metadata.ContainsKey("umlKind")), "Every UML descriptor carries versioned descriptive metadata.");
+Assert(latestUmlTypes.All(type => type.Ports.Select(port => port.Id).SequenceEqual(["relationships-top", "relationships-right", "relationships-bottom", "relationships-left"])), "Every current UML type exposes four stable relationship ports.");
+Assert(latestUmlTypes.All(type => type.Ports.Select(port => port.Anchor).SequenceEqual(["top", "right", "bottom", "left"])), "Current UML relationship ports are fixed to all four node sides.");
+Assert(latestUmlTypes.All(type => type.Ports.All(port => port.PropertyId is null)), "UML relationship ports remain independent from node properties.");
+Assert(latestUmlTypes.All(type => type.Width == 220 && type.Height <= 124), "Current UML nodes use compact default dimensions.");
+Assert(uml.NodeTypes.SelectMany(type => type.Properties).All(property => !property.Required || property.DefaultValue is not null), "New UML nodes never begin with an unsatisfied required property.");
+Assert(registry.NodeSets.Any(set => set.Id == MafOrchestrationNodeSet.Id) && registry.NodeSets.Any(set => set.Id == UmlNodeSet.Id), "MAF and UML node sets coexist in one immutable registry.");
+Expect<InvalidOperationException>(() => registry.GetLatest("uml.class").ResolveHandler(new SingleServiceProvider(new object())), "Node type 'uml.class@2' has no execution handler registration.");
+
+foreach (var type in latestUmlTypes)
+{
+    var nodeId = $"uml-test-{type.TypeId[4..]}";
+    var umlRequest = new NodeCreationRequest(nodeId, type.TypeId, 32, 48);
+    var first = factory.Create(umlRequest);
+    var second = factory.Create(umlRequest);
+    Assert(JsonSerializer.Serialize(first) == JsonSerializer.Serialize(second), $"Factory creation is deterministic for '{type.TypeId}'.");
+    Assert(first.Node.TypeId == type.TypeId && first.Node.TypeVersion == 2, $"Factory preserves the latest identity of '{type.TypeId}'.");
+    Assert(first.Ports.Select(port => port.Id).SequenceEqual(type.Ports.Select(port => $"{nodeId}:{port.Id}")), $"Factory creates stable ports for '{type.TypeId}'.");
+    Assert(first.Ports.Select(port => port.Anchor).SequenceEqual(["top", "right", "bottom", "left"]), $"Factory materializes four fixed-side anchors for '{type.TypeId}'.");
+}
+
+var legacyUmlClass = factory.Create(new("uml-legacy-class", "uml.class", 0, 0, TypeVersion: 1));
+Assert(legacyUmlClass.Node.TypeVersion == 1 && legacyUmlClass.Node.Width == 260 && legacyUmlClass.Ports.Select(port => port.Id).SequenceEqual(["uml-legacy-class:relationships-in", "uml-legacy-class:relationships-out"]), "Saved UML version 1 schemas remain resolvable.");
+
+var umlClass = factory.Create(new("uml-class-1", "uml.class", 24, 32, Label: "Customer"));
+var umlInterface = factory.Create(new("uml-interface-1", "uml.interface", 360, 32, Label: "IRepository"));
+var umlDocument = new DiagramDocument(
+    "uml-round-trip",
+    [umlClass.Node, umlInterface.Node],
+    umlClass.Ports.Concat(umlInterface.Ports).ToArray(),
+    [new("uml-realization", "uml-class-1:relationships-right", "uml-interface-1:relationships-left")]);
+var umlJsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+var umlJson = JsonSerializer.Serialize(umlDocument, umlJsonOptions);
+var umlRoundTrip = JsonSerializer.Deserialize<DiagramDocument>(umlJson, umlJsonOptions)
+    ?? throw new InvalidOperationException("UML document did not deserialize.");
+Assert(JsonSerializer.Serialize(umlRoundTrip, umlJsonOptions) == umlJson, "A UML document round-trips through the public JSON model without losing node identities or relationship ports.");
+Assert(compiler.Compile(umlRoundTrip, new(GraphCompileProfile.DagOnly)).Succeeded, "The compiler accepts a round-tripped UML relationship between fixed-side ports.");
+var tamperedUmlPorts = umlRoundTrip.Ports.Select(port => port.Id == "uml-class-1:relationships-right" ? port with { Anchor = "left" } : port).ToArray();
+Assert(compiler.Compile(umlRoundTrip with { Ports = tamperedUmlPorts }, new(GraphCompileProfile.DagOnly)).Diagnostics.Any(diagnostic => diagnostic.Code == GraphDiagnosticCodes.NodePortSchemaMismatch), "The compiler rejects a registered UML port moved away from its declared side.");
+
+var wildcardUmlDocument = new DiagramDocument(
+    "uml-wildcard",
+    [umlClass.Node, new DiagramNode("generic-target", 360, 32, Label: "Generic target")],
+    umlClass.Ports.Concat([new DiagramPort("generic-target:in", "generic-target", "target", "*")]).ToArray(),
+    [new("uml-to-generic", "uml-class-1:relationships-right", "generic-target:in")]);
+Assert(compiler.Compile(wildcardUmlDocument, new(GraphCompileProfile.DagOnly)).Succeeded, "A UML relationship scope intentionally connects to Ghostagram's wildcard port scope.");
+
+var umlReferences = typeof(UmlNodeSet).Assembly.GetReferencedAssemblies().Select(name => name.Name).ToArray();
+Assert(!umlReferences.Contains("Ghostagram.Server", StringComparer.Ordinal) && !umlReferences.Contains("Ghostagram.Blazor", StringComparer.Ordinal), "The UML node set has no Server or Blazor dependency.");
 
 Console.WriteLine("Ghostagram.Execution focused checks passed.");
 

@@ -1,0 +1,15 @@
+interface:
+  display_name: "Live Ghostagram Collaboration"
+  short_description: "Co-edit a live diagram with a human"
+  default_prompt: "Use $ghostagram-live-collaboration to make a revision-safe update to the diagram currently open in the Laboratory and verify it rendered."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "ghostagram"
+      description: "Ghostagram collaborative diagram MCP server"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:5256/mcp"

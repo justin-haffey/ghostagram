@@ -5,6 +5,7 @@
     <Project Path="src/Ghostagram.Core/Ghostagram.Core.csproj" />
     <Project Path="src/Ghostagram.Execution/Ghostagram.Execution.csproj" />
     <Project Path="src/Ghostagram.NodeSets.Maf/Ghostagram.NodeSets.Maf.csproj" />
+    <Project Path="src/Ghostagram.NodeSets.UML/Ghostagram.NodeSets.UML.csproj" />
     <Project Path="src/Ghostagram.Server/Ghostagram.Server.csproj" />
   </Folder>
   <Folder Name="/tests/">

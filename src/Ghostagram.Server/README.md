@@ -7,10 +7,12 @@
 The server uses the official C# MCP SDK and exposes streamable HTTP at:
 
 ```text
-http://127.0.0.1:5273/mcp
+http://127.0.0.1:5256/mcp
 ```
 
-The seven MVP tools are `open_session`, `create_diagram`, `get_diagram`, `apply_operations`, `layout_diagram`, `export_svg`, and `close_session`. Sessions are ephemeral collaboration handles; documents and revisions remain durable. Every mutating call uses the same `actorId`, `commandId`, `baseRevision`, reducer, idempotency ledger, and post-commit SignalR notification as the REST API.
+The authoring surface exposes nine tools: `describe_capabilities`, `list_diagrams`, `open_session`, `create_diagram`, `get_diagram`, `apply_operations`, `layout_diagram`, `export_svg`, and `close_session`. `describe_capabilities` returns the complete machine-readable authoring schema; `list_diagrams` reports durable documents plus active Laboratory views and their acknowledged render revisions. Sessions are ephemeral collaboration handles; documents and revisions remain durable. Every mutating call uses the same `actorId`, `commandId`, `baseRevision`, reducer, idempotency ledger, and post-commit publication path as the REST API.
+
+Open a specific durable document in the integrated Laboratory at `/?documentId=<encoded-document-id>`. An external MCP commit is complete for live collaboration only after the authoritative command succeeds, `list_diagrams` reports the Laboratory has acknowledged that revision, and the visible browser plus console have been checked.
 
 Start the standard local profile with:
 

@@ -18,6 +18,7 @@ Read `../../contracts/mcp-tools.md` before calling tools. The user's bounded edi
 3. Generate a new `commandId`; call `mcp__ghostagram__apply_operations` with exactly `sessionId`, `actorId`, `commandId`, current `baseRevision`, and `operations`.
 4. Handle `REVISION_CONFLICT` using the shared rebase protocol. Retry at most once with a new command ID; stop on destructive or ambiguous merges.
 5. On `COMMITTED`, `NO_CHANGES`, or exact `IDEMPOTENT_REPLAY`, call `mcp__ghostagram__get_diagram` with `sessionId`, `actorId`, and `afterRevision` equal to the original base revision. Confirm the command ID, resulting entities, and committed revision.
+6. When collaborating with a live Laboratory, call `mcp__ghostagram__list_diagrams`. Require a positive view count and `oldestBrowserRevision` at or beyond the commit before claiming every open Laboratory rendered it.
 
 Do not retry authorization, validation, capability, or idempotency-key-reuse failures.
 
@@ -27,4 +28,4 @@ Check semantic postconditions, not only response codes: requested fields changed
 
 ## Output
 
-Report the exact affected IDs, committed revision, command result, and conflict handling. Note that the commit is published through SignalR but browser acknowledgement is unavailable.
+Report the exact affected IDs, committed revision, command result, conflict handling, and separate browser acknowledgement evidence.

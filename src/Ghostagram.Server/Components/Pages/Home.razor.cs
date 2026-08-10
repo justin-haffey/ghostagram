@@ -15,7 +15,6 @@ public partial class Home : IAsyncDisposable
 {
     private const string DefaultDocumentId = "laboratory-design";
     private const string DefaultPaletteCatalogId = "laboratory-palette";
-    private const string ActorId = "ghostagram-laboratory";
     private const int GridSize = 16;
     private const int MaxDesignedProperties = 17;
     private static readonly EdgeMarkerChoice[] EdgeMarkerChoices =
@@ -43,6 +42,9 @@ public partial class Home : IAsyncDisposable
     [Inject] private DiagramLayoutService Layouts { get; set; } = default!;
     [Inject] private INodeTypeRegistry NodeTypes { get; set; } = default!;
     [Inject] private INodeFactory NodeFactory { get; set; } = default!;
+    [Inject] private IDocumentChangeNotifier DocumentChanges { get; set; } = default!;
+    [Inject] private LaboratoryCircuitState CircuitState { get; set; } = default!;
+    [Parameter, SupplyParameterFromQuery(Name = "documentId")] public string? RequestedDocumentId { get; set; }
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260809.4");
     private readonly List<PaletteCategory> _paletteCategories = CreatePaletteCategories();
@@ -55,6 +57,7 @@ public partial class Home : IAsyncDisposable
     private readonly SemaphoreSlim _eventGate = new(1, 1);
     private readonly SemaphoreSlim _commandGate = new(1, 1);
     private readonly SemaphoreSlim _paletteGate = new(1, 1);
+    private readonly string _actorId = $"ghostagram-laboratory-{Guid.NewGuid():N}";
 
     private DiagramDocument _document = EmptyDocument(DefaultDocumentId);
     private NodeDraft _draft = new();
@@ -69,6 +72,7 @@ public partial class Home : IAsyncDisposable
     private bool _isDesignerOpen;
     private bool _isPaletteGroupEditorOpen;
     private bool _isStyleEditorOpen;
+    private bool _isPropertiesEditorOpen;
     private bool _isExportOpen;
     private bool _isDiagramLibraryOpen;
     private bool _isSaveAsOpen;
@@ -99,23 +103,107 @@ public partial class Home : IAsyncDisposable
     private IReadOnlyList<PaletteCatalogSummary> _paletteCatalogSummaries = [];
     private string _paletteGroupName = string.Empty;
     private string? _styleNodeId;
+    private string? _propertiesNodeId;
+    private long _propertiesEditorBaseRevision;
+    private string? _propertiesEditorError;
+    private readonly List<PropertyEditorDraft> _propertyEditorDrafts = [];
+    private readonly List<PortEditorDraft> _portEditorDrafts = [];
     private long _revision;
     private int _templateSequence;
     private int _portSequence;
     private int _propertySequence;
     private long _lastBrowserEventId;
+    private IDisposable? _documentSubscription;
+    private bool _disposed;
 
     protected override async Task OnInitializedAsync()
     {
+        CircuitState.ConnectionChanged += OnCircuitConnectionChangedAsync;
         await LoadWorkspaceSelectionAsync();
+        ApplyRequestedDocumentId();
         AddRegisteredNodeSets();
         await LoadOrCreatePaletteCatalogAsync();
         await LoadOrCreateDocumentAsync();
         await RefreshDocumentCatalogAsync();
         SyncEdgeControlsFromDocument();
+        SubscribeToDocumentChanges();
     }
 
     private string DocumentId => _documentId;
+
+    private void ApplyRequestedDocumentId()
+    {
+        if (string.IsNullOrWhiteSpace(RequestedDocumentId)) return;
+        try
+        {
+            _documentId = DocumentIdRules.Require(RequestedDocumentId);
+        }
+        catch (ArgumentException exception)
+        {
+            _activity = $"Ignored an invalid collaboration link: {exception.Message}";
+        }
+    }
+
+    private void SubscribeToDocumentChanges()
+    {
+        if (_disposed) return;
+        var subscription = DocumentChanges.Subscribe(DocumentId, _revision, OnAuthoritativeDocumentChangedAsync);
+        Interlocked.Exchange(ref _documentSubscription, subscription)?.Dispose();
+    }
+
+    private Task OnCircuitConnectionChangedAsync(bool connected, CancellationToken cancellationToken)
+    {
+        if (_disposed) return Task.CompletedTask;
+        if (!connected)
+        {
+            Interlocked.Exchange(ref _documentSubscription, null)?.Dispose();
+            return Task.CompletedTask;
+        }
+
+        return InvokeAsync(SubscribeToDocumentChanges);
+    }
+
+    private Task OnAuthoritativeDocumentChangedAsync(DiagramChange change, CancellationToken cancellationToken)
+    {
+        if (_disposed || !string.Equals(change.DocumentId, DocumentId, StringComparison.Ordinal)) return Task.CompletedTask;
+        // This circuit already owns the synchronous command result for its own write. Returning here also
+        // allows the notifier to advance this view's acknowledgement without deadlocking the command gate.
+        if (string.Equals(change.ActorId, _actorId, StringComparison.Ordinal)) return Task.CompletedTask;
+        return InvokeAsync(() => ApplyExternalDocumentChangeAsync(change, cancellationToken));
+    }
+
+    private async Task ApplyExternalDocumentChangeAsync(DiagramChange change, CancellationToken cancellationToken)
+    {
+        if (_disposed || change.Revision <= _revision) return;
+        await _eventGate.WaitAsync(cancellationToken);
+        await _commandGate.WaitAsync(cancellationToken);
+        try
+        {
+            var snapshot = await Commands.GetSnapshotAsync(DocumentId, cancellationToken);
+            if (snapshot is null || snapshot.Revision <= _revision) return;
+            _document = Deserialize(snapshot);
+            _revision = snapshot.Revision;
+            _documentDurable = true;
+            _undo.Clear();
+            _redo.Clear();
+            _exportedSvg = null;
+            SyncEdgeControlsFromDocument();
+            if (_diagram is not null) await _diagram.ReplaceAsync(_document, _revision);
+            _activity = $"Live update from {change.ActorId} · revision {_revision}";
+            StateHasChanged();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _activity = $"A live update could not be rendered: {exception.Message}";
+            StateHasChanged();
+            throw;
+        }
+        finally
+        {
+            _commandGate.Release();
+            _eventGate.Release();
+        }
+    }
 
     private async Task LoadWorkspaceSelectionAsync()
     {
@@ -517,6 +605,7 @@ public partial class Home : IAsyncDisposable
             _documentDisplayName = name;
             _document = Deserialize(result.Snapshot);
             _revision = result.Revision;
+            SubscribeToDocumentChanges();
             _documentDurable = true;
             _undo.Clear();
             _redo.Clear();
@@ -564,6 +653,7 @@ public partial class Home : IAsyncDisposable
             _documentDisplayName = _documents.FirstOrDefault(item => item.DocumentId == documentId)?.DisplayName ?? documentId;
             _document = document;
             _revision = snapshot.Revision;
+            SubscribeToDocumentChanges();
             _documentDurable = true;
             _undo.Clear();
             _redo.Clear();
@@ -734,6 +824,7 @@ public partial class Home : IAsyncDisposable
     }
     private void ClosePaletteGroupEditor() => _isPaletteGroupEditorOpen = false;
     private void CloseStyleEditor() => _isStyleEditorOpen = false;
+    private void CloseNodePropertiesEditor() => _isPropertiesEditorOpen = false;
     private void CloseExport() => _isExportOpen = false;
 
     private bool HasSelectedGroups => _document.Groups.Any(group => _document.Selection.Contains(group.Id, StringComparer.Ordinal));
@@ -741,6 +832,9 @@ public partial class Home : IAsyncDisposable
     private bool CanEditSelectedNode => SelectedNode() is not null;
     private string EdgeApplyLabel => HasSelectedEdges ? "Apply selected" : "Apply all edges";
     private string StyleNodeLabel => _document.Nodes.SingleOrDefault(node => node.Id == _styleNodeId)?.Label ?? "Node style";
+    private string PropertiesNodeLabel => _document.Nodes.SingleOrDefault(node => node.Id == _propertiesNodeId)?.Label ?? "Node properties";
+    private bool IsRegisteredPropertiesLocked => _document.Nodes.SingleOrDefault(node => node.Id == _propertiesNodeId)?.TypeId is not null;
+    private int ConnectionsToRemove => BuildPropertiesEditPlan()?.RemovedEdgeIds.Count ?? 0;
     private IReadOnlyList<GhostPaletteGroup> PaletteGroups => _paletteCategories
         .Select(category => new GhostPaletteGroup(
             category.Name,
@@ -843,6 +937,215 @@ public partial class Home : IAsyncDisposable
             TextAlign = NormalizeTextAlign(style.TextAlign)
         };
         _isStyleEditorOpen = true;
+    }
+
+    private void OpenNodePropertiesEditor()
+    {
+        var node = SelectedNode();
+        if (node is null) return;
+        _propertiesNodeId = node.Id;
+        _propertiesEditorBaseRevision = _revision;
+        _propertiesEditorError = null;
+        _propertyEditorDrafts.Clear();
+        _propertyEditorDrafts.AddRange(node.Properties.OrderBy(property => PropertyOrder(node, property.Id)).Select(property => new PropertyEditorDraft(property.Id, property)
+        {
+            Name = property.Name, Type = property.Type, Mode = property.Mode, Value = PropertyValueText(property.Value),
+            Options = string.Join(", ", property.Options ?? []), Connection = PropertyConnection(node, property.Id)
+        }));
+        _portEditorDrafts.Clear();
+        _portEditorDrafts.AddRange(_document.Ports.Where(port => port.NodeId == node.Id && port.PropertyId is null).OrderBy(port => port.Order).Select(port => new PortEditorDraft(port.Id, port)
+        {
+            Label = port.Label ?? port.Id, Side = PortSideFromAnchor(port.Anchor), Direction = port.Direction
+        }));
+        _isPropertiesEditorOpen = true;
+    }
+
+    private void AddEditorProperty()
+    {
+        if (IsRegisteredPropertiesLocked || _propertyEditorDrafts.Count >= MaxDesignedProperties) return;
+        _propertyEditorDrafts.Add(new PropertyEditorDraft(NextPropertiesEditorId("property")) { Name = "Property" });
+    }
+    private void RemoveEditorProperty(string id) => _propertyEditorDrafts.RemoveAll(property => property.Id == id);
+    private void MoveEditorProperty(string id, int delta)
+    {
+        var index = _propertyEditorDrafts.FindIndex(property => property.Id == id);
+        var target = index + delta;
+        if (index < 0 || target < 0 || target >= _propertyEditorDrafts.Count) return;
+        (_propertyEditorDrafts[index], _propertyEditorDrafts[target]) = (_propertyEditorDrafts[target], _propertyEditorDrafts[index]);
+    }
+    private void AddEditorPort()
+    {
+        if (!IsRegisteredPropertiesLocked) _portEditorDrafts.Add(new PortEditorDraft(NextPropertiesEditorId("port")) { Label = "Connection" });
+    }
+    private void RemoveEditorPort(string id) => _portEditorDrafts.RemoveAll(port => port.Id == id);
+
+    private async Task ApplyNodePropertiesAsync()
+    {
+        _propertiesEditorError = null;
+        if (_propertiesEditorBaseRevision != _revision) { _propertiesEditorError = "The diagram changed while this editor was open. Reopen it to apply against the latest revision."; return; }
+        var plan = BuildPropertiesEditPlan();
+        if (plan is null) return;
+        if (plan.Error is not null) { _propertiesEditorError = plan.Error; return; }
+        if (await SubmitOperationsAsync(plan.Operations, $"Updated {PropertiesNodeLabel} properties and connections")) _isPropertiesEditorOpen = false;
+    }
+
+    private PropertiesEditPlan? BuildPropertiesEditPlan()
+    {
+        var node = _document.Nodes.SingleOrDefault(item => item.Id == _propertiesNodeId);
+        if (node is null) return null;
+        if (_propertyEditorDrafts.Count > MaxDesignedProperties) return PropertiesEditPlan.Invalid("A node can have at most 17 properties.");
+        if (_propertyEditorDrafts.Any(property => string.IsNullOrWhiteSpace(property.Name))) return PropertiesEditPlan.Invalid("Every property needs a name.");
+        if (_propertyEditorDrafts.GroupBy(property => property.Name.Trim(), StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1)) return PropertiesEditPlan.Invalid("Property names must be unique.");
+        var locked = node.TypeId is not null;
+        if (_propertyEditorDrafts.GroupBy(property => property.Id, StringComparer.Ordinal).Any(group => group.Count() > 1) || _portEditorDrafts.GroupBy(port => port.Id, StringComparer.Ordinal).Any(group => group.Count() > 1)) return PropertiesEditPlan.Invalid("Property and connection point IDs must be unique.");
+        var originalPropertyIds = node.Properties.Select(property => property.Id).ToHashSet(StringComparer.Ordinal);
+        var desiredProperties = new List<DiagramNodeProperty>();
+        foreach (var draft in _propertyEditorDrafts)
+        {
+            var validation = ValidateEditorProperty(draft);
+            if (validation.Error is not null) return PropertiesEditPlan.Invalid(validation.Error);
+            var original = draft.Original;
+            desiredProperties.Add(locked && original is not null
+                ? original with { Value = validation.Value }
+                : original is null
+                    ? new DiagramNodeProperty(draft.Id, draft.Name.Trim(), draft.Type.Trim(), validation.Value, draft.Mode, draft.Name.Trim(), Connectable: draft.Connection != "none", Options: validation.Options)
+                    : original with
+                    {
+                        Name = draft.Name.Trim(),
+                        Label = original.Label is not null && string.Equals(original.Label, original.Name, StringComparison.Ordinal) ? draft.Name.Trim() : original.Label,
+                        Type = draft.Type.Trim(),
+                        Value = validation.Value,
+                        Mode = draft.Mode,
+                        Connectable = draft.Connection != "none",
+                        Options = validation.Options
+                    });
+        }
+        if (locked && (!originalPropertyIds.SetEquals(desiredProperties.Select(property => property.Id)))) return PropertiesEditPlan.Invalid("Registered node schema changes are not allowed.");
+        var currentPorts = _document.Ports.Where(port => port.NodeId == node.Id).ToArray();
+        var desiredPorts = locked ? currentPorts : BuildDesiredPorts(node, desiredProperties);
+        var desiredPortIds = desiredPorts.Select(port => port.Id).ToHashSet(StringComparer.Ordinal);
+        var removedPortIds = currentPorts.Where(port => !desiredPortIds.Contains(port.Id)).Select(port => port.Id).ToHashSet(StringComparer.Ordinal);
+        var incompatibleEdges = _document.Edges.Where(edge => !EdgeRolesRemainCompatible(edge, desiredPorts)).Select(edge => edge.Id);
+        var removedEdges = _document.Edges.Where(edge => removedPortIds.Contains(edge.SourcePortId) || removedPortIds.Contains(edge.TargetPortId)).Select(edge => edge.Id).Concat(incompatibleEdges).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+        var visibleRows = desiredProperties.Count(property => property.Mode != DiagramPropertyModes.Hidden);
+        var contentHeight = visibleRows == 0 ? 0 : 37 + visibleRows * 21;
+        var height = Math.Max(node.Height, contentHeight);
+        var updatedNode = node with { Properties = desiredProperties };
+        if (!locked) updatedNode = updatedNode with { Height = height };
+        var operations = new List<GhostagramOperation>();
+        operations.AddRange(removedEdges.Select(DiagramOperations.RemoveEdge));
+        operations.AddRange(removedPortIds.Order(StringComparer.Ordinal).Select(DiagramOperations.RemovePort));
+        operations.Add(DiagramOperations.Upsert(updatedNode));
+        operations.AddRange(desiredPorts.Select(DiagramOperations.Upsert));
+        return new PropertiesEditPlan(operations, removedEdges, null);
+    }
+
+    private DiagramPort[] BuildDesiredPorts(DiagramNode node, IReadOnlyList<DiagramNodeProperty> properties)
+    {
+        var existing = _document.Ports.Where(port => port.NodeId == node.Id).ToDictionary(port => port.Id, StringComparer.Ordinal);
+        var result = new List<DiagramPort>();
+        var matchedPortIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var property in properties.Select((value, index) => (value, index)))
+        {
+            var connection = _propertyEditorDrafts[property.index].Connection;
+            var existingBound = existing.Values.Where(port => port.PropertyId == property.value.Id).ToArray();
+            if (connection == "both" && existingBound.Length == 1 && existingBound[0].Direction == "both")
+            {
+                var currentBoth = existingBound[0];
+                matchedPortIds.Add(currentBoth.Id);
+                result.Add(currentBoth with
+                {
+                    PropertyId = property.value.Id,
+                    Label = UpdatedPropertyPortLabel(currentBoth, _propertyEditorDrafts[property.index].Original, property.value),
+                    Order = property.index
+                });
+                continue;
+            }
+            foreach (var generated in PropertyPorts(node.Id, property.value, connection, property.index, node.Style?.BorderColor ?? "#4177de"))
+            {
+                var lane = generated.Direction;
+                var current = existing.Values.FirstOrDefault(port => !matchedPortIds.Contains(port.Id) && port.PropertyId == property.value.Id && PortAllows(port.Direction, lane));
+                if (current is not null) matchedPortIds.Add(current.Id);
+                result.Add(current is not null
+                    ? current with
+                    {
+                        Direction = generated.Direction,
+                        PropertyId = generated.PropertyId,
+                        Label = UpdatedPropertyPortLabel(current, _propertyEditorDrafts[property.index].Original, property.value),
+                        Order = generated.Order
+                    }
+                    : generated);
+            }
+        }
+        foreach (var draft in _portEditorDrafts.Select((value, index) => (value, index)))
+        {
+            var port = new DiagramPort(draft.value.Id, node.Id, draft.value.Direction, Anchor: draft.value.Side, Endpoint: new DiagramEndpoint("dot", 10, node.Style?.BorderColor ?? "#4177de", "#ffffff", 2), Label: draft.value.Label.Trim(), Order: properties.Count + draft.index);
+            result.Add(existing.TryGetValue(port.Id, out var current)
+                ? current with
+                {
+                    Direction = port.Direction,
+                    Anchor = string.Equals(draft.value.Side, draft.value.OriginalSide, StringComparison.Ordinal) ? current.Anchor : port.Anchor,
+                    Label = string.Equals(draft.value.Label, draft.value.OriginalLabel, StringComparison.Ordinal) ? current.Label : port.Label,
+                    Order = port.Order
+                }
+                : port);
+        }
+        return result.ToArray();
+    }
+
+    private static PropertyValidation ValidateEditorProperty(PropertyEditorDraft draft)
+    {
+        if (!KnownPropertyTypes.Contains(draft.Type))
+        {
+            if (draft.Original is null) return PropertyValidation.Invalid($"{draft.Name}: custom types must originate from an existing property.");
+            if (!string.Equals(draft.Type, draft.Original.Type, StringComparison.Ordinal)) return PropertyValidation.Invalid($"{draft.Name}: custom property types cannot be converted in this editor.");
+            return new(draft.Original.Value?.Clone(), draft.Original.Options ?? [], null);
+        }
+        if (draft.Mode is not (DiagramPropertyModes.Display or DiagramPropertyModes.Edit or DiagramPropertyModes.DisplayAndEdit or DiagramPropertyModes.Hidden)) return PropertyValidation.Invalid($"{draft.Name}: mode is not supported.");
+        var options = draft.Type == DiagramPropertyTypes.Enum ? draft.Options.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal).ToArray() : [];
+        if (draft.Type == DiagramPropertyTypes.Enum && options.Length == 0) return PropertyValidation.Invalid($"{draft.Name}: an enum needs at least one choice.");
+        if (string.IsNullOrWhiteSpace(draft.Value)) return draft.Original?.Required == true ? PropertyValidation.Invalid($"{draft.Name} is required.") : new(null, options, null);
+        var raw = draft.Value;
+        if (draft.Type == DiagramPropertyTypes.Boolean) return bool.TryParse(raw, out var boolean) ? new(JsonSerializer.SerializeToElement(boolean), options, null) : PropertyValidation.Invalid($"{draft.Name}: expected true or false.");
+        if (draft.Type == DiagramPropertyTypes.Integer) return long.TryParse(raw, out var integer) ? new(JsonSerializer.SerializeToElement(integer), options, null) : PropertyValidation.Invalid($"{draft.Name}: expected an integer.");
+        if (draft.Type == DiagramPropertyTypes.Decimal) return decimal.TryParse(raw, out var decimalValue) ? new(JsonSerializer.SerializeToElement(decimalValue), options, null) : PropertyValidation.Invalid($"{draft.Name}: expected a decimal number.");
+        if (draft.Type == DiagramPropertyTypes.Date && DateOnly.TryParseExact(raw, "yyyy-MM-dd", out var date)) return new(JsonSerializer.SerializeToElement(date.ToString("yyyy-MM-dd")), options, null);
+        if (draft.Type == DiagramPropertyTypes.Date) return PropertyValidation.Invalid($"{draft.Name}: expected an ISO date.");
+        if (draft.Type == DiagramPropertyTypes.DateTime && DateTimeOffset.TryParseExact(raw, ["O", "yyyy-MM-ddTHH:mm:ssK", "yyyy-MM-ddTHH:mm:ss.FFFFFFFK"], null, System.Globalization.DateTimeStyles.RoundtripKind, out var dateTime)) return new(JsonSerializer.SerializeToElement(dateTime.ToString("O")), options, null);
+        if (draft.Type == DiagramPropertyTypes.DateTime) return PropertyValidation.Invalid($"{draft.Name}: expected an ISO date/time.");
+        if (draft.Type == DiagramPropertyTypes.Json) { try { return new(JsonDocument.Parse(raw).RootElement.Clone(), options, null); } catch (JsonException) { return PropertyValidation.Invalid($"{draft.Name}: expected valid JSON."); } }
+        if (draft.Type == DiagramPropertyTypes.Enum && !options.Contains(raw, StringComparer.Ordinal)) return PropertyValidation.Invalid($"{draft.Name}: value must be one of its choices.");
+        return new(JsonSerializer.SerializeToElement(raw), options, null);
+    }
+    private static readonly HashSet<string> KnownPropertyTypes = [DiagramPropertyTypes.String, DiagramPropertyTypes.Boolean, DiagramPropertyTypes.Integer, DiagramPropertyTypes.Decimal, DiagramPropertyTypes.Date, DiagramPropertyTypes.DateTime, DiagramPropertyTypes.Enum, DiagramPropertyTypes.Json];
+    private static bool IsCustomPropertyType(string type) => !KnownPropertyTypes.Contains(type);
+    private static string PropertyValueText(JsonElement? value) => value is null ? string.Empty : value.Value.ValueKind == JsonValueKind.String ? value.Value.GetString() ?? string.Empty : value.Value.GetRawText();
+    private int PropertyOrder(DiagramNode node, string propertyId) => _document.Ports.Where(port => port.NodeId == node.Id && port.PropertyId == propertyId).Select(port => port.Order).DefaultIfEmpty(int.MaxValue).Min();
+    private string PropertyConnection(DiagramNode node, string propertyId)
+    {
+        var directions = _document.Ports.Where(port => port.NodeId == node.Id && port.PropertyId == propertyId).Select(port => port.Direction).ToHashSet(StringComparer.Ordinal);
+        return directions.Contains("both") || directions.Contains("source") && directions.Contains("target") ? "both" : directions.Contains("source") ? "source" : directions.Contains("target") ? "target" : "none";
+    }
+    private static string PortSideFromAnchor(object? anchor) => anchor is string value && value is "left" or "right" or "top" or "bottom" ? value : "right";
+    private bool EdgeRolesRemainCompatible(DiagramEdge edge, IEnumerable<DiagramPort> desiredPorts)
+    {
+        var ports = desiredPorts.ToDictionary(port => port.Id, StringComparer.Ordinal);
+        return (!ports.TryGetValue(edge.SourcePortId, out var source) || PortAllows(source.Direction, "source"))
+            && (!ports.TryGetValue(edge.TargetPortId, out var target) || PortAllows(target.Direction, "target"));
+    }
+    private static bool PortAllows(string direction, string role) => direction == "both" || direction == role;
+    private static string? UpdatedPropertyPortLabel(DiagramPort port, DiagramNodeProperty? original, DiagramNodeProperty desired)
+    {
+        if (original is null) return desired.Label;
+        var wasDerived = string.Equals(port.Label, original.Label, StringComparison.Ordinal)
+            || string.Equals(port.Label, original.Name, StringComparison.Ordinal);
+        return wasDerived ? desired.Label : port.Label;
+    }
+    private string NextPropertiesEditorId(string prefix)
+    {
+        var ids = _document.Nodes.Select(node => node.Id).Concat(_document.Ports.Select(port => port.Id)).Concat(_propertyEditorDrafts.Select(property => property.Id)).Concat(_portEditorDrafts.Select(port => port.Id)).ToHashSet(StringComparer.Ordinal);
+        string id; do { id = prefix == "property" ? $"property-{Guid.NewGuid():N}" : $"{_propertiesNodeId}-{prefix}-{Guid.NewGuid():N}"; } while (!ids.Add(id));
+        return id;
     }
 
     private async Task ApplyNodeStyleAsync()
@@ -1086,7 +1389,7 @@ public partial class Home : IAsyncDisposable
             case "group.label.commit": await CommitGroupAsync(envelope.Payload, group => group with { Label = NullableLabel(envelope.Payload, "label") }, "Updated group label"); break;
             case "edge.createRequested": await CreateEdgeAsync(envelope.Payload); break;
             case "edge.reconnectRequested": await ReconnectEdgeAsync(envelope.Payload); break;
-            case "edge.label.commit": await CommitEdgeAsync(envelope.Payload, edge => edge with { Label = NullableLabel(envelope.Payload, "label") }, "Updated edge label"); break;
+            case "edge.label.commit": await CommitEdgeAsync(envelope.Payload, edge => edge with { Label = EdgeLabel(envelope.Payload, "label") }, "Updated edge label"); break;
             case "edge.labelPosition.commit": await CommitEdgeAsync(envelope.Payload, edge => edge with { LabelOffsetX = Number(envelope.Payload, "labelOffsetX"), LabelOffsetY = Number(envelope.Payload, "labelOffsetY") }, "Moved edge label"); break;
             case "edge.waypointsRequested": await CommitEdgeAsync(envelope.Payload, edge => edge with { Waypoints = Points(envelope.Payload, "waypoints") }, "Updated edge waypoints"); break;
             case "edge.detachRequested": await DeleteEdgesAsync([String(envelope.Payload, "edgeId")]); break;
@@ -1292,7 +1595,7 @@ public partial class Home : IAsyncDisposable
         try
         {
             var result = await Layouts.ExecuteAsync(new DiagramLayoutRequest(
-                DocumentId, ActorId, CommandId("layout"), _revision, GhostLayeredLayoutStrategy.AlgorithmName, 42, false,
+                DocumentId, _actorId, CommandId("layout"), _revision, GhostLayeredLayoutStrategy.AlgorithmName, 42, false,
                 new DiagramLayoutOptions(Direction: _layoutDirection)), CancellationToken.None);
             if (!result.Accepted || result.Commit?.Snapshot is null)
             {
@@ -1380,7 +1683,7 @@ public partial class Home : IAsyncDisposable
         var baseRevision = _revision;
         try
         {
-            var command = new DiagramCommand(DocumentId, ActorId, CommandId("studio"), baseRevision, operations.ToImmutableArray());
+            var command = new DiagramCommand(DocumentId, _actorId, CommandId("studio"), baseRevision, operations.ToImmutableArray());
             var result = await Commands.SubmitAsync(command, CancellationToken.None);
             if (!result.Accepted && result.Code == "REVISION_CONFLICT" && result.Snapshot is not null && IsAdditiveBatch(operations, previous))
             {
@@ -1389,7 +1692,7 @@ public partial class Home : IAsyncDisposable
                 _revision = result.Snapshot.Revision;
                 baseRevision = _revision;
                 if (_diagram is not null) await _diagram.ReplaceAsync(_document, _revision);
-                command = new DiagramCommand(DocumentId, ActorId, CommandId("studio-retry"), baseRevision, operations.ToImmutableArray());
+                command = new DiagramCommand(DocumentId, _actorId, CommandId("studio-retry"), baseRevision, operations.ToImmutableArray());
                 result = await Commands.SubmitAsync(command, CancellationToken.None);
             }
             if (!result.Accepted || result.Snapshot is null)
@@ -1498,7 +1801,7 @@ public partial class Home : IAsyncDisposable
             var inspection = await _diagram.InspectAsync();
             var viewport = JsonSerializer.Deserialize<DiagramDocument>(inspection.Model.GetRawText(), JsonOptions)?.Viewport ?? _document.Viewport;
             var operations = new[] { DiagramOperations.SetViewport(viewport) };
-            var result = await Commands.SubmitAsync(new DiagramCommand(DocumentId, ActorId, CommandId("fit"), baseRevision, operations.ToImmutableArray()), CancellationToken.None);
+            var result = await Commands.SubmitAsync(new DiagramCommand(DocumentId, _actorId, CommandId("fit"), baseRevision, operations.ToImmutableArray()), CancellationToken.None);
             if (!result.Accepted || result.Snapshot is null)
             {
                 await AcceptRejectedResultAsync(result, result.Message);
@@ -1769,7 +2072,9 @@ public partial class Home : IAsyncDisposable
     {
         foreach (var set in NodeTypes.NodeSets)
         {
-            foreach (var descriptor in set.NodeTypes)
+            foreach (var descriptor in set.NodeTypes
+                .GroupBy(type => type.TypeId, StringComparer.Ordinal)
+                .Select(versions => versions.OrderByDescending(type => type.Version).First()))
             {
                 if (_paletteCategories.All(category => !string.Equals(category.Name, descriptor.PaletteGroup, StringComparison.Ordinal)))
                     _paletteCategories.Add(new(descriptor.PaletteGroup, true));
@@ -1786,7 +2091,7 @@ public partial class Home : IAsyncDisposable
                     PropertyDirection(descriptor, property.Id))).ToArray();
                 var ports = descriptor.Ports
                     .Where(port => port.PropertyId is null)
-                    .Select(port => new PortTemplate(port.Id, PortSide(port.Direction), port.Direction))
+                    .Select(port => new PortTemplate(port.Id, port.Anchor ?? PortSide(port.Direction), port.Direction))
                     .ToArray();
                 _templates.Add(new(
                     $"registered:{descriptor.TypeId}@{descriptor.Version}",
@@ -1850,6 +2155,10 @@ public partial class Home : IAsyncDisposable
         var label = value.ValueKind == JsonValueKind.String ? value.GetString()?.Trim() : null;
         return string.IsNullOrWhiteSpace(label) ? null : label;
     }
+    private static string EdgeLabel(JsonElement element, string property)
+        => element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()?.Trim() ?? string.Empty
+            : string.Empty;
     private static bool TryNullableString(JsonElement element, string property, out string? value)
     {
         value = null;
@@ -1878,6 +2187,9 @@ public partial class Home : IAsyncDisposable
             : [];
     public ValueTask DisposeAsync()
     {
+        _disposed = true;
+        CircuitState.ConnectionChanged -= OnCircuitConnectionChangedAsync;
+        Interlocked.Exchange(ref _documentSubscription, null)?.Dispose();
         _eventGate.Dispose();
         _commandGate.Dispose();
         _paletteGate.Dispose();
@@ -1922,6 +2234,34 @@ public partial class Home : IAsyncDisposable
         public string Options { get; set; } = string.Empty;
         public bool Connectable { get; set; }
         public string Direction { get; set; } = "both";
+    }
+    private sealed class PropertyEditorDraft(string id, DiagramNodeProperty? original = null)
+    {
+        public string Id { get; } = id;
+        public DiagramNodeProperty? Original { get; } = original;
+        public string Name { get; set; } = "Property";
+        public string Type { get; set; } = DiagramPropertyTypes.String;
+        public string Mode { get; set; } = DiagramPropertyModes.Display;
+        public string Value { get; set; } = string.Empty;
+        public string Options { get; set; } = string.Empty;
+        public string Connection { get; set; } = "none";
+    }
+    private sealed class PortEditorDraft(string id, DiagramPort? original = null)
+    {
+        public string Id { get; } = id;
+        public string? OriginalLabel { get; } = original?.Label;
+        public string OriginalSide { get; } = original is null ? "right" : PortSideFromAnchor(original.Anchor);
+        public string Label { get; set; } = "Connection";
+        public string Side { get; set; } = "right";
+        public string Direction { get; set; } = "both";
+    }
+    private sealed record PropertiesEditPlan(IReadOnlyList<GhostagramOperation> Operations, IReadOnlyList<string> RemovedEdgeIds, string? Error)
+    {
+        public static PropertiesEditPlan Invalid(string error) => new([], [], error);
+    }
+    private sealed record PropertyValidation(JsonElement? Value, IReadOnlyList<string> Options, string? Error)
+    {
+        public static PropertyValidation Invalid(string error) => new(null, [], error);
     }
 
     private sealed record NodeTemplate(

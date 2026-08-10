@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ghostagram.Core;
 
 namespace Ghostagram.Execution;
@@ -217,7 +218,8 @@ public sealed class GraphCompiler(INodeTypeRegistry registry) : IGraphCompiler
                 }
                 var schema = definition.Value;
                 if (port.Direction != schema.Direction || port.Scope != schema.Scope || port.PropertyId != schema.PropertyId ||
-                    port.Label != schema.Label || port.Order != schema.Order || port.MaxConnections != schema.MaxConnections || !port.Enabled)
+                    port.Label != schema.Label || port.Order != schema.Order || port.MaxConnections != schema.MaxConnections ||
+                    !AnchorMatches(port.Anchor, schema.Anchor) || !port.Enabled)
                     diagnostics.Add(new(GraphDiagnosticCodes.NodePortSchemaMismatch, $"Port '{port.Id}' does not match registered schema for node type '{registration.Descriptor.Key}'.", [node.Id]));
             }
             foreach (var extra in actual.Keys.Except(expected.Keys, StringComparer.Ordinal).Order(StringComparer.Ordinal))
@@ -268,6 +270,14 @@ public sealed class GraphCompiler(INodeTypeRegistry registry) : IGraphCompiler
         projectedEdges = projection;
         return diagnostics;
     }
+
+    private static bool AnchorMatches(object? actual, string? expected) => actual switch
+    {
+        null => expected is null,
+        string value => string.Equals(value, expected, StringComparison.Ordinal),
+        JsonElement { ValueKind: JsonValueKind.String } value => string.Equals(value.GetString(), expected, StringComparison.Ordinal),
+        _ => false
+    };
 
     private static bool ScopesCompatible(string source, string target) => source == "*" || target == "*" || string.Equals(source, target, StringComparison.Ordinal);
 

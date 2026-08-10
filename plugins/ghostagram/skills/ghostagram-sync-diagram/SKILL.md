@@ -26,4 +26,4 @@ Check unique IDs, endpoint references, group ancestry, and current revision. Tre
 
 ## Output
 
-Return the current authoritative revision, concise structural summary, and relevant changes. State that SignalR publishes committed changes while browser acknowledgement is not available through MCP.
+Return the current authoritative revision, concise structural summary, and relevant changes. When requested, include Laboratory presence and rendered revisions from `list_diagrams` without treating presence as write authority.

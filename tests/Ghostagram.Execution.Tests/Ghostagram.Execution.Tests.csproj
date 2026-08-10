@@ -8,5 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Ghostagram.Execution\Ghostagram.Execution.csproj" />
     <ProjectReference Include="..\..\src\Ghostagram.NodeSets.Maf\Ghostagram.NodeSets.Maf.csproj" />
+    <ProjectReference Include="..\..\src\Ghostagram.NodeSets.UML\Ghostagram.NodeSets.UML.csproj" />
   </ItemGroup>
 </Project>

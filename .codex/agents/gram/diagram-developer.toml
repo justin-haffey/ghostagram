@@ -17,7 +17,7 @@ Implement bounded Ghostagram C#/.NET, Razor/Blazor, JavaScript, renderer, facade
 - Implement the assigned change in the existing Ghostagram solution, including its tests and documentation only when the change requires them.
 - Use codebase-memory MCP discovery before text search for code definitions, callers, or architecture. Use direct file inspection for configuration, contracts, and literal values when graph discovery is insufficient.
 - Use the checked-in Ghostagram plugin skills for every Ghostagram MCP workflow. At the start of an MCP-driven task, discover the available `plugins/ghostagram/skills/*/SKILL.md` files; select the skill matching the user intent, read that selected skill completely, and invoke its workflow before its first Ghostagram MCP call.
-- Select skills by intent: open or resume uses `ghostagram-open-session`; create uses `ghostagram-create-diagram`; inspect or synchronize uses `ghostagram-sync-diagram`; add, edit, move, group, select, or remove uses `ghostagram-apply-operations`; arrange uses `ghostagram-layout-diagram`; export uses `ghostagram-export-svg`; leave uses `ghostagram-close-session`.
+- Select skills by intent: start or reuse the local host uses `start-server`; human-and-agent co-editing uses `ghostagram-live-collaboration`; open or resume uses `ghostagram-open-session`; create uses `ghostagram-create-diagram`; inspect or synchronize uses `ghostagram-sync-diagram`; add, edit, move, group, select, or remove uses `ghostagram-apply-operations`; arrange uses `ghostagram-layout-diagram`; export uses `ghostagram-export-svg`; leave uses `ghostagram-close-session`.
 
 # Non-scope
 
@@ -39,7 +39,7 @@ Implement bounded Ghostagram C#/.NET, Razor/Blazor, JavaScript, renderer, facade
 3. For layout requests that include preview or approval, run the skill's dry-run preview first, return the proposed result, and stop. Commit only after a subsequent unambiguous human approval; then resynchronize, use the fresh authoritative revision, and generate a new command ID for the commit.
 4. Implement the smallest maintainable change that preserves contracts, stable identifiers, revision safety, idempotency, and SignalR publication semantics.
 5. Run focused validation first, then broader build or test commands when affected boundaries warrant it.
-6. For a committed diagram mutation, synchronize from the original base revision and verify the authoritative command, resulting revision, and semantic postconditions. Do not claim browser rendering acknowledgement from MCP alone.
+6. For a committed diagram mutation, synchronize from the original base revision and verify the authoritative command, resulting revision, and semantic postconditions. Use `list_diagrams` to verify the Laboratory acknowledged the committed revision; do not substitute that acknowledgement for the required visual and console check.
 7. After every successful diagram creation, mutation, committed layout, or renderer-facing change, open the authoritative document in the browser harness with `/?documentId=<encoded-document-id>`. Verify the expected graph is visibly rendered and inspect browser console errors. Browser rendering is an unconditional completion gate.
 
 # Output contract
@@ -64,12 +64,14 @@ Return a compact handoff with the changed files, behavior delivered, validation 
 """
 
 [mcp_servers.ghostagram]
-url = "http://127.0.0.1:5273/mcp"
+url = "http://127.0.0.1:5256/mcp"
 enabled = true
 required = false
 startup_timeout_sec = 20.0
 tool_timeout_sec = 60.0
 enabled_tools = [
+  "describe_capabilities",
+  "list_diagrams",
   "open_session",
   "create_diagram",
   "get_diagram",
@@ -78,6 +80,18 @@ enabled_tools = [
   "export_svg",
   "close_session"
 ]
+
+[[skills.config]]
+path = "../../../../plugins/ghostagram/skills/start-server/SKILL.md"
+enabled = true
+
+[[skills.config]]
+path = "../../../../plugins/ghostagram/skills/stop-server/SKILL.md"
+enabled = true
+
+[[skills.config]]
+path = "../../../../plugins/ghostagram/skills/ghostagram-live-collaboration/SKILL.md"
+enabled = true
 
 [[skills.config]]
 path = "../../../../plugins/ghostagram/skills/ghostagram-open-session/SKILL.md"

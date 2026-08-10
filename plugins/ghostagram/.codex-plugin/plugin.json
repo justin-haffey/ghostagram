@@ -1,6 +1,6 @@
 {
   "name": "ghostagram",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Codex workflows for running the local Ghostagram server and creating, inspecting, editing, laying out, and exporting collaborative diagrams through MCP.",
   "author": {
     "name": "Ghostworx"
@@ -17,7 +17,7 @@
   "interface": {
     "displayName": "Ghostagram",
     "shortDescription": "Edit live diagrams through MCP",
-    "longDescription": "Nine focused skills run the local server and manage revision-safe collaborative Ghostagram sessions: start, stop, open, create, inspect, edit, lay out, export, and close.",
+    "longDescription": "Ten focused skills run the local server and support revision-safe human-and-agent Ghostagram collaboration: start, stop, discover, open, create, inspect, edit, lay out, export, and close.",
     "developerName": "Ghostworx",
     "category": "Productivity",
     "capabilities": [
@@ -27,6 +27,7 @@
     "defaultPrompt": [
       "Use $start-server to start or reuse the local Ghostagram collaboration server.",
       "Use $stop-server to stop only the Ghostagram server process started by Codex.",
+      "Use $ghostagram-live-collaboration to discover capabilities, co-edit the Laboratory with a human, and verify its render acknowledgement.",
       "Use $ghostagram-open-session to join an existing collaborative diagram.",
       "Use $ghostagram-create-diagram to create and open a new diagram.",
       "Use $ghostagram-sync-diagram to inspect or synchronize diagram state.",

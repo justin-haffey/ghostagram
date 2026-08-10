@@ -811,6 +811,10 @@ test("label commits normalize whitespace without creating invisible labels", () 
   assert.equal(__testing.editableLabelValue("  Updated label  "), "Updated label");
   assert.equal(__testing.editableLabelValue("\t \n"), null);
   assert.equal(__testing.editableLabelValue(null), null);
+  assert.equal(__testing.editableEdgeLabelValue("  Updated edge  "), "Updated edge");
+  assert.equal(__testing.editableEdgeLabelValue("\t \n"), "");
+  assert.equal(__testing.edgeLabelText({ label: "", overlays: [{ type: "label", label: "inherited" }] }), "");
+  assert.equal(__testing.edgeLabelPlacement({ connector: "flowchart", label: "", overlays: [{ type: "label", label: "inherited" }] }, { x: 0, y: 0 }, { x: 100, y: 100 }), null);
 });
 
 test("SVG export is standalone and escapes model text", () => {

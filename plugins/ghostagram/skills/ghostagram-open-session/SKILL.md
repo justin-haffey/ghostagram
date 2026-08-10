@@ -18,11 +18,11 @@ Read `../../contracts/mcp-tools.md` before calling tools. Require a document ID 
 3. Require the response to identify the same document and actor, a non-empty session ID, a nonnegative revision, and an authoritative snapshot.
 4. Preserve `sessionId` and revision exactly. Use `$ghostagram-sync-diagram` if a refreshed projection is needed.
 
-On `NOT_FOUND`, stop and offer `$ghostagram-create-diagram`; do not create without explicit user intent. Retry one transient read failure at most.
+On `DIAGRAM_NOT_FOUND`, stop and offer `$ghostagram-create-diagram`; do not create without explicit user intent. On `SESSION_NOT_FOUND`, open a fresh handle for the known document and full-sync rather than creating. Retry one transient read failure at most.
 
 ## Validation
 
-Confirm no diagram revision was advanced by opening the session. Report the document ID, session ID, and current authoritative revision. Browser acknowledgement is not exposed by MCP.
+Confirm no diagram revision was advanced by opening the session. Report the document ID, session ID, actor ID, current authoritative revision, and the direct browser URL from `list_diagrams` when available.
 
 ## Output
 

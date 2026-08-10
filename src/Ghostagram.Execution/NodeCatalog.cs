@@ -29,7 +29,8 @@ public sealed record NodePortDefinition(
     string? PropertyId = null,
     string? Label = null,
     int Order = 0,
-    int MaxConnections = -1);
+    int MaxConnections = -1,
+    string? Anchor = null);
 
 public sealed class NodeTypeDescriptor
 {
@@ -95,6 +96,8 @@ public sealed class NodeTypeDescriptor
                 throw new ArgumentException("Node port identifiers and scopes are required.", nameof(ports));
             if (port.Direction is not ("source" or "target" or "both"))
                 throw new ArgumentException($"Port '{port.Id}' has invalid direction '{port.Direction}'.", nameof(ports));
+            if (port.Anchor is not (null or "left" or "right" or "top" or "bottom"))
+                throw new ArgumentException($"Port '{port.Id}' has invalid fixed anchor '{port.Anchor}'.", nameof(ports));
             if (port.MaxConnections < -1) throw new ArgumentException($"Port '{port.Id}' has invalid MaxConnections '{port.MaxConnections}'.", nameof(ports));
             if (port.Order < 0) throw new ArgumentException($"Port '{port.Id}' has a negative order.", nameof(ports));
         }

@@ -297,6 +297,29 @@ textarea {
   width: min(720px, calc(100vw - 32px));
 }
 
+.studio-modal.properties-modal {
+  width: min(1160px, calc(100vw - 24px));
+}
+
+.properties-editor-content { display: grid; gap: 20px; }
+.properties-editor-section { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--studio-line); border-radius: 10px; background: #fcfdff; }
+.properties-editor-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.properties-editor-row, .unbound-port-row { display: grid; align-items: center; gap: 8px; padding: 10px; border: 1px solid #e5eaf4; border-radius: 8px; background: #fff; }
+.properties-editor-row { grid-template-columns: 58px minmax(112px, 1fr) minmax(100px, .8fr) minmax(130px, 1fr) minmax(140px, 1.15fr) minmax(135px, 1fr) minmax(105px, .7fr) 38px; }
+.unbound-port-row { grid-template-columns: minmax(160px, 1fr) minmax(110px, .7fr) minmax(110px, .7fr) 38px; }
+.property-reorder { display: flex; flex-direction: column; align-items: center; }
+@media (max-width: 900px) {
+  .properties-editor-row { grid-template-columns: 46px repeat(2, minmax(0, 1fr)); }
+  .properties-editor-row > :last-child { grid-column: 3; }
+}
+@media (max-width: 620px) {
+  .studio-modal.properties-modal { width: calc(100vw - 12px); }
+  .properties-editor-heading { align-items: stretch; flex-direction: column; }
+  .properties-editor-row, .unbound-port-row { grid-template-columns: 1fr; }
+  .property-reorder { flex-direction: row; justify-content: flex-start; }
+  .properties-editor-row > :last-child { grid-column: auto; }
+}
+
 .studio-modal-header,
 .studio-modal-actions {
   display: flex;

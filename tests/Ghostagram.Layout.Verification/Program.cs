@@ -7,6 +7,7 @@ using Ghostagram.Core;
 using Ghostagram.Server;
 using Ghostagram.Server.Export;
 using Ghostagram.Server.Layout;
+using Ghostagram.Server.Mcp;
 using Ghostagram.Server.Sessions;
 
 var checks = new List<(string Name, Action Check)>
@@ -21,6 +22,8 @@ var checks = new List<(string Name, Action Check)>
     ("cycles, components, and non-overlap", VerifyCyclesAndComponents),
     ("large sparse graph performance", VerifyPerformance),
     ("SVG preserves properties, property ports, and connector geometry", VerifyEnhancedSvgExport),
+    ("authoring capabilities expose the versioned operation schema", VerifyAuthoringCapabilities),
+    ("browser presence tracks successful rendered revisions", () => VerifyDocumentChangeNotifier().GetAwaiter().GetResult()),
     ("layout, collaborative session, export, and replay", () => VerifyCommandPipeline().GetAwaiter().GetResult())
 };
 
@@ -242,6 +245,65 @@ static void VerifyEnhancedSvgExport()
         "server SVG must inherit both endpoint markers from a reusable edge type");
 }
 
+static void VerifyAuthoringCapabilities()
+{
+    var capabilities = new GhostagramCapabilityCatalog().Describe();
+    Equal("1.0.0", capabilities.AuthoringSchemaVersion, "capability result must expose the embedded schema version");
+    True(capabilities.Operations.Contains("edgeType.upsert"), "capabilities must advertise reusable edge type authoring");
+    True(capabilities.Overlays.Contains("triangle-open") && capabilities.Overlays.Contains("erd-zero-many"), "capabilities must advertise UML and ERD markers");
+    var definitions = capabilities.AuthoringSchema.GetProperty("$defs");
+    True(definitions.TryGetProperty("diagramDocument", out _), "schema must define complete documents");
+    True(definitions.GetProperty("operation").GetProperty("oneOf").GetArrayLength() >= 10, "schema must define the supported operation union");
+}
+
+static async Task VerifyDocumentChangeNotifier()
+{
+    var notifier = new DocumentChangeNotifier();
+    var delivered = 0;
+    using var current = notifier.Subscribe("live", 3, (change, _) => { delivered++; return Task.CompletedTask; });
+    var initial = notifier.GetPresence("live");
+    True(initial.ViewCount == 1 && initial.OldestRevision == 3 && initial.LatestRevision == 3, "subscription must advertise its initial rendered revision");
+
+    var change = new DiagramChange("live", 4, "agent", "command-4", [], DateTimeOffset.UtcNow);
+    await notifier.NotifyAsync(change, default);
+    var advanced = notifier.GetPresence("live");
+    True(delivered == 1 && advanced.OldestRevision == 4 && advanced.LatestRevision == 4, "successful delivery must advance the browser acknowledgement");
+
+    using var stale = notifier.Subscribe("live", 2, (_, _) => throw new InvalidOperationException("render failed"));
+    await notifier.NotifyAsync(change with { Revision = 5, CommandId = "command-5" }, default);
+    var mixed = notifier.GetPresence("live");
+    True(mixed.ViewCount == 2 && mixed.OldestRevision == 2 && mixed.LatestRevision == 5, "a failed renderer must remain visibly stale without failing the durable commit");
+    stale.Dispose();
+    var recovered = notifier.GetPresence("live");
+    True(recovered.ViewCount == 1 && recovered.OldestRevision == 5, "disposing a failed browser must remove stale presence");
+
+    var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var rendered = new System.Collections.Concurrent.ConcurrentQueue<long>();
+    using var slow = notifier.Subscribe("coalesced", 0, async (next, _) =>
+    {
+        rendered.Enqueue(next.Revision);
+        if (next.Revision == 1)
+        {
+            started.SetResult();
+            await release.Task;
+        }
+    });
+    var timer = Stopwatch.StartNew();
+    notifier.Notify(change with { DocumentId = "coalesced", Revision = 1, CommandId = "coalesced-1" });
+    timer.Stop();
+    True(timer.Elapsed < TimeSpan.FromMilliseconds(50), "a slow browser must not delay the authoritative publisher");
+    await started.Task.WaitAsync(TimeSpan.FromSeconds(1));
+    notifier.Notify(change with { DocumentId = "coalesced", Revision = 2, CommandId = "coalesced-2" });
+    notifier.Notify(change with { DocumentId = "coalesced", Revision = 3, CommandId = "coalesced-3" });
+    release.SetResult();
+    var deadline = Stopwatch.StartNew();
+    while (notifier.GetPresence("coalesced").LatestRevision < 3 && deadline.Elapsed < TimeSpan.FromSeconds(1))
+        await Task.Delay(5);
+    Equal("1,3", string.Join(',', rendered), "a slow view must finish its current render then coalesce the burst to the latest revision");
+    True(notifier.GetPresence("coalesced").LatestRevision == 3, "coalesced delivery must acknowledge the latest successfully rendered revision");
+}
+
 static async Task VerifyCommandPipeline()
 {
     var model = Model([Node("a", 0, 0), Node("b", 0, 0)], [Edge("a", "b")]);
@@ -279,7 +341,24 @@ static async Task VerifyCommandPipeline()
     var exported = await sessions.ExportSvgAsync(sessionId, "agent-one", default);
     True(exported.Accepted && exported.Revision == 2 && exported.Content?.StartsWith("<svg", StringComparison.Ordinal) == true, "session export must return revision-pinned SVG");
     var closed = await sessions.CloseAsync(sessionId, "agent-one");
-    True(closed.Accepted && closed.Code == "SESSION_CLOSED", "session close must remove the participant");
+    True(closed.Accepted && closed.Code == "SESSION_CLOSED" && closed.Session?.DocumentId == "pipeline" && closed.Session.Revision == 2,
+        "session close must identify the document and final authoritative revision");
+
+    var createStore = new MemoryStore(new StoredDocument { DocumentId = "seed", Revision = 0, Model = Model([], []) });
+    var createCommands = new DiagramCommandService(createStore, new DocumentCommandQueue(), new RecordingPublisher());
+    var createLayouts = new DiagramLayoutService(createCommands, resolver);
+    var createSessions = new DiagramSessionService(createCommands, createLayouts, new SvgDiagramExporter());
+    var initialOperations = new[] { new GhostagramOperation("node.upsert", JsonSerializer.SerializeToElement(new { id = "created", x = 8, y = 12 })) };
+    var created = await createSessions.CreateAsync("created-diagram", "creator", "create-command", initialOperations, default);
+    True(created.Accepted && created.Command?.Code == "COMMITTED" && created.Session?.Revision == 1, "create must commit and open its first session");
+    var createReplay = await createSessions.CreateAsync("created-diagram", "creator", "create-command", initialOperations, default);
+    True(createReplay.Accepted && createReplay.Command?.Code == "IDEMPOTENT_REPLAY" && createReplay.Session?.Revision == 1,
+        "an uncertain create retry with the exact payload must replay and reopen safely");
+    var createKeyReuse = await createSessions.CreateAsync("created-diagram", "creator", "create-command",
+        [new GhostagramOperation("node.upsert", JsonSerializer.SerializeToElement(new { id = "different", x = 0, y = 0 }))], default);
+    True(!createKeyReuse.Accepted && createKeyReuse.Code == "IDEMPOTENCY_KEY_REUSED", "a create command id cannot be reused for a different payload");
+    var createCollision = await createSessions.CreateAsync("created-diagram", "creator", "different-command", initialOperations, default);
+    True(!createCollision.Accepted && createCollision.Code == "DIAGRAM_EXISTS", "a different create intent must not overwrite an existing diagram");
 
     var copyOperations = ImmutableArray.Create(new GhostagramOperation(
         "node.upsert",

@@ -57,15 +57,17 @@ public sealed class DiagramSessionService(
     {
         RequireActor(actorId);
         if (string.IsNullOrWhiteSpace(commandId)) throw new ArgumentException("commandId is required.", nameof(commandId));
-        if (await commands.GetSnapshotAsync(documentId, cancellationToken) is not null)
-            return new(false, "DIAGRAM_EXISTS", $"Diagram '{documentId}' already exists.");
-
         var operations = initialOperations is { Count: > 0 }
             ? initialOperations.ToImmutableArray()
             : [Operation("viewport.set", new { x = 0, y = 0, zoom = 1 })];
+        var existed = await commands.GetSnapshotAsync(documentId, cancellationToken) is not null;
         var command = await commands.SubmitAsync(
             new DiagramCommand(documentId, actorId, commandId, 0, operations),
             cancellationToken);
+        if (existed && command.Code == "IDEMPOTENCY_KEY_REUSED")
+            return new(false, command.Code, command.Message, Command: command);
+        if (existed && command.Code != "IDEMPOTENT_REPLAY")
+            return new(false, "DIAGRAM_EXISTS", $"Diagram '{documentId}' already exists.", Command: command);
         if (!command.Accepted)
             return new(false, command.Code, command.Message, Command: command);
 
@@ -156,14 +158,18 @@ public sealed class DiagramSessionService(
         return new(true, "SVG_EXPORTED", "SVG generated from the authoritative diagram revision.", sessionId, session.DocumentId, snapshot.Revision, artifact.MediaType, artifact.Content);
     }
 
-    public Task<DiagramSessionResult> CloseAsync(string sessionId, string actorId)
+    public async Task<DiagramSessionResult> CloseAsync(string sessionId, string actorId)
     {
         if (!TryGetSession(sessionId, out var session))
-            return Task.FromResult(new DiagramSessionResult(false, "SESSION_NOT_FOUND", $"Session '{sessionId}' does not exist or has expired."));
+            return new(false, "SESSION_NOT_FOUND", $"Session '{sessionId}' does not exist or has expired.");
+        var snapshot = await commands.GetSnapshotAsync(session.DocumentId, CancellationToken.None);
+        if (snapshot is null)
+            return new(false, "DIAGRAM_NOT_FOUND", $"Diagram '{session.DocumentId}' does not exist.");
         if (!session.Remove(actorId))
-            return Task.FromResult(new DiagramSessionResult(false, "SESSION_PARTICIPANT_REQUIRED", $"Actor '{actorId}' has not joined this session."));
+            return new(false, "SESSION_PARTICIPANT_REQUIRED", $"Actor '{actorId}' has not joined this session.");
+        var closed = ToContract(session, actorId, snapshot);
         if (session.IsEmpty) _sessions.TryRemove(sessionId, out _);
-        return Task.FromResult(new DiagramSessionResult(true, "SESSION_CLOSED", "The actor left the diagram session."));
+        return new(true, "SESSION_CLOSED", "The actor left the diagram session.", closed);
     }
 
     private bool TryGetParticipant(

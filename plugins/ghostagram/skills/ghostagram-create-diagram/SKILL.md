@@ -13,7 +13,7 @@ Read `../../contracts/mcp-tools.md` before calling tools. Creation is an externa
 
 ## Workflow
 
-1. Build optional `initialOperations` with stable IDs and dependency order: edge types, groups, nodes, ports, then edges. Omit the field when creating an empty diagram.
+1. Call `mcp__ghostagram__describe_capabilities` when constructing unfamiliar nodes, properties, ports, groups, edge types, or markers. Build optional `initialOperations` with stable IDs and dependency order: edge types, groups, nodes, ports, then edges. Omit the field when creating an empty diagram.
 2. Choose `documentId` and stable `actorId`, then generate a new `commandId`.
 3. Call `mcp__ghostagram__create_diagram` once with exactly `documentId`, `actorId`, `commandId`, and optional `initialOperations`.
 4. Require an accepted creation result or exact idempotent replay, then preserve the returned `sessionId` and revision.
@@ -27,4 +27,4 @@ Confirm every edge references existing endpoints, every port references an exist
 
 ## Output
 
-Return the document/session handoff, revision, counts by element type, and authoritative verification status. Note that committed changes are published through SignalR but browser acknowledgement is unavailable.
+Return the document/session handoff, revision, counts by element type, authoritative verification, direct browser URL, and any live-browser acknowledgement.

@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghostagram.local/schemas/ghostagram-authoring.v1.schema.json",
+  "title": "Ghostagram Authoring Contract v1",
+  "description": "Machine-readable shapes for Ghostagram documents and revision-safe operations. Unknown extension properties are preserved where supported by the model.",
+  "oneOf": [
+    { "$ref": "#/$defs/diagramDocument" },
+    { "$ref": "#/$defs/operation" }
+  ],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "color": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A CSS color string. Hex colors are the most portable authoring choice."
+    },
+    "point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "nodeStyle": {
+      "type": "object",
+      "properties": {
+        "background": { "$ref": "#/$defs/color" },
+        "borderColor": { "$ref": "#/$defs/color" },
+        "color": { "$ref": "#/$defs/color" },
+        "textAlign": { "enum": ["left", "center", "right"] }
+      },
+      "additionalProperties": true
+    },
+    "nodeProperty": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "type": "string", "minLength": 1 },
+        "label": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] },
+        "type": {
+          "enum": ["string", "boolean", "integer", "decimal", "date", "dateTime", "enum", "json"],
+          "default": "string"
+        },
+        "value": true,
+        "mode": {
+          "enum": ["display", "edit", "displayAndEdit", "hidden"],
+          "default": "display"
+        },
+        "required": { "type": "boolean", "default": false },
+        "connectable": { "type": "boolean", "default": false },
+        "options": {
+          "type": ["array", "null"],
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "metadata": true
+      },
+      "additionalProperties": true
+    },
+    "node": {
+      "type": "object",
+      "required": ["id"],
+      "x-ghostagram-createRequired": ["x", "y"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "exclusiveMinimum": 0, "default": 160 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "default": 80 },
+        "label": { "type": ["string", "null"] },
+        "groupId": { "type": ["string", "null"] },
+        "rotation": { "type": "number", "default": 0 },
+        "resizable": { "type": "boolean", "default": true },
+        "rotatable": { "type": "boolean", "default": true },
+        "labelEditable": { "type": "boolean", "default": true },
+        "icon": { "type": ["string", "null"], "description": "An Iconify name such as mdi:account-outline." },
+        "style": { "oneOf": [{ "$ref": "#/$defs/nodeStyle" }, { "type": "null" }] },
+        "typeId": { "type": ["string", "null"] },
+        "typeVersion": { "type": "integer", "minimum": 1, "default": 1 },
+        "properties": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nodeProperty" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "endpoint": {
+      "oneOf": [
+        { "enum": ["blank", "dot", "rectangle"] },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "enum": ["blank", "dot", "rectangle"], "default": "dot" },
+            "size": { "type": "number", "exclusiveMinimum": 0 },
+            "fill": { "$ref": "#/$defs/color" },
+            "stroke": { "$ref": "#/$defs/color" },
+            "strokeWidth": { "type": "number", "exclusiveMinimum": 0 }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "connectionPolicy": {
+      "type": "object",
+      "properties": {
+        "allowPortIds": { "type": ["array", "null"], "items": { "type": "string" }, "uniqueItems": true },
+        "denyPortIds": { "type": ["array", "null"], "items": { "type": "string" }, "uniqueItems": true },
+        "allowNodeIds": { "type": ["array", "null"], "items": { "type": "string" }, "uniqueItems": true },
+        "denyNodeIds": { "type": ["array", "null"], "items": { "type": "string" }, "uniqueItems": true }
+      },
+      "additionalProperties": true
+    },
+    "anchor": {
+      "oneOf": [
+        { "enum": ["left", "right", "top", "bottom", "center", "auto", "perimeter"] },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "side": { "enum": ["left", "right", "top", "bottom"] },
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "offsetX": { "type": "number" },
+            "offsetY": { "type": "number" }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "port": {
+      "type": "object",
+      "required": ["id"],
+      "x-ghostagram-createRequired": ["nodeId"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "nodeId": { "$ref": "#/$defs/identifier" },
+        "direction": { "enum": ["source", "target", "both"], "default": "both" },
+        "scope": { "type": "string", "minLength": 1, "default": "*" },
+        "maxConnections": { "type": "integer", "minimum": -1, "default": -1 },
+        "enabled": { "type": "boolean", "default": true },
+        "anchor": { "$ref": "#/$defs/anchor" },
+        "endpoint": { "$ref": "#/$defs/endpoint" },
+        "connectionPolicy": { "oneOf": [{ "$ref": "#/$defs/connectionPolicy" }, { "type": "null" }] },
+        "propertyId": { "type": ["string", "null"] },
+        "label": { "type": ["string", "null"] },
+        "order": { "type": "integer", "default": 0 }
+      },
+      "additionalProperties": true
+    },
+    "overlay": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["label", "arrow", "plain-arrow", "triangle-open", "diamond", "diamond-open", "erd-one", "erd-zero-one", "erd-one-many", "erd-zero-many"]
+        },
+        "label": { "type": ["string", "null"] },
+        "location": { "type": "number", "minimum": 0, "maximum": 1, "description": "Use 0 for a source marker and 1 for a target marker." },
+        "offsetX": { "type": "number" },
+        "offsetY": { "type": "number" },
+        "fontSize": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "edgeStyle": {
+      "type": "object",
+      "properties": {
+        "stroke": { "$ref": "#/$defs/color" },
+        "strokeWidth": { "type": "number", "exclusiveMinimum": 0 },
+        "dash": { "type": ["string", "null"] },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "labelColor": { "$ref": "#/$defs/color" }
+      },
+      "additionalProperties": true
+    },
+    "flowchartOptions": {
+      "type": "object",
+      "properties": {
+        "stub": { "type": "number", "minimum": 0, "default": 32 },
+        "cornerRadius": { "type": "number", "minimum": 0, "default": 0 }
+      },
+      "additionalProperties": true
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id"],
+      "x-ghostagram-createRequired": ["sourcePortId", "targetPortId"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "sourcePortId": { "$ref": "#/$defs/identifier" },
+        "targetPortId": { "$ref": "#/$defs/identifier" },
+        "label": { "type": ["string", "null"] },
+        "connector": { "enum": ["straight", "flowchart", "bezier", "state-machine"], "default": "flowchart" },
+        "type": { "type": ["string", "null"], "description": "Optional reusable edgeType id." },
+        "overlays": { "type": "array", "items": { "$ref": "#/$defs/overlay" } },
+        "waypoints": { "type": "array", "items": { "$ref": "#/$defs/point" } },
+        "connectorOptions": { "oneOf": [{ "$ref": "#/$defs/flowchartOptions" }, { "type": "null" }] },
+        "style": { "oneOf": [{ "$ref": "#/$defs/edgeStyle" }, { "type": "null" }] },
+        "animation": { "type": ["boolean", "object", "null"] },
+        "detachable": { "type": "boolean", "default": true },
+        "reconnectable": { "type": "boolean", "default": true },
+        "labelEditable": { "type": "boolean", "default": true },
+        "labelOffsetX": { "type": ["number", "null"] },
+        "labelOffsetY": { "type": ["number", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "group": {
+      "type": "object",
+      "required": ["id"],
+      "x-ghostagram-createRequired": ["x", "y", "width", "height"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 },
+        "label": { "type": ["string", "null"] },
+        "parentGroupId": { "type": ["string", "null"] },
+        "collapsed": { "type": "boolean", "default": false },
+        "resizable": { "type": "boolean", "default": true },
+        "labelEditable": { "type": "boolean", "default": true },
+        "icon": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "edgeType": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "connector": { "enum": ["straight", "flowchart", "bezier", "state-machine"], "default": "flowchart" },
+        "style": { "oneOf": [{ "$ref": "#/$defs/edgeStyle" }, { "type": "null" }] },
+        "overlays": { "type": "array", "items": { "$ref": "#/$defs/overlay" } },
+        "animation": { "type": ["boolean", "object", "null"] },
+        "detachable": { "type": ["boolean", "null"] },
+        "reconnectable": { "type": ["boolean", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "viewport": {
+      "type": "object",
+      "properties": {
+        "x": { "type": "number", "default": 0 },
+        "y": { "type": "number", "default": 0 },
+        "zoom": { "type": "number", "exclusiveMinimum": 0, "default": 1 }
+      },
+      "additionalProperties": true
+    },
+    "diagramDocument": {
+      "type": "object",
+      "required": ["documentId", "nodes", "ports", "edges"],
+      "properties": {
+        "documentId": { "$ref": "#/$defs/identifier" },
+        "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+        "ports": { "type": "array", "items": { "$ref": "#/$defs/port" } },
+        "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/group" } },
+        "edgeTypes": { "type": "array", "items": { "$ref": "#/$defs/edgeType" } },
+        "selection": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "viewport": { "$ref": "#/$defs/viewport" }
+      },
+      "additionalProperties": true
+    },
+    "removeValue": {
+      "type": "object",
+      "required": ["id"],
+      "properties": { "id": { "$ref": "#/$defs/identifier" } },
+      "additionalProperties": false
+    },
+    "operation": {
+      "oneOf": [
+        { "type": "object", "required": ["type", "value"], "properties": { "type": { "const": "node.upsert" }, "value": { "$ref": "#/$defs/node" }, "id": { "type": ["string", "null"] } }, "additionalProperties": false },
+        { "type": "object", "required": ["type", "value"], "properties": { "type": { "const": "port.upsert" }, "value": { "$ref": "#/$defs/port" }, "id": { "type": ["string", "null"] } }, "additionalProperties": false },
+        { "type": "object", "required": ["type", "value"], "properties": { "type": { "const": "edge.upsert" }, "value": { "$ref": "#/$defs/edge" }, "id": { "type": ["string", "null"] } }, "additionalProperties": false },
+        { "type": "object", "required": ["type", "value"], "properties": { "type": { "const": "group.upsert" }, "value": { "$ref": "#/$defs/group" }, "id": { "type": ["string", "null"] } }, "additionalProperties": false },
+        { "type": "object", "required": ["type", "value"], "properties": { "type": { "const": "edgeType.upsert" }, "value": { "$ref": "#/$defs/edgeType" }, "id": { "type": ["string", "null"] } }, "additionalProperties": false },
+        { "type": "object", "required": ["type", "value"], "properties": { "type": { "enum": ["node.remove", "port.remove", "edge.remove", "group.remove", "edgeType.remove"] }, "value": { "$ref": "#/$defs/removeValue" }, "id": { "type": ["string", "null"] } }, "additionalProperties": false },
+        { "type": "object", "required": ["type", "value"], "properties": { "type": { "const": "group.assignNode" }, "value": { "type": "object", "required": ["nodeId", "groupId"], "properties": { "nodeId": { "$ref": "#/$defs/identifier" }, "groupId": { "type": ["string", "null"] } }, "additionalProperties": false } }, "additionalProperties": false },
+        { "type": "object", "required": ["type", "value"], "properties": { "type": { "const": "group.assignGroup" }, "value": { "type": "object", "required": ["groupId", "parentGroupId"], "properties": { "groupId": { "$ref": "#/$defs/identifier" }, "parentGroupId": { "type": ["string", "null"] } }, "additionalProperties": false } }, "additionalProperties": false },
+        { "type": "object", "required": ["type", "value"], "properties": { "type": { "const": "selection.replace" }, "value": { "type": "object", "required": ["ids"], "properties": { "ids": { "type": "array", "items": { "type": "string" }, "uniqueItems": true } }, "additionalProperties": false } }, "additionalProperties": false },
+        { "type": "object", "required": ["type", "value"], "properties": { "type": { "const": "viewport.set" }, "value": { "$ref": "#/$defs/viewport" } }, "additionalProperties": false }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "type": "edge.upsert",
+      "value": {
+        "id": "customer-orders",
+        "sourcePortId": "customer-out",
+        "targetPortId": "orders-in",
+        "connector": "flowchart",
+        "overlays": [
+          { "type": "erd-one", "location": 0 },
+          { "type": "erd-zero-many", "location": 1 },
+          { "type": "label", "label": "places", "location": 0.5 }
+        ]
+      }
+    }
+  ]
+}

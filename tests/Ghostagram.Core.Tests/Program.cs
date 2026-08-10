@@ -17,6 +17,8 @@ Assert(operation.Type == "node.upsert", "Node upsert type is stable.");
 Assert(operation.Value.GetProperty("label").GetString() == "Start", "Operation payload uses web JSON names.");
 var stoppedEdge = DiagramOperations.Upsert(new DiagramEdge("edge", "start-out", "review-in", Animation: false));
 Assert(stoppedEdge.Value.GetProperty("animation").ValueKind == System.Text.Json.JsonValueKind.False, "An explicit false animation value survives C# operation serialization.");
+var clearedEdgeLabel = DiagramOperations.Upsert(new DiagramEdge("edge", "start-out", "review-in", Label: string.Empty));
+Assert(clearedEdgeLabel.Value.GetProperty("label").GetString() == string.Empty, "An explicit empty edge label survives C# operation serialization and suppresses inherited text.");
 Assert(DiagramOperations.Fit().Type == "viewport.fit", "Viewport factory is available.");
 var groups = new[]
 {
