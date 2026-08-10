@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Collections.ObjectModel;
 using System.Text.Json;
 using Ghostagram.Core;
 
@@ -20,7 +21,16 @@ public sealed record NodePropertyDefinition(
     bool Connectable = false,
     JsonElement? DefaultValue = null,
     IReadOnlyList<string>? Options = null,
-    JsonElement? Metadata = null);
+    JsonElement? Metadata = null,
+    string? SectionId = null,
+    DiagramPropertyEditor? Editor = null);
+
+public sealed record NodeSectionDefinition(
+    string Id,
+    string Title,
+    string? ParentSectionId = null,
+    int Order = 0,
+    bool Collapsible = true);
 
 public sealed record NodePortDefinition(
     string Id,
@@ -40,13 +50,15 @@ public sealed class NodeTypeDescriptor
         string displayName,
         string paletteGroup,
         string? icon = null,
-        double width = 220,
+        double width = 208,
         double height = 112,
         IEnumerable<NodePropertyDefinition>? properties = null,
         IEnumerable<NodePortDefinition>? ports = null,
         IReadOnlyDictionary<string, JsonElement>? metadata = null,
         DiagramNodeStyle? style = null,
-        bool isLoopController = false)
+        bool isLoopController = false,
+        IEnumerable<NodeSectionDefinition>? sections = null,
+        DiagramNodePresentation? presentation = null)
     {
         if (string.IsNullOrWhiteSpace(typeId)) throw new ArgumentException("A node type identifier is required.", nameof(typeId));
         if (version < 1) throw new ArgumentOutOfRangeException(nameof(version), "A node type version must be positive.");
@@ -66,15 +78,16 @@ public sealed class NodeTypeDescriptor
         IsLoopController = isLoopController;
         Properties = Array.AsReadOnly((properties ?? []).Select(CloneProperty).ToArray());
         Ports = Array.AsReadOnly((ports ?? []).Select(port => port with { }).ToArray());
-        var minimumHeight = 48 + Properties.Count(property => property.Mode != DiagramPropertyModes.Hidden) * 21;
-        if (height < minimumHeight)
-            throw new ArgumentOutOfRangeException(nameof(height), $"Node height must be at least {minimumHeight}px for its visible property rows.");
+        Sections = Array.AsReadOnly((sections ?? []).Select(section => section with { }).ToArray());
+        Presentation = ClonePresentation(presentation, Sections.Count > 0 ? height : null);
         Metadata = metadata is null
             ? FrozenDictionary<string, JsonElement>.Empty
             : metadata.ToFrozenDictionary(pair => pair.Key, pair => pair.Value.Clone(), StringComparer.Ordinal);
 
         EnsureUnique(Properties.Select(property => property.Id), "property");
         EnsureUnique(Ports.Select(port => port.Id), "port");
+        EnsureUnique(Sections.Select(section => section.Id), "section");
+        ValidateSections(Sections);
         foreach (var property in Properties)
         {
             if (string.IsNullOrWhiteSpace(property.Id) || string.IsNullOrWhiteSpace(property.Name) || string.IsNullOrWhiteSpace(property.Type))
@@ -89,7 +102,14 @@ public sealed class NodeTypeDescriptor
                 throw new ArgumentException($"Enum property '{property.Id}' has duplicate options.", nameof(properties));
             if (!PropertyValueRules.IsCompatible(property.Type, property.DefaultValue, property.Options, out var reason))
                 throw new ArgumentException($"Default for property '{property.Id}' is invalid. {reason}", nameof(properties));
+            if (property.SectionId is not null && Sections.All(section => section.Id != property.SectionId))
+                throw new ArgumentException($"Property '{property.Id}' references unknown section '{property.SectionId}'.", nameof(properties));
+            ValidateEditor(property);
         }
+        var minimumHeight = MinimumExpandedHeight(Properties, Sections);
+        var expandedHeight = Presentation?.ExpandedHeight ?? height;
+        if (expandedHeight < minimumHeight)
+            throw new ArgumentOutOfRangeException(nameof(height), $"Node height must be at least {minimumHeight}px for its visible property rows.");
         foreach (var port in Ports)
         {
             if (string.IsNullOrWhiteSpace(port.Id) || string.IsNullOrWhiteSpace(port.Scope))
@@ -108,6 +128,7 @@ public sealed class NodeTypeDescriptor
         var nonConnectablePort = Ports.FirstOrDefault(port => port.PropertyId is not null && !Properties.Single(property => property.Id == port.PropertyId).Connectable);
         if (nonConnectablePort is not null)
             throw new ArgumentException($"Port '{nonConnectablePort.Id}' references non-connectable property '{nonConnectablePort.PropertyId}'.", nameof(ports));
+        ValidatePresentation(Presentation, Sections);
     }
 
     public string TypeId { get; }
@@ -121,6 +142,8 @@ public sealed class NodeTypeDescriptor
     public bool IsLoopController { get; }
     public IReadOnlyList<NodePropertyDefinition> Properties { get; }
     public IReadOnlyList<NodePortDefinition> Ports { get; }
+    public IReadOnlyList<NodeSectionDefinition> Sections { get; }
+    public DiagramNodePresentation? Presentation { get; }
     public IReadOnlyDictionary<string, JsonElement> Metadata { get; }
     public NodeTypeKey Key => new(TypeId, Version);
 
@@ -134,8 +157,135 @@ public sealed class NodeTypeDescriptor
     {
         DefaultValue = property.DefaultValue?.Clone(),
         Metadata = property.Metadata?.Clone(),
-        Options = property.Options is null ? null : Array.AsReadOnly(property.Options.ToArray())
+        Options = property.Options is null ? null : Array.AsReadOnly(property.Options.ToArray()),
+        Editor = CloneEditor(property.Editor)
     };
+
+    private static DiagramNodePresentation? ClonePresentation(DiagramNodePresentation? presentation, double? defaultExpandedHeight)
+    {
+        if (presentation is null && defaultExpandedHeight is null) return null;
+        presentation ??= new();
+        return presentation with
+        {
+            ExpandedHeight = presentation.ExpandedHeight ?? defaultExpandedHeight,
+            CollapsedSectionIds = presentation.CollapsedSectionIds is null
+                ? Array.Empty<string>()
+                : Array.AsReadOnly(presentation.CollapsedSectionIds.ToArray()),
+            ExtensionData = CloneExtensionData(presentation.ExtensionData)
+        };
+    }
+
+    private static double MinimumExpandedHeight(
+        IReadOnlyList<NodePropertyDefinition> properties,
+        IReadOnlyList<NodeSectionDefinition> sections)
+    {
+        var visible = properties.Where(property => property.Mode != DiagramPropertyModes.Hidden).ToArray();
+        if (visible.Length == 0 && sections.Count == 0) return 30;
+        var rowHeight = (NodePropertyDefinition property) =>
+        {
+            var kind = property.Editor?.Kind is { } explicitKind and not DiagramPropertyEditorKinds.Auto
+                ? explicitKind
+                : property.Type switch
+                {
+                    DiagramPropertyTypes.Boolean => DiagramPropertyEditorKinds.Toggle,
+                    DiagramPropertyTypes.Integer or DiagramPropertyTypes.Decimal => DiagramPropertyEditorKinds.Number,
+                    DiagramPropertyTypes.Date => DiagramPropertyEditorKinds.Date,
+                    DiagramPropertyTypes.DateTime => DiagramPropertyEditorKinds.DateTime,
+                    DiagramPropertyTypes.Enum => DiagramPropertyEditorKinds.Select,
+                    DiagramPropertyTypes.Json => DiagramPropertyEditorKinds.Json,
+                    _ => DiagramPropertyEditorKinds.Text
+                };
+            return kind is DiagramPropertyEditorKinds.Multiline or DiagramPropertyEditorKinds.Json ? 48d
+                : kind == DiagramPropertyEditorKinds.Range ? 28d
+                : 20d;
+        };
+        return 30 + sections.Count * 23 + visible.Sum(property => rowHeight(property) + 1) + 7;
+    }
+
+    private static DiagramPropertyEditor? CloneEditor(DiagramPropertyEditor? editor) => editor is null
+        ? null
+        : editor with { ExtensionData = CloneExtensionData(editor.ExtensionData) };
+
+    private static IDictionary<string, JsonElement>? CloneExtensionData(IDictionary<string, JsonElement>? extensionData) => extensionData is null
+        ? null
+        : new ReadOnlyDictionary<string, JsonElement>(extensionData.ToDictionary(
+            pair => pair.Key,
+            pair => pair.Value.Clone(),
+            StringComparer.Ordinal));
+
+    private static void ValidateSections(IReadOnlyList<NodeSectionDefinition> sections)
+    {
+        const int maximumDepth = 8;
+        var byId = sections.ToDictionary(section => section.Id, StringComparer.Ordinal);
+        foreach (var section in sections)
+        {
+            if (string.IsNullOrWhiteSpace(section.Id) || string.IsNullOrWhiteSpace(section.Title))
+                throw new ArgumentException("Node section identifiers and titles are required.", nameof(sections));
+            if (section.Order < 0)
+                throw new ArgumentException($"Section '{section.Id}' has a negative order.", nameof(sections));
+            if (section.ParentSectionId is not null && !byId.ContainsKey(section.ParentSectionId))
+                throw new ArgumentException($"Section '{section.Id}' references unknown parent section '{section.ParentSectionId}'.", nameof(sections));
+
+            var visited = new HashSet<string>(StringComparer.Ordinal) { section.Id };
+            var current = section;
+            var depth = 1;
+            while (current.ParentSectionId is { } parentId)
+            {
+                if (!visited.Add(parentId))
+                    throw new ArgumentException($"Section '{section.Id}' participates in a parent cycle.", nameof(sections));
+                depth++;
+                if (depth > maximumDepth)
+                    throw new ArgumentException($"Section '{section.Id}' exceeds the maximum nesting depth of {maximumDepth}.", nameof(sections));
+                current = byId[parentId];
+            }
+        }
+    }
+
+    private static void ValidateEditor(NodePropertyDefinition property)
+    {
+        if (property.Editor is not { } editor) return;
+        var compatible = editor.Kind switch
+        {
+            DiagramPropertyEditorKinds.Auto => true,
+            DiagramPropertyEditorKinds.Text or DiagramPropertyEditorKinds.Multiline or DiagramPropertyEditorKinds.Color => property.Type == DiagramPropertyTypes.String,
+            DiagramPropertyEditorKinds.Toggle => property.Type == DiagramPropertyTypes.Boolean,
+            DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range => property.Type is DiagramPropertyTypes.Integer or DiagramPropertyTypes.Decimal,
+            DiagramPropertyEditorKinds.Date => property.Type == DiagramPropertyTypes.Date,
+            DiagramPropertyEditorKinds.DateTime => property.Type == DiagramPropertyTypes.DateTime,
+            DiagramPropertyEditorKinds.Select => property.Type == DiagramPropertyTypes.Enum,
+            DiagramPropertyEditorKinds.Json => property.Type == DiagramPropertyTypes.Json,
+            _ => false
+        };
+        if (!compatible)
+            throw new ArgumentException($"Editor '{editor.Kind}' is incompatible with property '{property.Id}' of type '{property.Type}'.", "properties");
+        if (editor.Minimum is { } minimum && editor.Maximum is { } maximum && minimum > maximum)
+            throw new ArgumentException($"Editor for property '{property.Id}' has a minimum greater than its maximum.", "properties");
+        if (editor.Step is <= 0)
+            throw new ArgumentException($"Editor for property '{property.Id}' must have a positive step.", "properties");
+        if (editor.Kind is not (DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range) &&
+            (editor.Minimum is not null || editor.Maximum is not null || editor.Step is not null))
+            throw new ArgumentException($"Editor '{editor.Kind}' for property '{property.Id}' cannot define numeric bounds.", "properties");
+    }
+
+    private static void ValidatePresentation(DiagramNodePresentation? presentation, IReadOnlyList<NodeSectionDefinition> sections)
+    {
+        if (presentation is null) return;
+        if (presentation.DisplayMode is not (DiagramNodeDisplayModes.Expanded or DiagramNodeDisplayModes.Compact or DiagramNodeDisplayModes.Collapsed))
+            throw new ArgumentException($"Node presentation has invalid display mode '{presentation.DisplayMode}'.", "presentation");
+        if (presentation.ExpandedHeight is not { } expandedHeight || !double.IsFinite(expandedHeight) || expandedHeight <= 0)
+            throw new ArgumentException("Node presentation expanded height must be finite and positive.", "presentation");
+        var collapsedIds = presentation.CollapsedSectionIds ?? [];
+        var duplicate = collapsedIds.GroupBy(id => id, StringComparer.Ordinal).FirstOrDefault(group => group.Count() > 1);
+        if (duplicate is not null)
+            throw new ArgumentException($"Node presentation contains duplicate collapsed section id '{duplicate.Key}'.", "presentation");
+        foreach (var id in collapsedIds)
+        {
+            var section = sections.FirstOrDefault(item => item.Id == id)
+                ?? throw new ArgumentException($"Node presentation references unknown collapsed section '{id}'.", "presentation");
+            if (!section.Collapsible)
+                throw new ArgumentException($"Node presentation collapses non-collapsible section '{id}'.", "presentation");
+        }
+    }
 }
 
 public sealed class NodeSetDescriptor

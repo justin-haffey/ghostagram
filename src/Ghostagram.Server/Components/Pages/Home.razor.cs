@@ -17,6 +17,13 @@ public partial class Home : IAsyncDisposable
     private const string DefaultPaletteCatalogId = "laboratory-palette";
     private const int GridSize = 16;
     private const int MaxDesignedProperties = 17;
+    // Keep these layout constants aligned with Ghostagram's nodeLayoutProjection.
+    private const double NodeHeaderHeight = 30;
+    private const double NodePropertyHeight = 20;
+    private const double NodeCompactPropertyHeight = 18;
+    private const double NodePropertyGap = 1;
+    private const double NodeSectionHeaderHeight = 22;
+    private const double NodeBodyBottomPadding = 8;
     private static readonly EdgeMarkerChoice[] EdgeMarkerChoices =
     [
         new("none", "None"),
@@ -51,6 +58,7 @@ public partial class Home : IAsyncDisposable
     private readonly List<NodeTemplate> _templates = CreateBuiltInTemplates();
     private readonly List<DraftPort> _draftPorts = [];
     private readonly List<DraftProperty> _draftProperties = [];
+    private readonly List<DraftSection> _draftSections = [];
     private readonly HashSet<string> _expandedCategories = new(StringComparer.Ordinal) { "Workflow" };
     private readonly Stack<DiagramDocument> _undo = new();
     private readonly Stack<DiagramDocument> _redo = new();
@@ -106,8 +114,11 @@ public partial class Home : IAsyncDisposable
     private string? _propertiesNodeId;
     private long _propertiesEditorBaseRevision;
     private string? _propertiesEditorError;
+    private string? _designerError;
     private readonly List<PropertyEditorDraft> _propertyEditorDrafts = [];
     private readonly List<PortEditorDraft> _portEditorDrafts = [];
+    private readonly List<SectionEditorDraft> _sectionEditorDrafts = [];
+    private PresentationDraft _presentationDraft = new();
     private long _revision;
     private int _templateSequence;
     private int _portSequence;
@@ -380,7 +391,8 @@ public partial class Home : IAsyncDisposable
                     Height = template.Height,
                     IsGroup = template.IsGroup,
                     Icon = template.Icon,
-                    Style = new(template.Outline, template.Background, template.TextColor, template.TextAlign)
+                    Style = new(template.Outline, template.Background, template.TextColor, template.TextAlign),
+                    Metadata = WithTemplateMetadata(template, persisted.Metadata)
                 };
             }
 
@@ -397,8 +409,8 @@ public partial class Home : IAsyncDisposable
                     port.Id, port.Side, port.Direction, port.Side, null, null, index, null, empty)).ToArray(),
                 template.Properties.Select((property, index) => new PalettePropertyDefinitionSnapshot(
                     property.Id, property.Name, property.Type, property.Value?.Clone(), property.Mode, property.Label,
-                    property.Connectable, property.Options.ToArray(), property.Direction, index, empty)).ToArray(),
-                empty);
+                    property.Connectable, property.Options.ToArray(), property.Direction, index, PropertyMetadata(property))).ToArray(),
+                WithTemplateMetadata(template, empty));
         }).ToArray();
         var placements = _paletteCategories.SelectMany(category => _templates
             .Where(template => string.Equals(template.Category, category.Name, StringComparison.Ordinal))
@@ -458,7 +470,11 @@ public partial class Home : IAsyncDisposable
                     property.Label,
                     property.Connectable,
                     property.Options.ToArray(),
-                    property.Direction)).ToArray(),
+                    property.Direction,
+                    ReadPropertySectionId(property.Metadata),
+                    ReadPropertyEditor(property.Metadata))).ToArray(),
+                ReadTemplateSections(node.Metadata),
+                ReadTemplatePresentation(node.Metadata),
                 PersistedDefinition: node));
         }
 
@@ -521,6 +537,46 @@ public partial class Home : IAsyncDisposable
         metadata is null
             ? ImmutableDictionary<string, JsonElement>.Empty
             : metadata.ToImmutableDictionary(pair => pair.Key, pair => pair.Value.Clone(), StringComparer.Ordinal);
+
+    private static IReadOnlyDictionary<string, JsonElement> WithTemplateMetadata(NodeTemplate template, IReadOnlyDictionary<string, JsonElement>? metadata)
+    {
+        var result = CloneMetadata(metadata).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        if (template.Sections.Count == 0) result.Remove("ghostagram.sections");
+        else result["ghostagram.sections"] = JsonSerializer.SerializeToElement(template.Sections, JsonOptions);
+        if (template.Presentation is null) result.Remove("ghostagram.presentation");
+        else result["ghostagram.presentation"] = JsonSerializer.SerializeToElement(template.Presentation, JsonOptions);
+        return result;
+    }
+
+    private static IReadOnlyDictionary<string, JsonElement> PropertyMetadata(PropertyTemplate property)
+    {
+        var result = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        if (property.SectionId is not null) result["ghostagram.sectionId"] = JsonSerializer.SerializeToElement(property.SectionId);
+        if (property.Editor is not null) result["ghostagram.editor"] = JsonSerializer.SerializeToElement(property.Editor, JsonOptions);
+        return result;
+    }
+
+    private static IReadOnlyList<DiagramNodeSection> ReadTemplateSections(IReadOnlyDictionary<string, JsonElement> metadata) =>
+        metadata.TryGetValue("ghostagram.sections", out var value)
+            ? JsonSerializer.Deserialize<IReadOnlyList<DiagramNodeSection>>(value.GetRawText(), JsonOptions) ?? []
+            : [];
+
+    private static DiagramNodePresentation? ReadTemplatePresentation(IReadOnlyDictionary<string, JsonElement> metadata) =>
+        metadata.TryGetValue("ghostagram.presentation", out var value)
+            ? JsonSerializer.Deserialize<DiagramNodePresentation>(value.GetRawText(), JsonOptions)
+            : null;
+
+    private static string? ReadPropertySectionId(IReadOnlyDictionary<string, JsonElement> metadata) =>
+        metadata.TryGetValue("ghostagram.sectionId", out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+    private static DiagramPropertyEditor? ReadPropertyEditor(IReadOnlyDictionary<string, JsonElement> metadata) =>
+        metadata.TryGetValue("ghostagram.editor", out var value)
+            ? JsonSerializer.Deserialize<DiagramPropertyEditor>(value.GetRawText(), JsonOptions)
+            : null;
+
+    private static DiagramNodePresentation? ClonePresentation(DiagramNodePresentation? presentation) => presentation is null
+        ? null
+        : presentation with { CollapsedSectionIds = presentation.CollapsedSectionIds?.ToArray() };
 
     private void UpdateTemplateSequence()
     {
@@ -950,8 +1006,27 @@ public partial class Home : IAsyncDisposable
         _propertyEditorDrafts.AddRange(node.Properties.OrderBy(property => PropertyOrder(node, property.Id)).Select(property => new PropertyEditorDraft(property.Id, property)
         {
             Name = property.Name, Type = property.Type, Mode = property.Mode, Value = PropertyValueText(property.Value),
-            Options = string.Join(", ", property.Options ?? []), Connection = PropertyConnection(node, property.Id)
+            Options = string.Join(", ", property.Options ?? []), Connection = PropertyConnection(node, property.Id),
+            SectionId = property.SectionId, EditorKind = property.Editor?.Kind ?? DiagramPropertyEditorKinds.Auto,
+            Placeholder = property.Editor?.Placeholder ?? string.Empty,
+            Minimum = property.Editor?.Minimum?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            Maximum = property.Editor?.Maximum?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            Step = property.Editor?.Step?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty
         }));
+        _sectionEditorDrafts.Clear();
+        _sectionEditorDrafts.AddRange((node.Sections ?? []).OrderBy(section => section.Order).Select(section => new SectionEditorDraft(section.Id, section)
+        {
+            Title = section.Title,
+            ParentSectionId = section.ParentSectionId,
+            Collapsible = section.Collapsible,
+            Collapsed = node.Presentation?.CollapsedSectionIds?.Contains(section.Id, StringComparer.Ordinal) == true
+        }));
+        _presentationDraft = new PresentationDraft
+        {
+            Enabled = node.Presentation is not null,
+            DisplayMode = node.Presentation?.DisplayMode ?? DiagramNodeDisplayModes.Expanded,
+            ExpandedHeight = node.Presentation?.ExpandedHeight ?? node.Height
+        };
         _portEditorDrafts.Clear();
         _portEditorDrafts.AddRange(_document.Ports.Where(port => port.NodeId == node.Id && port.PropertyId is null).OrderBy(port => port.Order).Select(port => new PortEditorDraft(port.Id, port)
         {
@@ -964,6 +1039,21 @@ public partial class Home : IAsyncDisposable
     {
         if (IsRegisteredPropertiesLocked || _propertyEditorDrafts.Count >= MaxDesignedProperties) return;
         _propertyEditorDrafts.Add(new PropertyEditorDraft(NextPropertiesEditorId("property")) { Name = "Property" });
+    }
+
+    private void AddEditorSection()
+    {
+        if (IsRegisteredPropertiesLocked) return;
+        var id = NextPropertiesEditorId("section");
+        _sectionEditorDrafts.Add(new SectionEditorDraft(id) { Title = "Section" });
+        _presentationDraft.Enabled = true;
+    }
+    private void RemoveEditorSection(string id)
+    {
+        if (IsRegisteredPropertiesLocked) return;
+        _sectionEditorDrafts.RemoveAll(section => section.Id == id);
+        foreach (var property in _propertyEditorDrafts.Where(property => property.SectionId == id)) property.SectionId = null;
+        foreach (var section in _sectionEditorDrafts.Where(section => section.ParentSectionId == id)) section.ParentSectionId = null;
     }
     private void RemoveEditorProperty(string id) => _propertyEditorDrafts.RemoveAll(property => property.Id == id);
     private void MoveEditorProperty(string id, int delta)
@@ -1008,7 +1098,7 @@ public partial class Home : IAsyncDisposable
             desiredProperties.Add(locked && original is not null
                 ? original with { Value = validation.Value }
                 : original is null
-                    ? new DiagramNodeProperty(draft.Id, draft.Name.Trim(), draft.Type.Trim(), validation.Value, draft.Mode, draft.Name.Trim(), Connectable: draft.Connection != "none", Options: validation.Options)
+                    ? new DiagramNodeProperty(draft.Id, draft.Name.Trim(), draft.Type.Trim(), validation.Value, draft.Mode, draft.Name.Trim(), Connectable: draft.Connection != "none", Options: validation.Options, SectionId: draft.SectionId, Editor: CreateEditor(draft))
                     : original with
                     {
                         Name = draft.Name.Trim(),
@@ -1017,21 +1107,26 @@ public partial class Home : IAsyncDisposable
                         Value = validation.Value,
                         Mode = draft.Mode,
                         Connectable = draft.Connection != "none",
-                        Options = validation.Options
+                        Options = validation.Options,
+                        SectionId = draft.SectionId,
+                        Editor = CreateEditor(draft)
                     });
         }
         if (locked && (!originalPropertyIds.SetEquals(desiredProperties.Select(property => property.Id)))) return PropertiesEditPlan.Invalid("Registered node schema changes are not allowed.");
+        var desiredSections = locked ? node.Sections ?? [] : BuildDesiredSections();
+        var sectionError = ValidateSections(desiredSections, desiredProperties);
+        if (sectionError is not null) return PropertiesEditPlan.Invalid(sectionError);
+        var presentation = BuildPresentation(node, desiredProperties, desiredSections);
+        if (presentation.Error is not null) return PropertiesEditPlan.Invalid(presentation.Error);
         var currentPorts = _document.Ports.Where(port => port.NodeId == node.Id).ToArray();
         var desiredPorts = locked ? currentPorts : BuildDesiredPorts(node, desiredProperties);
         var desiredPortIds = desiredPorts.Select(port => port.Id).ToHashSet(StringComparer.Ordinal);
         var removedPortIds = currentPorts.Where(port => !desiredPortIds.Contains(port.Id)).Select(port => port.Id).ToHashSet(StringComparer.Ordinal);
         var incompatibleEdges = _document.Edges.Where(edge => !EdgeRolesRemainCompatible(edge, desiredPorts)).Select(edge => edge.Id);
         var removedEdges = _document.Edges.Where(edge => removedPortIds.Contains(edge.SourcePortId) || removedPortIds.Contains(edge.TargetPortId)).Select(edge => edge.Id).Concat(incompatibleEdges).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
-        var visibleRows = desiredProperties.Count(property => property.Mode != DiagramPropertyModes.Hidden);
-        var contentHeight = visibleRows == 0 ? 0 : 37 + visibleRows * 21;
-        var height = Math.Max(node.Height, contentHeight);
-        var updatedNode = node with { Properties = desiredProperties };
-        if (!locked) updatedNode = updatedNode with { Height = height };
+        var height = presentation.Height;
+        var updatedNode = node with { Properties = desiredProperties, Sections = desiredSections.Count == 0 ? null : desiredSections, Presentation = presentation.Value };
+        updatedNode = updatedNode with { Height = height };
         var operations = new List<GhostagramOperation>();
         operations.AddRange(removedEdges.Select(DiagramOperations.RemoveEdge));
         operations.AddRange(removedPortIds.Order(StringComparer.Ordinal).Select(DiagramOperations.RemovePort));
@@ -1102,6 +1197,8 @@ public partial class Home : IAsyncDisposable
             return new(draft.Original.Value?.Clone(), draft.Original.Options ?? [], null);
         }
         if (draft.Mode is not (DiagramPropertyModes.Display or DiagramPropertyModes.Edit or DiagramPropertyModes.DisplayAndEdit or DiagramPropertyModes.Hidden)) return PropertyValidation.Invalid($"{draft.Name}: mode is not supported.");
+        var editorError = ValidateEditor(draft);
+        if (editorError is not null) return PropertyValidation.Invalid($"{draft.Name}: {editorError}");
         var options = draft.Type == DiagramPropertyTypes.Enum ? draft.Options.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal).ToArray() : [];
         if (draft.Type == DiagramPropertyTypes.Enum && options.Length == 0) return PropertyValidation.Invalid($"{draft.Name}: an enum needs at least one choice.");
         if (string.IsNullOrWhiteSpace(draft.Value)) return draft.Original?.Required == true ? PropertyValidation.Invalid($"{draft.Name} is required.") : new(null, options, null);
@@ -1116,6 +1213,193 @@ public partial class Home : IAsyncDisposable
         if (draft.Type == DiagramPropertyTypes.Json) { try { return new(JsonDocument.Parse(raw).RootElement.Clone(), options, null); } catch (JsonException) { return PropertyValidation.Invalid($"{draft.Name}: expected valid JSON."); } }
         if (draft.Type == DiagramPropertyTypes.Enum && !options.Contains(raw, StringComparer.Ordinal)) return PropertyValidation.Invalid($"{draft.Name}: value must be one of its choices.");
         return new(JsonSerializer.SerializeToElement(raw), options, null);
+    }
+
+    private static DiagramPropertyEditor? CreateEditor(PropertyEditorDraft draft)
+    {
+        if (draft.EditorKind == DiagramPropertyEditorKinds.Auto && string.IsNullOrWhiteSpace(draft.Placeholder) && string.IsNullOrWhiteSpace(draft.Minimum) && string.IsNullOrWhiteSpace(draft.Maximum) && string.IsNullOrWhiteSpace(draft.Step)) return null;
+        return new DiagramPropertyEditor(
+            draft.EditorKind,
+            string.IsNullOrWhiteSpace(draft.Placeholder) ? null : draft.Placeholder.Trim(),
+            ParseOptionalDecimal(draft.Minimum),
+            ParseOptionalDecimal(draft.Maximum),
+            ParseOptionalDecimal(draft.Step));
+    }
+
+    private static string? ValidateEditor(PropertyEditorDraft draft)
+    {
+        var compatible = draft.EditorKind switch
+        {
+            DiagramPropertyEditorKinds.Auto => true,
+            DiagramPropertyEditorKinds.Text or DiagramPropertyEditorKinds.Multiline or DiagramPropertyEditorKinds.Color => draft.Type == DiagramPropertyTypes.String,
+            DiagramPropertyEditorKinds.Toggle => draft.Type == DiagramPropertyTypes.Boolean,
+            DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range => draft.Type is DiagramPropertyTypes.Integer or DiagramPropertyTypes.Decimal,
+            DiagramPropertyEditorKinds.Date => draft.Type == DiagramPropertyTypes.Date,
+            DiagramPropertyEditorKinds.DateTime => draft.Type == DiagramPropertyTypes.DateTime,
+            DiagramPropertyEditorKinds.Select => draft.Type == DiagramPropertyTypes.Enum,
+            DiagramPropertyEditorKinds.Json => draft.Type == DiagramPropertyTypes.Json,
+            _ => false
+        };
+        if (!compatible) return "editor is not compatible with the selected type";
+        if (!string.IsNullOrWhiteSpace(draft.Minimum) && ParseOptionalDecimal(draft.Minimum) is null || !string.IsNullOrWhiteSpace(draft.Maximum) && ParseOptionalDecimal(draft.Maximum) is null || !string.IsNullOrWhiteSpace(draft.Step) && ParseOptionalDecimal(draft.Step) is null)
+            return "numeric editor settings must be decimal numbers";
+        var minimum = ParseOptionalDecimal(draft.Minimum);
+        var maximum = ParseOptionalDecimal(draft.Maximum);
+        var step = ParseOptionalDecimal(draft.Step);
+        if (minimum is not null && maximum is not null && minimum > maximum) return "minimum cannot exceed maximum";
+        if (step is <= 0) return "step must be positive";
+        if ((minimum is not null || maximum is not null || step is not null) && draft.EditorKind is not (DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range)) return "bounds are supported only by number and range editors";
+        return null;
+    }
+
+    private static decimal? ParseOptionalDecimal(string? value) => decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var result) ? result : null;
+
+    private IReadOnlyList<DiagramNodeSection> BuildDesiredSections() => _sectionEditorDrafts.Select((section, index) => new DiagramNodeSection(section.Id, section.Title.Trim(), section.ParentSectionId, index, section.Collapsible)).ToArray();
+
+    private static string? ValidateSections(IReadOnlyList<DiagramNodeSection> sections, IReadOnlyList<DiagramNodeProperty> properties)
+    {
+        if (sections.Any(section => string.IsNullOrWhiteSpace(section.Id) || string.IsNullOrWhiteSpace(section.Title))) return "Every section needs a title.";
+        if (sections.GroupBy(section => section.Id, StringComparer.Ordinal).Any(group => group.Count() > 1)) return "Section IDs must be unique.";
+        var byId = sections.ToDictionary(section => section.Id, StringComparer.Ordinal);
+        foreach (var section in sections)
+        {
+            if (section.ParentSectionId is { } parent && (!byId.ContainsKey(parent) || parent == section.Id)) return $"{section.Title}: select a valid parent section.";
+            var seen = new HashSet<string>(StringComparer.Ordinal) { section.Id };
+            var parentId = section.ParentSectionId;
+            var depth = 0;
+            while (parentId is not null)
+            {
+                if (!seen.Add(parentId)) return $"{section.Title}: sections cannot contain a parent cycle.";
+                if (!byId.TryGetValue(parentId, out var parentSection)) return $"{section.Title}: select a valid parent section.";
+                parentId = parentSection.ParentSectionId;
+                if (++depth > 4) return $"{section.Title}: sections can be nested at most four levels.";
+            }
+        }
+        var ids = sections.Select(section => section.Id).ToHashSet(StringComparer.Ordinal);
+        var ungrouped = properties.FirstOrDefault(property => property.SectionId is not null && !ids.Contains(property.SectionId));
+        return ungrouped is null ? null : $"{ungrouped.Name}: select an existing section.";
+    }
+
+    private (DiagramNodePresentation? Value, double Height, string? Error) BuildPresentation(
+        DiagramNode node,
+        IReadOnlyList<DiagramNodeProperty> properties,
+        IReadOnlyList<DiagramNodeSection> sections)
+    {
+        if (!_presentationDraft.Enabled && sections.Count == 0)
+        {
+            var minimum = ProjectNodeMinimumHeight(properties, sections, DiagramNodeDisplayModes.Expanded, []);
+            return (null, GridCeilingDimension(Math.Max(node.Height, minimum), 32), null);
+        }
+
+        var collapsed = _sectionEditorDrafts.Where(section => section.Collapsed).Select(section => section.Id).ToArray();
+        return ResolvePresentationGeometry(
+            node,
+            properties,
+            sections,
+            _presentationDraft.DisplayMode,
+            collapsed,
+            _presentationDraft.ExpandedHeight,
+            allowRequestedExpandedHeight: true);
+    }
+
+    private static (DiagramNodePresentation? Value, double Height, string? Error) ResolvePresentationGeometry(
+        DiagramNode node,
+        IReadOnlyList<DiagramNodeProperty> properties,
+        IReadOnlyList<DiagramNodeSection> sections,
+        string displayMode,
+        IReadOnlyList<string>? collapsedSectionIds,
+        double? requestedExpandedHeight,
+        bool allowRequestedExpandedHeight)
+    {
+        if (displayMode is not (DiagramNodeDisplayModes.Expanded or DiagramNodeDisplayModes.Compact or DiagramNodeDisplayModes.Collapsed))
+            return (null, 0, "Choose a valid node display mode.");
+
+        var collapsed = collapsedSectionIds ?? [];
+        if (collapsed.Any(string.IsNullOrWhiteSpace) || collapsed.Distinct(StringComparer.Ordinal).Count() != collapsed.Count)
+            return (null, 0, "Collapsed section IDs must be unique and non-empty.");
+        var collapsible = sections.Where(section => section.Collapsible).Select(section => section.Id).ToHashSet(StringComparer.Ordinal);
+        if (collapsed.Any(id => !collapsible.Contains(id))) return (null, 0, "Only collapsible sections can be collapsed.");
+
+        if (requestedExpandedHeight is not null && (!double.IsFinite(requestedExpandedHeight.Value) || requestedExpandedHeight <= 0))
+            return (null, 0, "Expanded height must be a positive number.");
+        var collapsedIds = collapsed.Order(StringComparer.Ordinal).ToArray();
+        var expandedMinimum = GridCeilingDimension(ProjectNodeMinimumHeight(properties, sections, DiagramNodeDisplayModes.Expanded, collapsedIds), 32);
+        var authoritativeExpanded = AuthoritativeExpandedHeight(node, properties, sections, collapsedIds);
+        var expandedHeight = GridCeilingDimension(Math.Max(allowRequestedExpandedHeight && requestedExpandedHeight is { } requested ? requested : authoritativeExpanded, expandedMinimum), 32);
+        var minimum = GridCeilingDimension(ProjectNodeMinimumHeight(properties, sections, displayMode, collapsedIds), 32);
+        var height = displayMode switch
+        {
+            DiagramNodeDisplayModes.Expanded => Math.Max(expandedHeight, minimum),
+            DiagramNodeDisplayModes.Compact => minimum,
+            _ => GridCeilingDimension(NodeHeaderHeight, 32)
+        };
+        return (new DiagramNodePresentation(displayMode, expandedHeight, collapsedIds.Length == 0 ? null : collapsedIds), height, null);
+    }
+
+    private static double AuthoritativeExpandedHeight(
+        DiagramNode node,
+        IReadOnlyList<DiagramNodeProperty> properties,
+        IReadOnlyList<DiagramNodeSection> sections,
+        IReadOnlyList<string> collapsedSectionIds)
+    {
+        var stored = node.Presentation?.ExpandedHeight;
+        var current = node.Presentation?.DisplayMode == DiagramNodeDisplayModes.Expanded ? Math.Max(node.Height, stored ?? node.Height) : stored ?? node.Height;
+        var minimum = ProjectNodeMinimumHeight(properties, sections, DiagramNodeDisplayModes.Expanded, collapsedSectionIds);
+        return GridCeilingDimension(Math.Max(double.IsFinite(current) && current > 0 ? current : minimum, minimum), 32);
+    }
+
+    private static double ProjectNodeMinimumHeight(
+        IReadOnlyList<DiagramNodeProperty> properties,
+        IReadOnlyList<DiagramNodeSection> sections,
+        string displayMode,
+        IReadOnlyList<string> collapsedSectionIds)
+    {
+        if (displayMode == DiagramNodeDisplayModes.Collapsed) return NodeHeaderHeight;
+        var compact = displayMode == DiagramNodeDisplayModes.Compact;
+        var visible = properties.Where(property => property.Mode != DiagramPropertyModes.Hidden).ToArray();
+        var collapsed = collapsedSectionIds.ToHashSet(StringComparer.Ordinal);
+        var bySection = visible.Where(property => property.SectionId is not null).GroupBy(property => property.SectionId!, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+        var children = sections.OrderBy(section => section.Order).ThenBy(section => section.Id, StringComparer.Ordinal)
+            .GroupBy(section => section.ParentSectionId ?? string.Empty, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+        var cursor = NodeHeaderHeight;
+        void AddProperties(IEnumerable<DiagramNodeProperty> source)
+        {
+            foreach (var property in source)
+                cursor += ProjectPropertyHeight(property, compact) + NodePropertyGap;
+        }
+        void AddSection(DiagramNodeSection section)
+        {
+            cursor += NodeSectionHeaderHeight + NodePropertyGap;
+            if (collapsed.Contains(section.Id)) return;
+            if (bySection.TryGetValue(section.Id, out var sectionProperties)) AddProperties(sectionProperties);
+            if (children.TryGetValue(section.Id, out var childSections)) foreach (var child in childSections) AddSection(child);
+        }
+
+        AddProperties(visible.Where(property => property.SectionId is null));
+        if (children.TryGetValue(string.Empty, out var rootSections)) foreach (var section in rootSections) AddSection(section);
+        return visible.Length > 0 || sections.Count > 0
+            ? Math.Max(NodeHeaderHeight, cursor + NodeBodyBottomPadding - NodePropertyGap)
+            : NodeHeaderHeight;
+    }
+
+    private static double ProjectPropertyHeight(DiagramNodeProperty property, bool compact)
+    {
+        if (compact) return NodeCompactPropertyHeight;
+        var kind = property.Editor?.Kind is { } explicitKind and not DiagramPropertyEditorKinds.Auto
+            ? explicitKind
+            : property.Type switch
+            {
+                DiagramPropertyTypes.Boolean => DiagramPropertyEditorKinds.Toggle,
+                DiagramPropertyTypes.Integer or DiagramPropertyTypes.Decimal => DiagramPropertyEditorKinds.Number,
+                DiagramPropertyTypes.Date => DiagramPropertyEditorKinds.Date,
+                DiagramPropertyTypes.DateTime => DiagramPropertyEditorKinds.DateTime,
+                DiagramPropertyTypes.Enum => DiagramPropertyEditorKinds.Select,
+                DiagramPropertyTypes.Json => DiagramPropertyEditorKinds.Json,
+                _ => DiagramPropertyEditorKinds.Text
+            };
+        return kind is DiagramPropertyEditorKinds.Multiline or DiagramPropertyEditorKinds.Json ? 48 : kind == DiagramPropertyEditorKinds.Range ? 28 : NodePropertyHeight;
     }
     private static readonly HashSet<string> KnownPropertyTypes = [DiagramPropertyTypes.String, DiagramPropertyTypes.Boolean, DiagramPropertyTypes.Integer, DiagramPropertyTypes.Decimal, DiagramPropertyTypes.Date, DiagramPropertyTypes.DateTime, DiagramPropertyTypes.Enum, DiagramPropertyTypes.Json];
     private static bool IsCustomPropertyType(string type) => !KnownPropertyTypes.Contains(type);
@@ -1217,15 +1501,17 @@ public partial class Home : IAsyncDisposable
     {
         var template = _templates.SingleOrDefault(item => item.Id == templateId);
         if (template is null) return;
+        var templateWidth = GridFloorDimension(template.Width, template.IsGroup ? 80 : 48);
+        var templateHeight = GridCeilingDimension(template.Height, template.IsGroup ? 64 : 32);
 
         if (template.IsGroup)
         {
             var group = new DiagramGroup(
                 NextId("group"),
-                Snap(point.X - template.Width / 2),
-                Snap(point.Y - template.Height / 2),
-                template.Width,
-                template.Height,
+                Snap(point.X - templateWidth / 2),
+                Snap(point.Y - templateHeight / 2),
+                templateWidth,
+                templateHeight,
                 template.Label,
                 Icon: template.Icon);
             await SubmitOperationsAsync([DiagramOperations.Upsert(group)], $"Added {template.Label}");
@@ -1233,18 +1519,19 @@ public partial class Home : IAsyncDisposable
         else
         {
             var id = NextId("node");
-            var x = Snap(point.X - template.Width / 2);
-            var y = Snap(point.Y - template.Height / 2);
-            var groupId = DiagramGroupMembership.ResolveGroupId(_document.Groups, x, y, template.Width, template.Height);
+            var x = Snap(point.X - templateWidth / 2);
+            var y = Snap(point.Y - templateHeight / 2);
+            var groupId = DiagramGroupMembership.ResolveGroupId(_document.Groups, x, y, templateWidth, templateHeight);
             if (template.RegisteredTypeId is not null)
             {
                 var created = NodeFactory.Create(new(id, template.RegisteredTypeId, x, y, template.RegisteredTypeVersion, GroupId: groupId));
+                var createdNode = FitNodeToGrid(created.Node);
                 var styledPorts = created.Ports.Select(port => port with
                 {
                     Endpoint = new DiagramEndpoint("dot", 10, template.Outline, "#ffffff", 2)
                 });
                 await SubmitOperationsAsync(
-                    [DiagramOperations.Upsert(created.Node), .. styledPorts.Select(DiagramOperations.Upsert)],
+                    [DiagramOperations.Upsert(createdNode), .. styledPorts.Select(DiagramOperations.Upsert)],
                     $"Added {template.Label}");
             }
             else
@@ -1263,9 +1550,13 @@ public partial class Home : IAsyncDisposable
                         property.Label,
                         Connectable: property.Connectable,
                         Options: property.Options.ToArray(),
-                        Metadata: property.Metadata.Count == 0 ? null : JsonSerializer.SerializeToElement(property.Metadata, JsonOptions))).ToArray();
-                var node = new DiagramNode(id, x, y, template.Width, template.Height, template.Label, GroupId: groupId, Icon: template.Icon,
-                    Style: new DiagramNodeStyle(template.Background, template.Outline, template.TextColor, template.TextAlign), Properties: properties);
+                        Metadata: property.Metadata.Count == 0 ? null : JsonSerializer.SerializeToElement(property.Metadata, JsonOptions),
+                        SectionId: ReadPropertySectionId(property.Metadata),
+                        Editor: ReadPropertyEditor(property.Metadata))).ToArray();
+                var node = FitNodeToGrid(new DiagramNode(id, x, y, templateWidth, templateHeight, template.Label, GroupId: groupId, Icon: template.Icon,
+                    Style: new DiagramNodeStyle(template.Background, template.Outline, template.TextColor, template.TextAlign), Properties: properties,
+                    Sections: template.Sections.Count == 0 ? null : template.Sections.Select(section => section with { }).ToArray(),
+                    Presentation: ClonePresentation(template.Presentation)));
                 var persistedPorts = template.PersistedDefinition?.Ports.OrderBy(port => port.Order).ToArray();
                 var ports = persistedPorts is null
                     ? template.Ports.Select((port, index) => new DiagramPort(
@@ -1319,9 +1610,39 @@ public partial class Home : IAsyncDisposable
         _draftProperties.Add(new DraftProperty($"property-{++_propertySequence}"));
     }
     private void RemoveDraftProperty(string id) => _draftProperties.RemoveAll(property => property.Id == id);
+    private void SetDraftOrganized(bool value)
+    {
+        _draft.IsOrganized = value;
+        if (value && _draftSections.Count == 0) AddDraftSection();
+    }
+    private void AddDraftSection()
+    {
+        _draft.IsOrganized = true;
+        _draftSections.Add(new DraftSection($"section-{++_propertySequence}") { Title = _draftSections.Count == 0 ? "Details" : "Section" });
+    }
+    private void RemoveDraftSection(string id)
+    {
+        _draftSections.RemoveAll(section => section.Id == id);
+        foreach (var property in _draftProperties.Where(property => property.SectionId == id)) property.SectionId = null;
+        foreach (var section in _draftSections.Where(section => section.ParentSectionId == id)) section.ParentSectionId = null;
+    }
+    private int PreviewSectionDepth(string id)
+    {
+        var depth = 0;
+        var section = _draftSections.SingleOrDefault(item => item.Id == id);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        while (section?.ParentSectionId is { } parent && seen.Add(parent))
+        {
+            depth++;
+            section = _draftSections.SingleOrDefault(item => item.Id == parent);
+            if (depth == 4) break;
+        }
+        return depth;
+    }
 
     private async Task AddCustomTemplate()
     {
+        _designerError = null;
         var label = string.IsNullOrWhiteSpace(_draft.Label) ? "Custom node" : _draft.Label.Trim();
         var outline = NormalizeColor(_draft.Outline, "#d24686");
         var background = NormalizeColor(_draft.Background, "#ffffff");
@@ -1330,13 +1651,29 @@ public partial class Home : IAsyncDisposable
         var category = _paletteCategories.Any(item => item.Name == _draft.Category) ? _draft.Category : "Custom";
         var ports = _draftPorts.Select((port, index) => new PortTemplate($"port-{index + 1}", port.Side, port.Direction)).ToArray();
         var properties = _draftProperties.Select(CreatePropertyTemplate).ToArray();
-        var minimumPropertyHeight = properties.Count(property => property.Mode != DiagramPropertyModes.Hidden) * 21 + 48;
+        var sections = _draft.IsOrganized ? _draftSections.Select((section, index) => new DiagramNodeSection(section.Id, section.Title.Trim(), section.ParentSectionId, index, section.Collapsible)).ToArray() : [];
+        var sectionError = ValidateSections(sections, properties.Select(property => property.Property).ToArray());
+        if (sectionError is not null) { _designerError = sectionError; return; }
+        foreach (var property in _draftProperties)
+        {
+            var editorError = ValidateEditor(property);
+            if (editorError is not null) { _designerError = $"{property.Name}: {editorError}"; return; }
+        }
+        var minimumPropertyHeight = ProjectNodeMinimumHeight(
+            properties.Select(property => property.Property).ToArray(),
+            sections,
+            DiagramNodeDisplayModes.Expanded,
+            []);
+        var width = GridFloorDimension(Math.Clamp(_draft.Width, 96, 360), 96);
+        var height = GridCeilingDimension(Math.Clamp(Math.Max(_draft.Height, minimumPropertyHeight), 48, 420), 48, 416);
+        var presentation = sections.Length == 0 ? null : new DiagramNodePresentation(DiagramNodeDisplayModes.Expanded, height);
         _templates.Add(new NodeTemplate($"custom-{++_templateSequence}", category, label, "Custom component",
-            Math.Clamp(_draft.Width, 96, 360), Math.Clamp(Math.Max(_draft.Height, minimumPropertyHeight), 48, 420), outline, background, textColor, textAlign,
-            ports, false, NormalizeIcon(_draft.Icon) ?? "mdi:shape-outline", true, properties));
+            width, height, outline, background, textColor, textAlign,
+            ports, false, NormalizeIcon(_draft.Icon) ?? "mdi:shape-outline", true, properties, Sections: sections, Presentation: presentation));
         _draft = new NodeDraft();
         _draftPorts.Clear();
         _draftProperties.Clear();
+        _draftSections.Clear();
         _isDesignerOpen = false;
         _paletteOpen = true;
         _expandedCategories.Add(category);
@@ -1381,6 +1718,7 @@ public partial class Home : IAsyncDisposable
             case "node.rotate.commit": await CommitNodeAsync(envelope.Payload, node => node with { Rotation = Number(envelope.Payload, "rotation") }, "Rotated node"); break;
             case "node.label.commit": await CommitNodeAsync(envelope.Payload, node => node with { Label = NullableLabel(envelope.Payload, "label") }, "Updated node label"); break;
             case "node.property.commit": await CommitNodePropertyAsync(envelope.Payload); break;
+            case "node.presentationRequested": await CommitNodePresentationAsync(envelope.Payload); break;
             case "nodes.move.commit": await CommitNodePositionsAsync(envelope.Payload, "nodes", "Moved nodes"); break;
             case "selection.move.commit": await CommitNodeAndGroupPositionsAsync(envelope.Payload, "Moved selection"); break;
             case "group.move.commit": await CommitGroupMoveAsync(envelope.Payload); break;
@@ -1418,6 +1756,39 @@ public partial class Home : IAsyncDisposable
         var properties = node.Properties.Select(property => property.Id == propertyId ? property with { Value = value.Clone() } : property).ToArray();
         if (properties.SequenceEqual(node.Properties)) return;
         await SubmitOperationsAsync([DiagramOperations.Upsert(node with { Properties = properties })], $"Updated {properties.Single(property => property.Id == propertyId).Label ?? propertyId}");
+    }
+
+    private async Task CommitNodePresentationAsync(JsonElement payload)
+    {
+        var node = _document.Nodes.SingleOrDefault(item => item.Id == String(payload, "nodeId"));
+        if (node is null || !payload.TryGetProperty("presentation", out var rawPresentation)) return;
+        DiagramNodePresentation? presentation;
+        try { presentation = JsonSerializer.Deserialize<DiagramNodePresentation>(rawPresentation.GetRawText(), JsonOptions); }
+        catch (JsonException) { return; }
+        if (presentation is null || presentation.ExpandedHeight is not { } proposedExpandedHeight || !double.IsFinite(proposedExpandedHeight) || proposedExpandedHeight <= 0) return;
+        var proposedCollapsed = presentation.CollapsedSectionIds ?? [];
+        if (proposedCollapsed.Any(string.IsNullOrWhiteSpace) || proposedCollapsed.Distinct(StringComparer.Ordinal).Count() != proposedCollapsed.Count) return;
+        var collapsed = proposedCollapsed.ToHashSet(StringComparer.Ordinal);
+        if (TryNullableString(payload, "sectionId", out var sectionId) && sectionId is not null)
+        {
+            var section = (node.Sections ?? []).SingleOrDefault(item => item.Id == sectionId);
+            if (section is null || !section.Collapsible) return;
+            var requestedCollapsed = Boolean(payload, "collapsed");
+            if (collapsed.Contains(sectionId) != requestedCollapsed) return;
+        }
+        var validSections = (node.Sections ?? []).Where(section => section.Collapsible).Select(section => section.Id).ToHashSet(StringComparer.Ordinal);
+        if (collapsed.Any(id => !validSections.Contains(id))) return;
+        if (presentation.DisplayMode is not (DiagramNodeDisplayModes.Expanded or DiagramNodeDisplayModes.Compact or DiagramNodeDisplayModes.Collapsed)) return;
+        var geometry = ResolvePresentationGeometry(
+            node,
+            node.Properties,
+            node.Sections ?? [],
+            presentation.DisplayMode,
+            collapsed.Order(StringComparer.Ordinal).ToArray(),
+            requestedExpandedHeight: null,
+            allowRequestedExpandedHeight: false);
+        if (geometry.Error is not null || geometry.Value is null) return;
+        await SubmitOperationsAsync([DiagramOperations.Upsert(node with { Height = geometry.Height, Presentation = geometry.Value })], "Updated node presentation");
     }
 
     private async Task CommitNodeMoveAsync(JsonElement payload)
@@ -1994,8 +2365,23 @@ public partial class Home : IAsyncDisposable
         var options = type == DiagramPropertyTypes.Enum
             ? draft.Options.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal).ToArray()
             : [];
-        return new PropertyTemplate(draft.Id, name, type, ParsePropertyValue(draft.DefaultValue, type), draft.Mode, name, draft.Connectable, options, draft.Direction);
+        return new PropertyTemplate(draft.Id, name, type, ParsePropertyValue(draft.DefaultValue, type), draft.Mode, name, draft.Connectable, options, draft.Direction, draft.SectionId, CreateEditor(draft));
     }
+
+    private static DiagramPropertyEditor? CreateEditor(DraftProperty draft)
+    {
+        if (draft.EditorKind == DiagramPropertyEditorKinds.Auto && string.IsNullOrWhiteSpace(draft.Placeholder) && string.IsNullOrWhiteSpace(draft.Minimum) && string.IsNullOrWhiteSpace(draft.Maximum) && string.IsNullOrWhiteSpace(draft.Step)) return null;
+        return new DiagramPropertyEditor(draft.EditorKind, string.IsNullOrWhiteSpace(draft.Placeholder) ? null : draft.Placeholder.Trim(), ParseOptionalDecimal(draft.Minimum), ParseOptionalDecimal(draft.Maximum), ParseOptionalDecimal(draft.Step));
+    }
+    private static string? ValidateEditor(DraftProperty draft) => ValidateEditor(new PropertyEditorDraft(draft.Id)
+    {
+        Type = draft.Type,
+        EditorKind = draft.EditorKind,
+        Placeholder = draft.Placeholder,
+        Minimum = draft.Minimum,
+        Maximum = draft.Maximum,
+        Step = draft.Step
+    });
 
     private static JsonElement? ParsePropertyValue(string? raw, string type)
     {
@@ -2038,8 +2424,8 @@ public partial class Home : IAsyncDisposable
     private static DiagramDocument CreateStarterDocument(string documentId = DefaultDocumentId) => new(
         documentId,
         [
-            new DiagramNode("node-1", 128, 160, 156, 72, "Discover", GroupId: "group-1", Icon: "mdi:magnify", Style: new DiagramNodeStyle("#ffffff", "#4177de", "#172033")),
-            new DiagramNode("node-2", 412, 160, 172, 72, "Shape the flow", GroupId: "group-1", Icon: "mdi:vector-polyline", Style: new DiagramNodeStyle("#ffffff", "#7455dd", "#172033"))
+            new DiagramNode("node-1", 128, 160, 160, 64, "Discover", GroupId: "group-1", Icon: "mdi:magnify", Style: new DiagramNodeStyle("#ffffff", "#4177de", "#172033")),
+            new DiagramNode("node-2", 416, 160, 160, 64, "Shape the flow", GroupId: "group-1", Icon: "mdi:vector-polyline", Style: new DiagramNodeStyle("#ffffff", "#7455dd", "#172033"))
         ],
         [
             new DiagramPort("node-1-output", "node-1", "source", Anchor: "right", Endpoint: new DiagramEndpoint("dot", 11, "#4177de", "#ffffff", 2)),
@@ -2047,17 +2433,17 @@ public partial class Home : IAsyncDisposable
             new DiagramPort("node-2-output", "node-2", "source", Anchor: "right", Endpoint: new DiagramEndpoint("dot", 11, "#7455dd", "#ffffff", 2))
         ],
         [new DiagramEdge("edge-1", "node-1-output", "node-2-input", "explore", "flowchart", Overlays: [new DiagramOverlay("arrow")], ConnectorOptions: new DiagramFlowchartOptions(32, 0), Style: new DiagramEdgeStyle("#7455dd", 2.5))],
-        [new DiagramGroup("group-1", 88, 104, 548, 196, "Design loop", Icon: "mdi:layers-outline")],
+        [new DiagramGroup("group-1", 96, 96, 544, 192, "Design loop", Icon: "mdi:layers-outline")],
         new DiagramViewport(0, 0, 1),
         Selection: []);
 
     private static List<NodeTemplate> CreateBuiltInTemplates() =>
     [
         new("start", "Workflow", "Start", "Entry point for a workflow", 144, 64, "#16875b", "#ecfdf5", "#115e45", "center", [new PortTemplate("output", "right", "source")], false, "mdi:play-circle-outline"),
-        new("task", "Workflow", "Task", "Work step with input and output", 168, 72, "#4177de", "#ffffff", "#172033", "center", [new PortTemplate("input", "left", "target"), new PortTemplate("output", "right", "source")], false, "mdi:checkbox-marked-circle-outline"),
-        new("decision", "Workflow", "Decision", "Branch a workflow into paths", 172, 88, "#d97706", "#fffaf0", "#7c2d12", "center", [new PortTemplate("input", "left", "target"), new PortTemplate("yes", "right", "source"), new PortTemplate("no", "bottom", "source")], false, "mdi:source-branch"),
-        new("note", "Content", "Note", "Context without connection points", 184, 92, "#0f9d79", "#f0fdfa", "#134e4a", "left", [], false, "mdi:note-text-outline"),
-        new("group", "Containers", "Group", "Resizable visual boundary", 320, 220, "#7455dd", "#ffffff", "#172033", "left", [], true, "mdi:layers-outline")
+        new("task", "Workflow", "Task", "Work step with input and output", 160, 64, "#4177de", "#ffffff", "#172033", "center", [new PortTemplate("input", "left", "target"), new PortTemplate("output", "right", "source")], false, "mdi:checkbox-marked-circle-outline"),
+        new("decision", "Workflow", "Decision", "Branch a workflow into paths", 160, 80, "#d97706", "#fffaf0", "#7c2d12", "center", [new PortTemplate("input", "left", "target"), new PortTemplate("yes", "right", "source"), new PortTemplate("no", "bottom", "source")], false, "mdi:source-branch"),
+        new("note", "Content", "Note", "Context without connection points", 176, 80, "#0f9d79", "#f0fdfa", "#134e4a", "left", [], false, "mdi:note-text-outline"),
+        new("group", "Containers", "Group", "Resizable visual boundary", 320, 208, "#7455dd", "#ffffff", "#172033", "left", [], true, "mdi:layers-outline")
     ];
 
     private static List<PaletteCategory> CreatePaletteCategories() =>
@@ -2088,7 +2474,9 @@ public partial class Home : IAsyncDisposable
                     property.Label,
                     property.Connectable,
                     property.Options ?? [],
-                    PropertyDirection(descriptor, property.Id))).ToArray();
+                    PropertyDirection(descriptor, property.Id),
+                    property.SectionId,
+                    property.Editor)).ToArray();
                 var ports = descriptor.Ports
                     .Where(port => port.PropertyId is null)
                     .Select(port => new PortTemplate(port.Id, port.Anchor ?? PortSide(port.Direction), port.Direction))
@@ -2110,6 +2498,8 @@ public partial class Home : IAsyncDisposable
                     false,
                     NormalizeIcon(descriptor.Icon) ?? "mdi:shape-outline",
                     Properties: properties,
+                    Sections: descriptor.Sections.Select(section => new DiagramNodeSection(section.Id, section.Title, section.ParentSectionId, section.Order, section.Collapsible)).ToArray(),
+                    Presentation: ClonePresentation(descriptor.Presentation),
                     RegisteredTypeId: descriptor.TypeId,
                     RegisteredTypeVersion: descriptor.Version));
             }
@@ -2145,6 +2535,18 @@ public partial class Home : IAsyncDisposable
     }
     private static string NextId(string prefix) => $"{prefix}-{Guid.NewGuid():N}";
     private static double Snap(double value) => Math.Round(value / GridSize) * GridSize;
+    private static double GridFloorDimension(double value, double minimum) => Math.Max(minimum, Math.Floor(value / GridSize) * GridSize);
+    private static double GridCeilingDimension(double value, double minimum, double maximum = double.PositiveInfinity) =>
+        Math.Min(maximum, Math.Max(minimum, Math.Ceiling(value / GridSize) * GridSize));
+    private static DiagramNode FitNodeToGrid(DiagramNode node)
+    {
+        var width = GridFloorDimension(node.Width, 48);
+        var height = GridCeilingDimension(node.Height, 32);
+        var presentation = node.Presentation is null
+            ? null
+            : node.Presentation with { ExpandedHeight = GridCeilingDimension(node.Presentation.ExpandedHeight ?? height, 32) };
+        return node with { Width = width, Height = height, Presentation = presentation };
+    }
     private static bool ValidColor(string? value) => value is not null && value.Length is 4 or 7 && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit);
     private static string NormalizeColor(string? value, string fallback) => ValidColor(value) ? value!.ToLowerInvariant() : fallback;
     private static string NormalizeTextAlign(string? value) => value is "left" or "right" or "center" ? value : "center";
@@ -2199,7 +2601,7 @@ public partial class Home : IAsyncDisposable
     private sealed class NodeDraft
     {
         public string Label { get; set; } = "Human review";
-        public double Width { get; set; } = 184;
+        public double Width { get; set; } = 176;
         public double Height { get; set; } = 80;
         public string Outline { get; set; } = "#d24686";
         public string Background { get; set; } = "#ffffff";
@@ -2208,6 +2610,7 @@ public partial class Home : IAsyncDisposable
         public string Category { get; set; } = "Custom";
         public string Direction { get; set; } = "both";
         public string Icon { get; set; } = "mdi:shape-outline";
+        public bool IsOrganized { get; set; }
     }
 
     private sealed class NodeStyleDraft
@@ -2234,6 +2637,20 @@ public partial class Home : IAsyncDisposable
         public string Options { get; set; } = string.Empty;
         public bool Connectable { get; set; }
         public string Direction { get; set; } = "both";
+        public string? SectionId { get; set; }
+        public string EditorKind { get; set; } = DiagramPropertyEditorKinds.Auto;
+        public string Placeholder { get; set; } = string.Empty;
+        public string Minimum { get; set; } = string.Empty;
+        public string Maximum { get; set; } = string.Empty;
+        public string Step { get; set; } = string.Empty;
+    }
+    private sealed class DraftSection(string id)
+    {
+        public string Id { get; } = id;
+        public string Title { get; set; } = "Section";
+        public string? ParentSectionId { get; set; }
+        public bool Collapsible { get; set; } = true;
+        public bool Collapsed { get; set; }
     }
     private sealed class PropertyEditorDraft(string id, DiagramNodeProperty? original = null)
     {
@@ -2245,6 +2662,27 @@ public partial class Home : IAsyncDisposable
         public string Value { get; set; } = string.Empty;
         public string Options { get; set; } = string.Empty;
         public string Connection { get; set; } = "none";
+        public string? SectionId { get; set; }
+        public string EditorKind { get; set; } = DiagramPropertyEditorKinds.Auto;
+        public string Placeholder { get; set; } = string.Empty;
+        public string Minimum { get; set; } = string.Empty;
+        public string Maximum { get; set; } = string.Empty;
+        public string Step { get; set; } = string.Empty;
+    }
+    private sealed class SectionEditorDraft(string id, DiagramNodeSection? original = null)
+    {
+        public string Id { get; } = id;
+        public DiagramNodeSection? Original { get; } = original;
+        public string Title { get; set; } = "Section";
+        public string? ParentSectionId { get; set; }
+        public bool Collapsible { get; set; } = true;
+        public bool Collapsed { get; set; }
+    }
+    private sealed class PresentationDraft
+    {
+        public bool Enabled { get; set; }
+        public string DisplayMode { get; set; } = DiagramNodeDisplayModes.Expanded;
+        public double ExpandedHeight { get; set; } = 112;
     }
     private sealed class PortEditorDraft(string id, DiagramPort? original = null)
     {
@@ -2280,17 +2718,20 @@ public partial class Home : IAsyncDisposable
         string Icon,
         bool IsCustom = false,
         IReadOnlyList<PropertyTemplate>? Properties = null,
+        IReadOnlyList<DiagramNodeSection>? Sections = null,
+        DiagramNodePresentation? Presentation = null,
         string? RegisteredTypeId = null,
         int? RegisteredTypeVersion = null,
         PaletteNodeDefinitionSnapshot? PersistedDefinition = null)
     {
         public IReadOnlyList<PropertyTemplate> Properties { get; init; } = Properties ?? [];
+        public IReadOnlyList<DiagramNodeSection> Sections { get; init; } = Sections ?? [];
     }
     private sealed record PaletteCategory(string Name, bool IsSystem, PaletteGroupSnapshot? PersistedGroup = null);
     private sealed record PortTemplate(string Id, string Side, string Direction);
-    private sealed record PropertyTemplate(string Id, string Name, string Type, JsonElement? Value, string Mode, string? Label, bool Connectable, IReadOnlyList<string> Options, string Direction)
+    private sealed record PropertyTemplate(string Id, string Name, string Type, JsonElement? Value, string Mode, string? Label, bool Connectable, IReadOnlyList<string> Options, string Direction, string? SectionId = null, DiagramPropertyEditor? Editor = null)
     {
-        public DiagramNodeProperty Property => new(Id, Name, Type: Type, Value: Value, Mode: Mode, Label: Label, Connectable: Connectable, Options: Options);
+        public DiagramNodeProperty Property => new(Id, Name, Type: Type, Value: Value, Mode: Mode, Label: Label, Connectable: Connectable, Options: Options, SectionId: SectionId, Editor: Editor);
     }
     private sealed record NodePosition(string Id, double X, double Y, string? GroupId, bool HasGroupId);
     private sealed record GroupPosition(string Id, double X, double Y);

@@ -9,6 +9,11 @@ namespace Ghostagram.Server.Export;
 /// <summary>Deterministic, dependency-free SVG projection for server and MCP exports.</summary>
 public sealed class SvgDiagramExporter : IDiagramExporter
 {
+    private const double NodeHeaderHeight = 30;
+    private const double PropertyHeight = 20;
+    private const double CompactPropertyHeight = 18;
+    private const double PropertyGap = 1;
+    private const double SectionHeaderHeight = 22;
     private static readonly string[] MarkerTypes = ["arrow", "plain-arrow", "triangle-open", "diamond", "diamond-open", "erd-one", "erd-zero-one", "erd-one-many", "erd-zero-many"];
     public string Format => "svg";
 
@@ -65,20 +70,31 @@ public sealed class SvgDiagramExporter : IDiagramExporter
 
         foreach (var node in nodes.Values.OrderBy(item => item.Id, StringComparer.Ordinal))
         {
+            var layout = node.Layout;
             svg.Append("<g data-node-id=\"").Append(Escape(node.Id)).Append("\"><rect x=\"").Append(N(node.Box.X))
                 .Append("\" y=\"").Append(N(node.Box.Y)).Append("\" width=\"").Append(N(node.Box.Width)).Append("\" height=\"")
                 .Append(N(node.Box.Height)).Append("\" rx=\"8\" fill=\"#ffffff\" stroke=\"#334155\" stroke-width=\"1.5\"/>")
-                .Append(Text(node.Box.X + 12, node.Box.Y + (node.Properties.Count == 0 ? node.Box.Height / 2 + 5 : 21), node.Box.Label, 15, "#0f172a"));
+                .Append(Text(node.Box.X + 12, node.Box.Y + 20, node.Box.Label, 15, "#0f172a"));
             if (!string.IsNullOrWhiteSpace(node.Icon))
                 svg.Append(Text(node.Box.X + node.Box.Width - 10, node.Box.Y + 20, IconGlyph(node.Icon), 13, "#475569", "end"));
-            var visibleIndex = 0;
-            for (var index = 0; index < node.Properties.Count; index++)
+            if (layout.Progressive)
+                svg.Append("<path d=\"M ").Append(N(node.Box.X)).Append(' ').Append(N(node.Box.Y + NodeHeaderHeight))
+                    .Append(" L ").Append(N(node.Box.X + node.Box.Width)).Append(' ').Append(N(node.Box.Y + NodeHeaderHeight))
+                    .Append("\" stroke=\"#334155\" stroke-opacity=\"0.28\"/>");
+            foreach (var section in layout.Sections)
             {
-                var property = node.Properties[index];
-                if (property.Hidden) continue;
-                var y = node.Box.Y + 49 + visibleIndex++ * 21;
-                svg.Append(Text(node.Box.X + 12, y, property.Label, 11, "#64748b"))
-                    .Append(Text(node.Box.X + node.Box.Width - 12, y, property.Value, 11, "#334155", "end"));
+                var heading = $"{(section.Collapsed ? "▸ " : "▾ ")}{section.Section.Title}";
+                svg.Append("<text data-section-id=\"").Append(Escape(section.Section.Id)).Append("\" x=\"")
+                    .Append(N(node.Box.X + 8 + Math.Min(section.Depth, 4) * 8)).Append("\" y=\"")
+                    .Append(N(node.Box.Y + section.Y + 15))
+                    .Append("\" font-family=\"system-ui,sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">")
+                    .Append(Escape(heading)).Append("</text>");
+            }
+            foreach (var row in layout.Rows)
+            {
+                var y = node.Box.Y + row.Y + row.Height / 2 + 4;
+                svg.Append(Text(node.Box.X + 8, y, row.Property.Label, 11, "#64748b"))
+                    .Append(Text(node.Box.X + node.Box.Width - 8, y, row.Property.Value, 11, "#334155", "end"));
             }
             svg.Append("</g>");
         }
@@ -86,8 +102,21 @@ public sealed class SvgDiagramExporter : IDiagramExporter
         foreach (var port in ports.Values.OrderBy(item => item.Id, StringComparer.Ordinal))
         {
             if (!TryPoint(port.Id, ports, nodes, out var point)) continue;
-            svg.Append("<circle data-port-id=\"").Append(Escape(port.Id)).Append("\" cx=\"").Append(N(point.X)).Append("\" cy=\"")
-                .Append(N(point.Y)).Append("\" r=\"5\" fill=\"#f8fafc\" stroke=\"#0f766e\" stroke-width=\"2\"/>");
+            if (!string.IsNullOrWhiteSpace(port.PropertyId))
+            {
+                svg.Append("<g data-port-id=\"").Append(Escape(port.Id)).Append("\" cx=\"").Append(N(point.X))
+                    .Append("\" cy=\"").Append(N(point.Y)).Append("\" data-port-kind=\"property\">")
+                    .Append("<rect x=\"").Append(N(point.X - 5)).Append("\" y=\"").Append(N(point.Y - 5))
+                    .Append("\" width=\"10\" height=\"10\" rx=\"2\" fill=\"#f8fafc\" stroke=\"#0f766e\" stroke-width=\"2\"/>")
+                    .Append("<rect x=\"").Append(N(point.X - 1.5)).Append("\" y=\"").Append(N(point.Y - 1.5))
+                    .Append("\" width=\"3\" height=\"3\" rx=\"1\" fill=\"#0f766e\"/></g>");
+            }
+            else
+            {
+                svg.Append("<circle data-port-id=\"").Append(Escape(port.Id)).Append("\" cx=\"")
+                    .Append(N(point.X)).Append("\" cy=\"").Append(N(point.Y)).Append("\" data-port-kind=\"node\"")
+                    .Append(" r=\"5\" fill=\"#f8fafc\" stroke=\"#0f766e\" stroke-width=\"2\"/>");
+            }
         }
 
         svg.Append("</svg>");
@@ -120,11 +149,9 @@ public sealed class SvgDiagramExporter : IDiagramExporter
         };
         if (!string.IsNullOrWhiteSpace(port.PropertyId))
         {
-            var row = node.Properties.Where(item => !item.Hidden).ToList()
-                .FindIndex(item => string.Equals(item.Id, port.PropertyId, StringComparison.Ordinal));
-            if (row >= 0)
+            if (node.Layout.PropertyAnchors.TryGetValue(port.PropertyId, out var anchor))
             {
-                var y = box.Y + 40 + row * 21;
+                var y = box.Y + anchor.OffsetY;
                 point = port.Direction.Equals("target", StringComparison.OrdinalIgnoreCase)
                     ? new(box.X, y)
                     : new(box.X + box.Width, y);
@@ -137,7 +164,7 @@ public sealed class SvgDiagramExporter : IDiagramExporter
             var slot = ordered.FindIndex(item => string.Equals(item.Id, port.Id, StringComparison.Ordinal));
             if (slot >= 0)
             {
-                var y = box.Y + 40 + slot * 21;
+                var y = box.Y + NodeHeaderHeight + PropertyHeight / 2 + slot * (PropertyHeight + PropertyGap);
                 point = port.Direction.Equals("target", StringComparison.OrdinalIgnoreCase)
                     ? new(box.X, y)
                     : new(box.X + box.Width, y);
@@ -219,16 +246,43 @@ public sealed class SvgDiagramExporter : IDiagramExporter
     {
         public static Box Parse(JsonElement item) => new(S(item, "id"), S(item, "label"), D(item, "x", 0), D(item, "y", 0), D(item, "width", 160), D(item, "height", 80));
     }
-    private sealed record Node(string Id, Box Box, string Icon, List<Property> Properties)
+    private sealed class Node
     {
+        private Node(string id, Box box, string icon, List<Property> properties, List<Section> sections, Presentation? presentation)
+        {
+            Id = id;
+            Box = box;
+            Icon = icon;
+            Properties = properties;
+            Sections = sections;
+            Presentation = presentation;
+            Layout = Project(this);
+        }
+
+        public string Id { get; }
+        public Box Box { get; }
+        public string Icon { get; }
+        public List<Property> Properties { get; }
+        public List<Section> Sections { get; }
+        public Presentation? Presentation { get; }
+        public NodeLayout Layout { get; }
+
         public static Node Parse(JsonElement item)
         {
             var box = Box.Parse(item);
             var properties = Items(item, "properties").Select(Property.Parse).ToList();
-            return new(box.Id, box, S(item, "icon"), properties);
+            var sections = Items(item, "sections")
+                .Select((section, index) => Section.Parse(section, index))
+                .OrderBy(section => section.Order)
+                .ThenBy(section => section.Id, StringComparer.Ordinal)
+                .ToList();
+            var presentation = item.TryGetProperty("presentation", out var rawPresentation) && rawPresentation.ValueKind == JsonValueKind.Object
+                ? Presentation.Parse(rawPresentation)
+                : null;
+            return new(box.Id, box, S(item, "icon"), properties, sections, presentation);
         }
     }
-    private sealed record Property(string Id, string Label, string Value, bool Hidden)
+    private sealed record Property(string Id, string Label, string Value, bool Hidden, string SectionId, string Type, string EditorKind)
     {
         public static Property Parse(JsonElement item)
         {
@@ -236,7 +290,33 @@ public sealed class SvgDiagramExporter : IDiagramExporter
             var label = S(item, "label", S(item, "name", id));
             var mode = S(item, "mode", "display");
             var value = item.TryGetProperty("value", out var rawValue) ? DisplayValue(rawValue) : "—";
-            return new(id, label, value, mode.Equals("hidden", StringComparison.OrdinalIgnoreCase));
+            var type = S(item, "type", "string");
+            var editorKind = item.TryGetProperty("editor", out var editor) && editor.ValueKind == JsonValueKind.Object
+                ? S(editor, "kind", "auto")
+                : "auto";
+            return new(id, label, value, mode.Equals("hidden", StringComparison.OrdinalIgnoreCase), S(item, "sectionId"), type, editorKind);
+        }
+
+        public double RowHeight(bool compact)
+        {
+            if (compact) return CompactPropertyHeight;
+            var kind = EffectiveEditorKind();
+            return kind is "multiline" or "json" ? 48 : kind == "range" ? 28 : PropertyHeight;
+        }
+
+        private string EffectiveEditorKind()
+        {
+            if (!string.IsNullOrWhiteSpace(EditorKind) && !EditorKind.Equals("auto", StringComparison.Ordinal)) return EditorKind;
+            return Type switch
+            {
+                "boolean" => "toggle",
+                "integer" or "decimal" or "number" => "number",
+                "date" => "date",
+                "dateTime" or "datetime" => "dateTime",
+                "enum" => "select",
+                "json" => "json",
+                _ => "text"
+            };
         }
 
         private static string DisplayValue(JsonElement value) => value.ValueKind switch
@@ -248,6 +328,103 @@ public sealed class SvgDiagramExporter : IDiagramExporter
             _ => value.GetRawText()
         };
     }
+    private sealed record Section(string Id, string Title, string ParentSectionId, int Order, bool Collapsible)
+    {
+        public static Section Parse(JsonElement item, int index) => new(
+            S(item, "id"),
+            S(item, "title", S(item, "id")),
+            S(item, "parentSectionId"),
+            I(item, "order", index),
+            !item.TryGetProperty("collapsible", out var collapsible) || collapsible.ValueKind != JsonValueKind.False);
+    }
+
+    private sealed record Presentation(string DisplayMode, HashSet<string> CollapsedSectionIds)
+    {
+        public static Presentation Parse(JsonElement item) => new(
+            S(item, "displayMode", "expanded"),
+            Items(item, "collapsedSectionIds")
+                .Where(value => value.ValueKind == JsonValueKind.String)
+                .Select(value => value.GetString() ?? string.Empty)
+                .Where(value => value.Length > 0)
+                .ToHashSet(StringComparer.Ordinal));
+    }
+
+    private sealed record PropertyRow(Property Property, double Y, double Height, int Depth, string SectionId);
+    private sealed record SectionProjection(Section Section, double Y, int Depth, bool Collapsed);
+    private sealed record AnchorProjection(double OffsetY, bool Proxied, string ProxyId);
+    private sealed record NodeLayout(
+        bool Progressive,
+        string DisplayMode,
+        bool Compact,
+        List<PropertyRow> Rows,
+        List<SectionProjection> Sections,
+        Dictionary<string, AnchorProjection> PropertyAnchors);
+
+    private static NodeLayout Project(Node node)
+    {
+        var displayMode = node.Presentation?.DisplayMode ?? "expanded";
+        var compact = displayMode.Equals("compact", StringComparison.Ordinal);
+        var progressive = node.Sections.Count > 0 || node.Presentation is not null;
+        var rows = new List<PropertyRow>();
+        var sectionProjections = new List<SectionProjection>();
+        var anchors = new Dictionary<string, AnchorProjection>(StringComparer.Ordinal);
+        if (displayMode.Equals("collapsed", StringComparison.Ordinal))
+        {
+            foreach (var property in node.Properties) anchors[property.Id] = new(NodeHeaderHeight / 2, true, "node");
+            return new(progressive, displayMode, compact, rows, sectionProjections, anchors);
+        }
+
+        var cursor = NodeHeaderHeight;
+        var visible = node.Properties.Where(property => !property.Hidden).ToArray();
+        var bySection = visible.Where(property => !string.IsNullOrWhiteSpace(property.SectionId))
+            .GroupBy(property => property.SectionId, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
+        var unsectioned = visible.Where(property => string.IsNullOrWhiteSpace(property.SectionId));
+        var children = node.Sections.Where(section => !string.IsNullOrWhiteSpace(section.ParentSectionId))
+            .GroupBy(section => section.ParentSectionId, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
+        var collapsed = node.Presentation?.CollapsedSectionIds ?? [];
+
+        void AddRow(Property property, int depth, string sectionId)
+        {
+            var height = property.RowHeight(compact);
+            rows.Add(new(property, cursor, height, depth, sectionId));
+            anchors[property.Id] = new(cursor + height / 2, false, string.Empty);
+            cursor += height + PropertyGap;
+        }
+
+        IEnumerable<string> DescendantPropertyIds(string sectionId)
+        {
+            foreach (var property in bySection.GetValueOrDefault(sectionId) ?? []) yield return property.Id;
+            foreach (var child in children.GetValueOrDefault(sectionId) ?? [])
+                foreach (var propertyId in DescendantPropertyIds(child.Id)) yield return propertyId;
+        }
+
+        void AddSection(Section section, int depth)
+        {
+            var start = cursor;
+            var isCollapsed = collapsed.Contains(section.Id);
+            cursor += SectionHeaderHeight + PropertyGap;
+            if (isCollapsed)
+            {
+                foreach (var propertyId in DescendantPropertyIds(section.Id))
+                    anchors[propertyId] = new(start + SectionHeaderHeight / 2, true, section.Id);
+            }
+            else
+            {
+                foreach (var property in bySection.GetValueOrDefault(section.Id) ?? []) AddRow(property, depth + 1, section.Id);
+                foreach (var child in children.GetValueOrDefault(section.Id) ?? []) AddSection(child, depth + 1);
+            }
+            sectionProjections.Add(new(section, start, depth, isCollapsed));
+        }
+
+        foreach (var property in unsectioned) AddRow(property, 0, string.Empty);
+        foreach (var section in node.Sections.Where(section => string.IsNullOrWhiteSpace(section.ParentSectionId))) AddSection(section, 0);
+        foreach (var property in node.Properties)
+            if (!anchors.ContainsKey(property.Id)) anchors[property.Id] = new(NodeHeaderHeight / 2, true, "node");
+        return new(progressive, displayMode, compact, rows, sectionProjections, anchors);
+    }
+
     private sealed record Port(string Id, string NodeId, string Anchor, string Direction, string PropertyId, int Order)
     {
         public static Port Parse(JsonElement item) => new(

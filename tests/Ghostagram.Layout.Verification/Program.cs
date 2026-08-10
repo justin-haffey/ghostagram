@@ -18,10 +18,12 @@ var checks = new List<(string Name, Action Check)>
     ("group removal preserves and ungroups content", VerifyGroupRemoval),
     ("explicit group assignment supports reparenting and ungrouping", VerifyGroupAssignment),
     ("server rejects duplicate ids and cyclic group hierarchies", VerifyReducerStructuralValidation),
+    ("server validates progressive node sections, editors, and presentation", VerifyProgressiveNodeValidation),
     ("property ports require an existing property on their node", VerifyPropertyPortValidation),
     ("cycles, components, and non-overlap", VerifyCyclesAndComponents),
     ("large sparse graph performance", VerifyPerformance),
     ("SVG preserves properties, property ports, and connector geometry", VerifyEnhancedSvgExport),
+    ("server SVG mirrors progressive node presentation", VerifyProgressiveSvgExport),
     ("authoring capabilities expose the versioned operation schema", VerifyAuthoringCapabilities),
     ("browser presence tracks successful rendered revisions", () => VerifyDocumentChangeNotifier().GetAwaiter().GetResult()),
     ("layout, collaborative session, export, and replay", () => VerifyCommandPipeline().GetAwaiter().GetResult())
@@ -134,6 +136,73 @@ static void VerifyReducerStructuralValidation()
     ExpectDiagramError(cyclic, [], "INVALID_GROUP_HIERARCHY", "cyclic group parents must be rejected");
 }
 
+static void VerifyProgressiveNodeValidation()
+{
+    var missingSection = ProgressiveModel(new
+    {
+        id = "missing-section",
+        x = 0,
+        y = 0,
+        width = 220,
+        height = 100,
+        properties = new[] { new { id = "name", name = "Name", type = "string", sectionId = "unknown" } },
+        sections = Array.Empty<object>()
+    });
+    ExpectDiagramError(missingSection, [], "MISSING_REFERENCE", "property section references must be validated");
+
+    var cyclicSections = ProgressiveModel(new
+    {
+        id = "section-cycle",
+        x = 0,
+        y = 0,
+        width = 220,
+        height = 100,
+        properties = Array.Empty<object>(),
+        sections = new[]
+        {
+            new { id = "first", title = "First", parentSectionId = "second", order = 0, collapsible = true },
+            new { id = "second", title = "Second", parentSectionId = "first", order = 1, collapsible = true }
+        }
+    });
+    ExpectDiagramError(cyclicSections, [], "INVALID_SECTION_HIERARCHY", "section parent cycles must be rejected");
+
+    var invalidEditor = ProgressiveModel(new
+    {
+        id = "invalid-editor",
+        x = 0,
+        y = 0,
+        width = 220,
+        height = 100,
+        properties = new[] { new { id = "enabled", name = "Enabled", type = "boolean", editor = new { kind = "range", minimum = 0, maximum = 1 } } },
+        sections = Array.Empty<object>()
+    });
+    ExpectDiagramError(invalidEditor, [], "INVALID_MODEL", "editor and property types must be compatible");
+
+    var nonCollapsible = ProgressiveModel(new
+    {
+        id = "invalid-presentation",
+        x = 0,
+        y = 0,
+        width = 220,
+        height = 100,
+        properties = Array.Empty<object>(),
+        sections = new[] { new { id = "fixed", title = "Fixed", order = 0, collapsible = false } },
+        presentation = new { displayMode = "expanded", expandedHeight = 100, collapsedSectionIds = new[] { "fixed" } }
+    });
+    ExpectDiagramError(nonCollapsible, [], "INVALID_MODEL", "non-collapsible sections cannot be persisted as collapsed");
+}
+
+static JsonElement ProgressiveModel(object node) => JsonSerializer.SerializeToElement(new
+{
+    nodes = new[] { node },
+    ports = Array.Empty<object>(),
+    edges = Array.Empty<object>(),
+    groups = Array.Empty<object>(),
+    edgeTypes = Array.Empty<object>(),
+    selection = Array.Empty<string>(),
+    viewport = new { x = 0, y = 0, zoom = 1 }
+});
+
 static void ExpectDiagramError(JsonElement model, IReadOnlyList<GhostagramOperation> operations, string code, string message)
 {
     try
@@ -235,6 +304,8 @@ static void VerifyEnhancedSvgExport()
     True(artifact.Content.Contains(" C ", StringComparison.Ordinal), "Bezier connector must remain curved in SVG");
     True(artifact.Content.Contains("M 180 40 C", StringComparison.Ordinal), "property-bound edge must originate at the rendered property row");
     True(artifact.Content.Contains("data-port-id=\"source-prompt\"", StringComparison.Ordinal), "property-bound port must be exported");
+    True(artifact.Content.Contains("data-port-id=\"source-prompt\" cx=\"180\" cy=\"40\" data-port-kind=\"property\"><rect", StringComparison.Ordinal), "property-bound ports must export as field sockets");
+    True(artifact.Content.Contains("data-port-id=\"source-next\" cx=\"180\" cy=\"61\" data-port-kind=\"node\"", StringComparison.Ordinal), "ordinary node ports must remain circular connectors");
     True(artifact.Content.Contains("data-port-id=\"source-next\" cx=\"180\" cy=\"61\"", StringComparison.Ordinal), "ordered complex-node ports must retain their row slot instead of using node height");
     True(artifact.Content.Contains("marker-start=\"url(#gp-diamond-open)\"", StringComparison.Ordinal), "server SVG must preserve the selected UML source marker");
     True(artifact.Content.Contains("marker-end=\"url(#gp-erd-zero-many)\"", StringComparison.Ordinal), "server SVG must preserve the selected crow's-foot target marker");
@@ -243,6 +314,99 @@ static void VerifyEnhancedSvgExport()
     True(artifact.Content.Contains("data-edge-id=\"typed-edge\"><path", StringComparison.Ordinal)
         && artifact.Content.Contains("marker-start=\"url(#gp-diamond-open)\" marker-end=\"url(#gp-plain-arrow)\"", StringComparison.Ordinal),
         "server SVG must inherit both endpoint markers from a reusable edge type");
+}
+
+static void VerifyProgressiveSvgExport()
+{
+    static JsonObject ProgressiveNode(string id, string displayMode = "expanded", JsonArray? collapsedSectionIds = null) => new()
+    {
+        ["id"] = id, ["label"] = id, ["x"] = 0, ["y"] = 0, ["width"] = 240,
+        ["height"] = displayMode == "collapsed" ? 30 : 190,
+        ["sections"] = new JsonArray
+        {
+            new JsonObject { ["id"] = "identity", ["title"] = "Identity", ["order"] = 10 },
+            new JsonObject { ["id"] = "preferences", ["title"] = "Preferences", ["order"] = 20 },
+            new JsonObject { ["id"] = "advanced", ["title"] = "Advanced", ["parentSectionId"] = "preferences", ["order"] = 10 }
+        },
+        ["properties"] = new JsonArray
+        {
+            new JsonObject { ["id"] = "name", ["name"] = "Name", ["value"] = "Ada", ["sectionId"] = "identity" },
+            new JsonObject { ["id"] = "theme", ["name"] = "Theme", ["value"] = "Dark", ["sectionId"] = "preferences" },
+            new JsonObject
+            {
+                ["id"] = "confidence", ["name"] = "Confidence", ["value"] = 0.8, ["type"] = "decimal", ["sectionId"] = "advanced",
+                ["editor"] = new JsonObject { ["kind"] = "range" }
+            }
+        },
+        ["presentation"] = new JsonObject
+        {
+            ["displayMode"] = displayMode, ["expandedHeight"] = 190,
+            ["collapsedSectionIds"] = collapsedSectionIds ?? new JsonArray()
+        }
+    };
+
+    static string Export(JsonObject node, params JsonObject[] ports)
+    {
+        var model = new JsonObject
+        {
+            ["nodes"] = new JsonArray(node),
+            ["ports"] = new JsonArray(ports.Cast<JsonNode?>().ToArray()),
+            ["edges"] = new JsonArray(), ["groups"] = new JsonArray(), ["edgeTypes"] = new JsonArray()
+        };
+        return new SvgDiagramExporter().Export(new("progressive", 1, JsonSerializer.SerializeToElement(model))).Content;
+    }
+
+    var simple = Export(new JsonObject { ["id"] = "Simple", ["label"] = "Simple", ["x"] = 0, ["y"] = 0, ["width"] = 120, ["height"] = 60 });
+    True(simple.Contains("<text x=\"12\" y=\"20\"", StringComparison.Ordinal) && simple.Contains(">Simple</text>", StringComparison.Ordinal),
+        "simple-node titles must export in the top header rather than vertically centered");
+
+    var nested = Export(
+        ProgressiveNode("Nested"),
+        new JsonObject { ["id"] = "confidence-port", ["nodeId"] = "Nested", ["direction"] = "source", ["propertyId"] = "confidence" });
+    True(nested.Contains("data-section-id=\"advanced\" x=\"16\" y=\"133\"", StringComparison.Ordinal),
+        "nested section headings must use the runtime depth and cursor projection");
+    True(nested.Contains("data-port-id=\"confidence-port\" cx=\"240\" cy=\"155\"", StringComparison.Ordinal),
+        "expanded range property ports must anchor at the projected 28px row center");
+
+    var compactNode = ProgressiveNode("Compact", "compact");
+    compactNode["sections"] = new JsonArray(new JsonObject { ["id"] = "details", ["title"] = "Details" });
+    compactNode["properties"] = new JsonArray(new JsonObject
+    {
+        ["id"] = "note", ["name"] = "Note", ["value"] = "Text", ["sectionId"] = "details",
+        ["editor"] = new JsonObject { ["kind"] = "multiline" }
+    });
+    var compact = Export(compactNode, new JsonObject { ["id"] = "compact-note", ["nodeId"] = "Compact", ["direction"] = "source", ["propertyId"] = "note" });
+    True(compact.Contains("data-port-id=\"compact-note\" cx=\"240\" cy=\"62\"", StringComparison.Ordinal),
+        "compact mode must reduce every projected property row to 18px");
+
+    var collapsedSection = Export(
+        ProgressiveNode("SectionCollapsed", collapsedSectionIds: new JsonArray("preferences")),
+        new JsonObject { ["id"] = "section-proxy", ["nodeId"] = "SectionCollapsed", ["direction"] = "source", ["propertyId"] = "confidence" });
+    True(collapsedSection.Contains("data-section-id=\"preferences\" x=\"8\" y=\"89\"", StringComparison.Ordinal)
+        && !collapsedSection.Contains("data-section-id=\"advanced\"", StringComparison.Ordinal),
+        "collapsing a section must omit its nested headings and property content");
+    True(collapsedSection.Contains("data-port-id=\"section-proxy\" cx=\"240\" cy=\"85\"", StringComparison.Ordinal),
+        "a hidden descendant property port must proxy to its collapsed section header center");
+
+    var collapsedNode = Export(
+        ProgressiveNode("Collapsed", "collapsed"),
+        new JsonObject { ["id"] = "node-proxy", ["nodeId"] = "Collapsed", ["direction"] = "target", ["propertyId"] = "confidence" });
+    True(!collapsedNode.Contains("data-section-id=", StringComparison.Ordinal) && collapsedNode.Contains("data-port-id=\"node-proxy\" cx=\"0\" cy=\"15\"", StringComparison.Ordinal),
+        "a collapsed node must omit its body and proxy property ports to the node header center");
+
+    var reducerModel = new JsonObject
+    {
+        ["nodes"] = new JsonArray(ProgressiveNode("Preserved")), ["ports"] = new JsonArray(), ["edges"] = new JsonArray(),
+        ["groups"] = new JsonArray(), ["edgeTypes"] = new JsonArray()
+    };
+    var reduced = GhostagramDocumentReducer.Apply(
+        JsonSerializer.SerializeToElement(reducerModel),
+        [new GhostagramOperation("node.upsert", JsonSerializer.SerializeToElement(new { id = "Preserved", label = "Updated" }))]);
+    var preservedNode = reduced.GetProperty("nodes")[0];
+    True(preservedNode.GetProperty("sections").GetArrayLength() == 3
+        && preservedNode.GetProperty("presentation").GetProperty("expandedHeight").GetInt32() == 190
+        && preservedNode.GetProperty("properties")[2].GetProperty("sectionId").GetString() == "advanced",
+        "partial server node upserts must preserve progressive fields that are not part of the update");
 }
 
 static void VerifyAuthoringCapabilities()

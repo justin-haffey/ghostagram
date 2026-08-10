@@ -40,6 +40,39 @@ Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests",
 Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", ports: [new("bad", "sideways")]), "Port 'bad' has invalid direction 'sideways'.");
 Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", ports: [new("bad", Anchor: "diagonal")]), "Port 'bad' has invalid fixed anchor 'diagonal'.");
 
+var mutableSections = new List<NodeSectionDefinition>
+{
+    new("identity", "Identity", Order: 10),
+    new("preferences", "Preferences", Order: 20),
+    new("advanced", "Advanced", "preferences", 10)
+};
+var advancedType = new NodeTypeDescriptor(
+    "test.advanced", 1, "Advanced node", "Tests", width: 280, height: 220,
+    properties:
+    [
+        new("name", "Name", SectionId: "identity", Editor: new(DiagramPropertyEditorKinds.Text, "Customer name")),
+        new("confidence", "Confidence", DiagramPropertyTypes.Decimal, DiagramPropertyModes.DisplayAndEdit,
+            SectionId: "advanced", Editor: new(DiagramPropertyEditorKinds.Range, Minimum: 0, Maximum: 1, Step: 0.05m)),
+        new("color", "Color", SectionId: "preferences", Editor: new(DiagramPropertyEditorKinds.Color))
+    ],
+    sections: mutableSections,
+    presentation: new(CollapsedSectionIds: ["advanced"]));
+mutableSections[0] = new("mutated", "Mutated");
+Assert(advancedType.Sections[0].Id == "identity", "Catalog construction defensively clones section definitions.");
+Assert(advancedType.Presentation!.CollapsedSectionIds!.SequenceEqual(["advanced"]), "Catalog construction owns an immutable collapse-state snapshot.");
+
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", sections: [new("same", "One"), new("same", "Two")]), "Duplicate node section id 'same'.");
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", sections: [new("child", "Child", "missing")]), "Section 'child' references unknown parent section 'missing'.");
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", sections: [new("a", "A", "b"), new("b", "B", "a")]), "Section 'a' participates in a parent cycle.");
+var tooDeepSections = Enumerable.Range(1, 9)
+    .Select(index => new NodeSectionDefinition($"s{index}", $"Section {index}", index == 1 ? null : $"s{index - 1}"))
+    .ToArray();
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", sections: tooDeepSections), "Section 's9' exceeds the maximum nesting depth of 8.");
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", properties: [new("name", "Name", SectionId: "missing")]), "Property 'name' references unknown section 'missing'.");
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", properties: [new("flag", "Flag", DiagramPropertyTypes.Boolean, Editor: new(DiagramPropertyEditorKinds.Range))]), "Editor 'range' is incompatible with property 'flag' of type 'boolean'.");
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", properties: [new("name", "Name", Editor: new(DiagramPropertyEditorKinds.Text, Minimum: 0))]), "Editor 'text' for property 'name' cannot define numeric bounds.");
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", sections: [new("fixed", "Fixed", Collapsible: false)], presentation: new(CollapsedSectionIds: ["fixed"])), "Node presentation collapses non-collapsible section 'fixed'.");
+
 Expect<InvalidOperationException>(
     () => new NodeTypeRegistry([new("duplicate", "Duplicate", [simpleType, simpleType])]),
     "Duplicate node type registration 'test.node@1'.");
@@ -51,10 +84,20 @@ var created1 = factory.Create(request);
 var created2 = factory.Create(request);
 Assert(JsonSerializer.Serialize(created1) == JsonSerializer.Serialize(created2), "Node creation is deterministic for the same catalog and request.");
 Assert(created1.Node.TypeId == "test.node" && created1.Node.TypeVersion == 1, "Factory stamps the persisted type identity.");
+Assert(created1.Node.Sections is null && created1.Node.Presentation is null, "Factory leaves simple nodes free of advanced presentation payload.");
 Assert(created1.Ports.Select(port => port.Id).SequenceEqual(["node-1:payload-in", "node-1:next"]), "Factory creates stable property-port identifiers.");
 Assert(created1.Ports[0].PropertyId == "payload", "Factory preserves property-to-port association.");
 Assert(created1.Node.Properties.Single(property => property.Id == "payload").Value?.GetProperty("id").GetInt32() == 7, "Factory preserves custom property values.");
 Expect<ArgumentException>(() => factory.Create(request with { PropertyValues = new Dictionary<string, JsonElement?> { ["unknown"] = null } }), "Property 'unknown' is not defined by node type 'test.node@1'.");
+
+var advancedRegistry = new NodeTypeRegistry([new("advanced-tests", "Advanced tests", [advancedType])]);
+var advancedCreated = new DeterministicNodeFactory(advancedRegistry).Create(new("advanced-1", "test.advanced", 40, 60));
+Assert(advancedCreated.Node.Sections!.Select(section => section.Id).SequenceEqual(["identity", "preferences", "advanced"]), "Factory materializes flat and nested section definitions without a second node datatype.");
+Assert(advancedCreated.Node.Properties.Single(property => property.Id == "confidence").Editor?.Kind == DiagramPropertyEditorKinds.Range, "Factory materializes typed property editor hints.");
+Assert(advancedCreated.Node.Presentation!.DisplayMode == DiagramNodeDisplayModes.Expanded && advancedCreated.Node.Presentation.ExpandedHeight == 220, "Factory materializes authoritative expanded geometry.");
+Assert(advancedCreated.Node.Presentation.CollapsedSectionIds!.SequenceEqual(["advanced"]), "Factory preserves authoritative section-collapse state.");
+var advancedNodeRoundTrip = JsonSerializer.Deserialize<DiagramNode>(JsonSerializer.Serialize(advancedCreated.Node, new JsonSerializerOptions(JsonSerializerDefaults.Web)), new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+Assert(advancedNodeRoundTrip.Sections![2].ParentSectionId == "preferences" && advancedNodeRoundTrip.Properties[1].SectionId == "advanced", "Factory-created nested nodes survive a web JSON round trip.");
 
 var compiler = new GraphCompiler(registry);
 var dag = Document(
@@ -254,6 +297,8 @@ Expect<InvalidOperationException>(() => (activation with { RunId = "other" }).Va
 
 var maf = MafOrchestrationNodeSet.Descriptor;
 Assert(maf.DisplayName == "MAF Orchestration" && maf.NodeTypes.Count >= 8, "MAF orchestration ships as a complete palette node set.");
+Assert(maf.NodeTypes.All(type => type.Width % 16 == 0 && type.Height % 16 == 0), "Every MAF node type has grid-fitted default dimensions.");
+Assert(maf.NodeTypes.Max(type => type.Width) <= 224 && maf.NodeTypes.Max(type => type.Height) <= 192, "MAF defaults remain compact while fitting their property rows.");
 Assert(maf.NodeTypes.All(type => type.Ports.All(port => port.PropertyId is null || type.Properties.Any(property => property.Id == port.PropertyId))), "MAF property ports reference declared properties.");
 Assert(maf.NodeTypes.Single(type => type.TypeId == "maf.join").Properties.Single(property => property.Id == "strategy").Options!.SequenceEqual(["all", "any", "quorum"]), "Join exposes usable all, any, and quorum choices.");
 Assert(maf.NodeTypes.Single(type => type.TypeId == "maf.data-capture").Ports.Count(port => port.PropertyId == "value") == 2, "Data Capture exposes separate input and output property ports.");
@@ -273,7 +318,7 @@ Assert(uml.NodeTypes.All(type => type.Metadata.ContainsKey("description") && typ
 Assert(latestUmlTypes.All(type => type.Ports.Select(port => port.Id).SequenceEqual(["relationships-top", "relationships-right", "relationships-bottom", "relationships-left"])), "Every current UML type exposes four stable relationship ports.");
 Assert(latestUmlTypes.All(type => type.Ports.Select(port => port.Anchor).SequenceEqual(["top", "right", "bottom", "left"])), "Current UML relationship ports are fixed to all four node sides.");
 Assert(latestUmlTypes.All(type => type.Ports.All(port => port.PropertyId is null)), "UML relationship ports remain independent from node properties.");
-Assert(latestUmlTypes.All(type => type.Width == 220 && type.Height <= 124), "Current UML nodes use compact default dimensions.");
+Assert(latestUmlTypes.All(type => type.Width == 208 && type.Height <= 112 && type.Width % 16 == 0 && type.Height % 16 == 0), "Current UML nodes use compact grid-fitted default dimensions.");
 Assert(uml.NodeTypes.SelectMany(type => type.Properties).All(property => !property.Required || property.DefaultValue is not null), "New UML nodes never begin with an unsatisfied required property.");
 Assert(registry.NodeSets.Any(set => set.Id == MafOrchestrationNodeSet.Id) && registry.NodeSets.Any(set => set.Id == UmlNodeSet.Id), "MAF and UML node sets coexist in one immutable registry.");
 Expect<InvalidOperationException>(() => registry.GetLatest("uml.class").ResolveHandler(new SingleServiceProvider(new object())), "Node type 'uml.class@2' has no execution handler registration.");

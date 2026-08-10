@@ -30,7 +30,7 @@ public static class UmlNodeSet
         "Basic structural UML elements for class and domain-model diagrams.");
 
     private static NodeTypeDescriptor Class(int version) => new(
-        "uml.class", version, "Class", DisplayName, "mdi:code-braces-box", version == 1 ? 260 : 220, version == 1 ? 174 : 124,
+        "uml.class", version, "Class", DisplayName, "mdi:code-braces-box", version == 1 ? 260 : 208, version == 1 ? 174 : 112,
         properties:
         [
             Property("stereotype", "Stereotype", "Stereotype"),
@@ -42,7 +42,7 @@ public static class UmlNodeSet
         style: ClassStyle);
 
     private static NodeTypeDescriptor AbstractClass(int version) => new(
-        "uml.abstract-class", version, "Abstract Class", DisplayName, "mdi:shape-outline", version == 1 ? 260 : 220, version == 1 ? 174 : 124,
+        "uml.abstract-class", version, "Abstract Class", DisplayName, "mdi:shape-outline", version == 1 ? 260 : 208, version == 1 ? 174 : 112,
         properties:
         [
             Property("stereotype", "Stereotype", "Stereotype", "\u00ABabstract\u00BB"),
@@ -54,7 +54,7 @@ public static class UmlNodeSet
         style: AbstractStyle);
 
     private static NodeTypeDescriptor Interface(int version) => new(
-        "uml.interface", version, "Interface", DisplayName, "mdi:lan-connect", version == 1 ? 260 : 220, version == 1 ? 153 : 106,
+        "uml.interface", version, "Interface", DisplayName, "mdi:lan-connect", version == 1 ? 260 : 208, version == 1 ? 153 : 96,
         properties:
         [
             Property("stereotype", "Stereotype", "Stereotype", "\u00ABinterface\u00BB"),
@@ -65,7 +65,7 @@ public static class UmlNodeSet
         style: InterfaceStyle);
 
     private static NodeTypeDescriptor Enumeration(int version) => new(
-        "uml.enumeration", version, "Enumeration", DisplayName, "mdi:format-list-bulleted-square", version == 1 ? 250 : 220, version == 1 ? 153 : 106,
+        "uml.enumeration", version, "Enumeration", DisplayName, "mdi:format-list-bulleted-square", version == 1 ? 250 : 208, version == 1 ? 153 : 96,
         properties:
         [
             Property("stereotype", "Stereotype", "Stereotype", "\u00ABenumeration\u00BB"),
@@ -76,7 +76,7 @@ public static class UmlNodeSet
         style: EnumerationStyle);
 
     private static NodeTypeDescriptor DataType(int version) => new(
-        "uml.data-type", version, "Data Type", DisplayName, "mdi:database-outline", version == 1 ? 260 : 220, version == 1 ? 174 : 124,
+        "uml.data-type", version, "Data Type", DisplayName, "mdi:database-outline", version == 1 ? 260 : 208, version == 1 ? 174 : 112,
         properties:
         [
             Property("stereotype", "Stereotype", "Stereotype", "\u00ABdataType\u00BB"),
@@ -88,7 +88,7 @@ public static class UmlNodeSet
         style: DataTypeStyle);
 
     private static NodeTypeDescriptor Object(int version) => new(
-        "uml.object", version, "Object", DisplayName, "mdi:cube-outline", version == 1 ? 250 : 220, version == 1 ? 153 : 106,
+        "uml.object", version, "Object", DisplayName, "mdi:cube-outline", version == 1 ? 250 : 208, version == 1 ? 153 : 96,
         properties:
         [
             Property("classifier", "Classifier", "Classifier"),

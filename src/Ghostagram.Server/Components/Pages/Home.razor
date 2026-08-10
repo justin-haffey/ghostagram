@@ -24,7 +24,7 @@
                 <MudMenuItem OnClick="ResetAsync" Icon="@Icons.Material.Filled.RestartAlt">Reset starter design</MudMenuItem>
             </MudMenu>
             <MudMenu Label="Insert" Color="Color.Inherit" Dense="true">
-                <MudMenuItem OnClick="OpenDesigner" Icon="@Icons.Material.Filled.AddBox">New node type</MudMenuItem>
+                <MudMenuItem OnClick="OpenDesigner" Icon="@Icons.Material.Filled.AddBox">Node typeâ€¦</MudMenuItem>
                 <MudMenuItem OnClick="OpenPaletteGroupEditor" Icon="@Icons.Material.Filled.CreateNewFolder">Palette group</MudMenuItem>
                 <MudMenuItem OnClick="AddGroupAsync" Icon="@Icons.Material.Filled.SelectAll">Canvas group</MudMenuItem>
             </MudMenu>
@@ -35,7 +35,7 @@
             </MudMenu>
             <MudMenu Label="Edit" Color="Color.Inherit" Dense="true">
                 <MudMenuItem OnClick="OpenNodeStyleEditor" Disabled="@(!CanEditSelectedNode)" Icon="@Icons.Material.Filled.Palette">Node style</MudMenuItem>
-                <MudMenuItem OnClick="OpenNodePropertiesEditor" Disabled="@(!CanEditSelectedNode)" Icon="@Icons.Material.Filled.Tune">Properties and connections</MudMenuItem>
+                <MudMenuItem OnClick="OpenNodePropertiesEditor" Disabled="@(!CanEditSelectedNode)" Icon="@Icons.Material.Filled.Tune">Node detailsâ€¦</MudMenuItem>
                 <MudMenuItem OnClick="DeleteSelectedAsync" Disabled="@(!_document.Selection.Any())" Icon="@Icons.Material.Filled.DeleteOutline">Delete selected</MudMenuItem>
                 <MudMenuItem OnClick="RemoveSelectedGroupFramesAsync" Disabled="@(!HasSelectedGroups)" Icon="@Icons.Material.Filled.FolderOff">Remove group frame</MudMenuItem>
                 <MudMenuItem OnClick="UndoAsync" Disabled="@(!_undo.Any())" Icon="@Icons.Material.Filled.Undo">Undo</MudMenuItem>
@@ -131,8 +131,8 @@
                 <MudTooltip Text="Edit the selected node's appearance">
                     <MudIconButton Icon="@Icons.Material.Filled.Palette" Color="Color.Primary" OnClick="OpenNodeStyleEditor" Disabled="@(!CanEditSelectedNode)" aria-label="Edit selected node style" />
                 </MudTooltip>
-                <MudTooltip Text="Edit the selected node's properties and connection points">
-                    <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" OnClick="OpenNodePropertiesEditor" Disabled="@(!CanEditSelectedNode)" aria-label="Edit selected node properties" />
+                <MudTooltip Text="Edit selected-node presentation, properties, and connection points">
+                    <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" OnClick="OpenNodePropertiesEditor" Disabled="@(!CanEditSelectedNode)" aria-label="Edit selected node details" />
                 </MudTooltip>
                 <MudTooltip Text="Delete the current node, group, or edge selection">
                     <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" OnClick="DeleteSelectedAsync" Disabled="@(!_document.Selection.Any())" aria-label="Delete selected" />
@@ -279,8 +279,10 @@
             <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseDesigner" aria-label="Close node designer" />
         </header>
         <div class="studio-modal-content">
+            <div class="node-designer-layout">
+            <div class="node-designer-authoring">
             <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-                Create a reusable palette item, then click the preview edges to add connection points.
+                Start with a lightweight node. Organize properties into nested, collapsible sections only when the node needs them.
             </MudText>
             <MudGrid Spacing="2">
                 <MudItem xs="12">
@@ -359,11 +361,29 @@
             <section class="designer-properties" aria-label="Node properties">
                 <div class="designer-properties-header">
                     <div>
-                        <MudText Typo="Typo.subtitle2">Node properties</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Primitive values can be shown or edited directly on each node. Connectable properties receive left/right ports.</MudText>
+                        <MudText Typo="Typo.subtitle2">Content</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Simple nodes stay flat. Turn on organization only when properties need a hierarchy.</MudText>
                     </div>
-                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="AddDraftProperty">Add property</MudButton>
+                    <MudSwitch T="bool" Value="@_draft.IsOrganized" ValueChanged="SetDraftOrganized" Color="Color.Primary" Label="Organize with sections" />
                 </div>
+                @if (_draft.IsOrganized)
+                {
+                    <div class="designer-sections" aria-label="Section hierarchy">
+                        <div class="designer-properties-header"><div><MudText Typo="Typo.subtitle2">Sections</MudText><MudText Typo="Typo.caption" Color="Color.Secondary">Parent references determine nesting; the order shown becomes the node order.</MudText></div><MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.AccountTree" OnClick="AddDraftSection">Add section</MudButton></div>
+                        @foreach (var section in _draftSections)
+                        {
+                            <div class="designer-section-row" @key="section.Id">
+                                <MudTextField @bind-Value="section.Title" Label="Section title" Variant="Variant.Outlined" />
+                                <MudSelect T="string" @bind-Value="section.ParentSectionId" Label="Parent" Dense="true" Variant="Variant.Outlined" Clearable="true">
+                                    @foreach (var parent in _draftSections.Where(parent => parent.Id != section.Id)) { <MudSelectItem T="string" Value="@parent.Id">@parent.Title</MudSelectItem> }
+                                </MudSelect>
+                                <MudCheckBox @bind-Value="section.Collapsible" Label="Collapsible" Dense="true" />
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveDraftSection(section.Id))" aria-label="Remove section" />
+                            </div>
+                        }
+                    </div>
+                }
+                <div class="designer-properties-header designer-properties-subheader"><div><MudText Typo="Typo.subtitle2">Properties</MudText><MudText Typo="Typo.caption" Color="Color.Secondary">Connectable properties receive left/right ports. Editor choices are validated against type.</MudText></div><MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="AddDraftProperty">Add property</MudButton></div>
                 @if (_draftProperties.Count == 0)
                 {
                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">No properties yet. Add one to expose a typed value on nodes created from this type.</MudText>
@@ -387,11 +407,24 @@
                             <MudSelectItem T="string" Value="@DiagramPropertyModes.Edit">Edit</MudSelectItem>
                             <MudSelectItem T="string" Value="@DiagramPropertyModes.DisplayAndEdit">Display and edit</MudSelectItem>
                         </MudSelect>
+                        @if (_draft.IsOrganized)
+                        {
+                            <MudSelect T="string" @bind-Value="property.SectionId" Label="Section" Dense="true" Variant="Variant.Outlined" Clearable="true">
+                                @foreach (var section in _draftSections) { <MudSelectItem T="string" Value="@section.Id">@section.Title</MudSelectItem> }
+                            </MudSelect>
+                        }
+                        <MudSelect T="string" @bind-Value="property.EditorKind" Label="Editor" Dense="true" Variant="Variant.Outlined">
+                            <MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Auto">Automatic</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Text">Text</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Multiline">Multiline</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Toggle">Toggle</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Number">Number</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Range">Range</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Date">Date</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.DateTime">Date/time</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Select">Select</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Color">Color</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Json">JSON</MudSelectItem>
+                        </MudSelect>
                         <MudTextField @bind-Value="property.DefaultValue" Label="Default" Variant="Variant.Outlined" Immediate="true" />
                         @if (property.Type == DiagramPropertyTypes.Enum)
                         {
                             <MudTextField @bind-Value="property.Options" Label="Choices (comma separated)" Variant="Variant.Outlined" Immediate="true" />
                         }
+                        @if (property.EditorKind is DiagramPropertyEditorKinds.Text or DiagramPropertyEditorKinds.Multiline)
+                        { <MudTextField @bind-Value="property.Placeholder" Label="Placeholder" Variant="Variant.Outlined" Immediate="true" /> }
+                        @if (property.EditorKind is DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range)
+                                                    { <MudTextField @bind-Value="property.Minimum" Label="Minimum" Immediate="true" Variant="Variant.Outlined" /><MudTextField @bind-Value="property.Maximum" Label="Maximum" Immediate="true" Variant="Variant.Outlined" /><MudTextField @bind-Value="property.Step" Label="Step" Immediate="true" Variant="Variant.Outlined" /> }
                         <MudCheckBox @bind-Value="property.Connectable" Label="Connectable" Dense="true" />
                         @if (property.Connectable)
                         {
@@ -405,15 +438,21 @@
                     </div>
                 }
             </section>
-
+            @if (!string.IsNullOrWhiteSpace(_designerError)) { <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@_designerError</MudAlert> }
+            </div>
+            <aside class="node-designer-preview-panel" aria-label="Node preview">
+                <MudText Typo="Typo.overline">Live preview</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Shows the semantic header, sections, and active editor choices.</MudText>
             <div class="node-designer-preview" style="@($"--node-outline:{NormalizeColor(_draft.Outline, "#d24686")};--node-background:{NormalizeColor(_draft.Background, "#ffffff")};--node-text:{NormalizeColor(_draft.TextColor, "#172033")};--node-align:{NormalizeTextAlign(_draft.TextAlign)}")">
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-top" OnClick="AddTopConnectionPoint" aria-label="Add top connection point" />
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-right" OnClick="AddRightConnectionPoint" aria-label="Add right connection point" />
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-bottom" OnClick="AddBottomConnectionPoint" aria-label="Add bottom connection point" />
                 <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-left" OnClick="AddLeftConnectionPoint" aria-label="Add left connection point" />
                 <div class="node-designer-card">
-                    <MudText Typo="Typo.overline">Custom node</MudText>
+                    <MudText Typo="Typo.overline">@(_draft.IsOrganized ? "Organized node" : "Simple node")</MudText>
                     <MudText Typo="Typo.h6">@(string.IsNullOrWhiteSpace(_draft.Label) ? "Untitled" : _draft.Label)</MudText>
+                    @if (_draft.IsOrganized) { @foreach (var section in _draftSections) { <div class="node-preview-section" style="@($"margin-left:{PreviewSectionDepth(section.Id) * 10}px")"><span>@section.Title</span>@if (section.Collapsible) { <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" /> }</div> } }
+                    @foreach (var property in _draftProperties.Take(4)) { <div class="node-preview-property">@property.Name <span>@property.EditorKind</span></div> }
                     <MudText Typo="Typo.caption">@_draftPorts.Count connection point@(_draftPorts.Count == 1 ? string.Empty : "s")</MudText>
                 </div>
             </div>
@@ -438,6 +477,8 @@
                     </MudListItem>
                 }
             </MudList>
+            </aside>
+            </div>
         </div>
         <footer class="studio-modal-actions">
             <MudButton OnClick="CloseDesigner">Cancel</MudButton>
@@ -539,7 +580,36 @@
             <div class="studio-modal-content properties-editor-content">
                 @if (IsRegisteredPropertiesLocked)
                 {
-                    <MudAlert Severity="Severity.Info" Dense="true">This registered node has a governed schema and ports. You can update property values, but its fields and connection points are locked.</MudAlert>
+                    <MudAlert Severity="Severity.Info" Dense="true">This registered node has a governed schema and ports. Property values and this node's presentation can change, but fields, sections, and connection points are locked.</MudAlert>
+                }
+                <section class="properties-editor-section" aria-label="Node presentation">
+                    <div class="properties-editor-heading"><div><MudText Typo="Typo.subtitle1">Presentation</MudText><MudText Typo="Typo.caption">Current height is authoritative. Collapsing keeps the expanded height for restoration.</MudText></div><MudSwitch T="bool" @bind-Value="_presentationDraft.Enabled" Color="Color.Primary" Label="Use presentation state" /></div>
+                    @if (_presentationDraft.Enabled)
+                    {
+                        <div class="presentation-editor-row">
+                            <MudSelect T="string" @bind-Value="_presentationDraft.DisplayMode" Label="Node display" Dense="true" Variant="Variant.Outlined"><MudSelectItem Value="@DiagramNodeDisplayModes.Expanded">Expanded</MudSelectItem><MudSelectItem Value="@DiagramNodeDisplayModes.Compact">Compact</MudSelectItem><MudSelectItem Value="@DiagramNodeDisplayModes.Collapsed">Collapsed</MudSelectItem></MudSelect>
+                            <MudNumericField T="double" @bind-Value="_presentationDraft.ExpandedHeight" Label="Expanded height" Min="48" Variant="Variant.Outlined" />
+                        </div>
+                        @if (_sectionEditorDrafts.Count > 0)
+                        {
+                            <div class="section-presentation-list" aria-label="Section visibility">
+                                @foreach (var section in _sectionEditorDrafts)
+                                {
+                                    <div class="section-presentation-row" @key="section.Id"><div><MudText Typo="Typo.body2">@section.Title</MudText><MudText Typo="Typo.caption" Color="Color.Secondary">@(section.ParentSectionId is null ? "Top-level section" : "Nested section")</MudText></div>@if (section.Collapsible) { <MudSwitch T="bool" @bind-Value="section.Collapsed" Label="Collapsed" /> } else { <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">Always open</MudChip> }</div>
+                                }
+                            </div>
+                        }
+                    }
+                </section>
+                @if (!IsRegisteredPropertiesLocked)
+                {
+                    <section class="properties-editor-section" aria-label="Section hierarchy">
+                        <div class="properties-editor-heading"><div><MudText Typo="Typo.subtitle1">Sections</MudText><MudText Typo="Typo.caption">Use a parent to nest a section; moving a property never changes its value.</MudText></div><MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.AccountTree" OnClick="AddEditorSection">Add section</MudButton></div>
+                        @foreach (var section in _sectionEditorDrafts)
+                        {
+                            <div class="section-editor-row" @key="section.Id"><MudTextField @bind-Value="section.Title" Label="Section title" Variant="Variant.Outlined" /><MudSelect T="string" @bind-Value="section.ParentSectionId" Label="Parent" Dense="true" Variant="Variant.Outlined" Clearable="true">@foreach (var parent in _sectionEditorDrafts.Where(parent => parent.Id != section.Id)) { <MudSelectItem T="string" Value="@parent.Id">@parent.Title</MudSelectItem> }</MudSelect><MudCheckBox @bind-Value="section.Collapsible" Label="Collapsible" Dense="true" /><MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveEditorSection(section.Id))" aria-label="Remove section" /></div>
+                        }
+                    </section>
                 }
                 <section class="properties-editor-section">
                     <div class="properties-editor-heading"><div><MudText Typo="Typo.subtitle1">Properties</MudText><MudText Typo="Typo.caption">Values appear on the node; connections create typed input/output ports.</MudText></div><MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Disabled="@(IsRegisteredPropertiesLocked || _propertyEditorDrafts.Count >= MaxDesignedProperties)" OnClick="AddEditorProperty">Add property</MudButton></div>
@@ -566,8 +636,13 @@
                                 </MudSelect>
                             }
                             <MudSelect T="string" @bind-Value="property.Mode" Label="Mode" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem Value="@DiagramPropertyModes.Display">Display</MudSelectItem><MudSelectItem Value="@DiagramPropertyModes.Edit">Edit</MudSelectItem><MudSelectItem Value="@DiagramPropertyModes.DisplayAndEdit">Display and edit</MudSelectItem><MudSelectItem Value="@DiagramPropertyModes.Hidden">Hidden</MudSelectItem></MudSelect>
+                            @if (_sectionEditorDrafts.Count > 0)
+                            { <MudSelect T="string" @bind-Value="property.SectionId" Label="Section" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" Clearable="true">@foreach (var section in _sectionEditorDrafts) { <MudSelectItem T="string" Value="@section.Id">@section.Title</MudSelectItem> }</MudSelect> }
+                            <MudSelect T="string" @bind-Value="property.EditorKind" Label="Editor" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Auto">Automatic</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Text">Text</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Multiline">Multiline</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Toggle">Toggle</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Number">Number</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Range">Range</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Date">Date</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.DateTime">Date/time</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Select">Select</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Color">Color</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Json">JSON</MudSelectItem></MudSelect>
                             <MudTextField @bind-Value="property.Value" Label="Current value" Variant="Variant.Outlined" Immediate="true" Disabled="@IsCustomPropertyType(property.Type)" />
                             @if (property.Type == DiagramPropertyTypes.Enum) { <MudTextField @bind-Value="property.Options" Label="Choices (comma separated)" Variant="Variant.Outlined" Immediate="true" Disabled="@IsRegisteredPropertiesLocked" /> }
+                            @if (property.EditorKind is DiagramPropertyEditorKinds.Text or DiagramPropertyEditorKinds.Multiline) { <MudTextField @bind-Value="property.Placeholder" Label="Placeholder" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /> }
+                                        @if (property.EditorKind is DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range) { <MudTextField @bind-Value="property.Minimum" Label="Minimum" Immediate="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /><MudTextField @bind-Value="property.Maximum" Label="Maximum" Immediate="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /><MudTextField @bind-Value="property.Step" Label="Step" Immediate="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /> }
                             <MudSelect T="string" @bind-Value="property.Connection" Label="Connection" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem Value="@("none")">None</MudSelectItem><MudSelectItem Value="@("target")">Input</MudSelectItem><MudSelectItem Value="@("source")">Output</MudSelectItem><MudSelectItem Value="@("both")">Both</MudSelectItem></MudSelect>
                             <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" Disabled="@IsRegisteredPropertiesLocked" OnClick="@(() => RemoveEditorProperty(property.Id))" aria-label="Remove property" />
                         </div>

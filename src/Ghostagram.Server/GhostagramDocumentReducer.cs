@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Ghostagram.Contracts;
+using Ghostagram.Core;
 
 namespace Ghostagram.Server;
 
@@ -101,6 +102,7 @@ public static class GhostagramDocumentReducer
                 if (!propertyIds.Add(propertyId))
                     throw new DiagramCommandException("DUPLICATE_ID", $"Node '{IdOf(node)}' contains duplicate property id '{propertyId}'.");
             }
+            ValidateProgressiveNode(node);
             propertyIdsByNode[IdOf(node)] = propertyIds;
         }
         var portIds = Ids(Collection(root, "ports"), "port");
@@ -155,6 +157,120 @@ public static class GhostagramDocumentReducer
                 current = parent;
             }
         }
+    }
+
+    private static void ValidateProgressiveNode(JsonObject node)
+    {
+        var nodeId = IdOf(node);
+        if (node["sections"] is not null and not JsonArray)
+            throw new DiagramCommandException("INVALID_MODEL", $"Node '{nodeId}' sections must be an array.");
+
+        var sections = (node["sections"] as JsonArray ?? []).OfType<JsonObject>().ToArray();
+        var sectionsById = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
+        foreach (var section in sections)
+        {
+            var sectionId = IdOf(section, "node section");
+            if (!sectionsById.TryAdd(sectionId, section))
+                throw new DiagramCommandException("DUPLICATE_ID", $"Node '{nodeId}' contains duplicate section id '{sectionId}'.");
+            String(section, "title", "node section");
+            if (section["order"] is JsonValue orderValue && (!orderValue.TryGetValue<int>(out var order) || order < 0))
+                throw new DiagramCommandException("INVALID_MODEL", $"Node section '{sectionId}' has an invalid order.");
+            if (section["collapsible"] is JsonValue collapsibleValue && !collapsibleValue.TryGetValue<bool>(out _))
+                throw new DiagramCommandException("INVALID_MODEL", $"Node section '{sectionId}' has an invalid collapsible value.");
+        }
+
+        foreach (var section in sections)
+        {
+            var sectionId = IdOf(section, "node section");
+            if (OptionalString(section, "parentSectionId") is { } immediateParentId && !sectionsById.ContainsKey(immediateParentId))
+                throw new DiagramCommandException("MISSING_REFERENCE", $"Node section '{sectionId}' references missing parent section '{immediateParentId}'.");
+
+            var visited = new HashSet<string>(StringComparer.Ordinal) { sectionId };
+            var current = section;
+            var depth = 1;
+            while (OptionalString(current, "parentSectionId") is { } parentId)
+            {
+                if (!visited.Add(parentId))
+                    throw new DiagramCommandException("INVALID_SECTION_HIERARCHY", $"Node '{nodeId}' section hierarchy contains a cycle involving '{parentId}'.");
+                if (++depth > 8)
+                    throw new DiagramCommandException("INVALID_SECTION_HIERARCHY", $"Node '{nodeId}' section '{sectionId}' exceeds the maximum nesting depth of 8.");
+                current = sectionsById[parentId];
+            }
+        }
+
+        foreach (var property in (node["properties"] as JsonArray ?? []).OfType<JsonObject>())
+        {
+            var propertyId = IdOf(property, "node property");
+            if (OptionalString(property, "sectionId") is { } sectionId && !sectionsById.ContainsKey(sectionId))
+                throw new DiagramCommandException("MISSING_REFERENCE", $"Node property '{propertyId}' references missing section '{sectionId}'.");
+            ValidatePropertyEditor(property, propertyId);
+        }
+
+        if (node["presentation"] is null) return;
+        if (node["presentation"] is not JsonObject presentation)
+            throw new DiagramCommandException("INVALID_MODEL", $"Node '{nodeId}' presentation must be an object.");
+        var displayMode = OptionalString(presentation, "displayMode") ?? DiagramNodeDisplayModes.Expanded;
+        if (displayMode is not (DiagramNodeDisplayModes.Expanded or DiagramNodeDisplayModes.Compact or DiagramNodeDisplayModes.Collapsed))
+            throw new DiagramCommandException("INVALID_MODEL", $"Node '{nodeId}' has unsupported display mode '{displayMode}'.");
+        if (presentation["expandedHeight"] is JsonValue heightValue &&
+            (!heightValue.TryGetValue<double>(out var expandedHeight) || !double.IsFinite(expandedHeight) || expandedHeight <= 0))
+            throw new DiagramCommandException("INVALID_MODEL", $"Node '{nodeId}' expanded height must be finite and positive.");
+        if (presentation["collapsedSectionIds"] is not null and not JsonArray)
+            throw new DiagramCommandException("INVALID_MODEL", $"Node '{nodeId}' collapsed section ids must be an array.");
+        var collapsedIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var item in presentation["collapsedSectionIds"] as JsonArray ?? [])
+        {
+            if (item is not JsonValue value || !value.TryGetValue<string>(out var collapsedId) || string.IsNullOrWhiteSpace(collapsedId))
+                throw new DiagramCommandException("INVALID_MODEL", $"Node '{nodeId}' collapsed section ids must contain non-empty strings.");
+            if (!collapsedIds.Add(collapsedId))
+                throw new DiagramCommandException("DUPLICATE_ID", $"Node '{nodeId}' contains duplicate collapsed section id '{collapsedId}'.");
+            if (!sectionsById.TryGetValue(collapsedId, out var section))
+                throw new DiagramCommandException("MISSING_REFERENCE", $"Node '{nodeId}' presentation references missing collapsed section '{collapsedId}'.");
+            if (section["collapsible"] is JsonValue collapsible && collapsible.TryGetValue<bool>(out var canCollapse) && !canCollapse)
+                throw new DiagramCommandException("INVALID_MODEL", $"Node '{nodeId}' presentation collapses non-collapsible section '{collapsedId}'.");
+        }
+    }
+
+    private static void ValidatePropertyEditor(JsonObject property, string propertyId)
+    {
+        if (property["editor"] is null) return;
+        if (property["editor"] is not JsonObject editor)
+            throw new DiagramCommandException("INVALID_MODEL", $"Node property '{propertyId}' editor must be an object.");
+        var kind = OptionalString(editor, "kind") ?? DiagramPropertyEditorKinds.Auto;
+        var type = OptionalString(property, "type") ?? DiagramPropertyTypes.String;
+        var compatible = kind switch
+        {
+            DiagramPropertyEditorKinds.Auto => true,
+            DiagramPropertyEditorKinds.Text or DiagramPropertyEditorKinds.Multiline or DiagramPropertyEditorKinds.Color => type == DiagramPropertyTypes.String,
+            DiagramPropertyEditorKinds.Toggle => type == DiagramPropertyTypes.Boolean,
+            DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range => type is DiagramPropertyTypes.Integer or DiagramPropertyTypes.Decimal or "number",
+            DiagramPropertyEditorKinds.Date => type == DiagramPropertyTypes.Date,
+            DiagramPropertyEditorKinds.DateTime => type is DiagramPropertyTypes.DateTime or "datetime",
+            DiagramPropertyEditorKinds.Select => type == DiagramPropertyTypes.Enum,
+            DiagramPropertyEditorKinds.Json => type == DiagramPropertyTypes.Json,
+            _ => false
+        };
+        if (!compatible)
+            throw new DiagramCommandException("INVALID_MODEL", $"Editor '{kind}' is incompatible with node property '{propertyId}' of type '{type}'.");
+
+        var minimum = OptionalFiniteNumber(editor, "minimum", propertyId);
+        var maximum = OptionalFiniteNumber(editor, "maximum", propertyId);
+        var step = OptionalFiniteNumber(editor, "step", propertyId);
+        if (minimum is { } min && maximum is { } max && min > max)
+            throw new DiagramCommandException("INVALID_MODEL", $"Node property '{propertyId}' editor minimum exceeds its maximum.");
+        if (step is <= 0)
+            throw new DiagramCommandException("INVALID_MODEL", $"Node property '{propertyId}' editor step must be positive.");
+        if (kind is not (DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range) &&
+            (minimum is not null || maximum is not null || step is not null))
+            throw new DiagramCommandException("INVALID_MODEL", $"Editor '{kind}' for node property '{propertyId}' cannot define numeric bounds.");
+    }
+
+    private static double? OptionalFiniteNumber(JsonObject item, string key, string propertyId)
+    {
+        if (item[key] is null) return null;
+        if (item[key] is not JsonValue value || !value.TryGetValue<double>(out var number) || !double.IsFinite(number))
+            throw new DiagramCommandException("INVALID_MODEL", $"Node property '{propertyId}' editor {key} must be a finite number.");
+        return number;
     }
     private static string Id(GhostagramOperation operation, JsonObject value) => operation.Id ?? IdOf(value);
     private static string IdOf(JsonObject item, string kind = "item") => String(item, "id", kind);

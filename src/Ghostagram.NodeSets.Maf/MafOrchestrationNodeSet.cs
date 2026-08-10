@@ -34,7 +34,7 @@ public static class MafOrchestrationNodeSet
         "Composable authoring nodes for future Microsoft Agent Framework adapters.");
 
     private static NodeTypeDescriptor Start() => new(
-        "maf.start", 1, "Start", DisplayName, "mdi:play-circle-outline", 200, 92,
+        "maf.start", 1, "Start", DisplayName, "mdi:play-circle-outline", 192, 96,
         properties:
         [
             Property("input", "Input", DiagramPropertyTypes.Json, DiagramPropertyModes.Edit, "Initial input", connectable: true)
@@ -46,7 +46,7 @@ public static class MafOrchestrationNodeSet
         ], style: DefaultStyle);
 
     private static NodeTypeDescriptor Agent() => new(
-        "maf.agent-component", 1, "Agent Component", DisplayName, "mdi:robot-outline", 248, 168,
+        "maf.agent-component", 1, "Agent Component", DisplayName, "mdi:robot-outline", 224, 192,
         properties:
         [
             Property("componentKey", "Component key", label: "Component", required: true, description: "DI/component activation key used by the future adapter."),
@@ -61,7 +61,7 @@ public static class MafOrchestrationNodeSet
         ], style: DefaultStyle);
 
     private static NodeTypeDescriptor DataCapture() => new(
-        "maf.data-capture", 1, "Data Capture", DisplayName, "mdi:clipboard-text-outline", 240, 152,
+        "maf.data-capture", 1, "Data Capture", DisplayName, "mdi:clipboard-text-outline", 224, 128,
         properties:
         [
             Property("field", "Field", label: "Field", required: true),
@@ -77,7 +77,7 @@ public static class MafOrchestrationNodeSet
         ], style: DefaultStyle);
 
     private static NodeTypeDescriptor Decision() => new(
-        "maf.decision", 1, "Route / Decision", DisplayName, "mdi:source-branch", 224, 136,
+        "maf.decision", 1, "Route / Decision", DisplayName, "mdi:source-branch", 208, 112,
         properties:
         [
             Property("expression", "Expression", mode: DiagramPropertyModes.Edit, label: "Condition", required: true),
@@ -91,7 +91,7 @@ public static class MafOrchestrationNodeSet
         ], style: DefaultStyle);
 
     private static NodeTypeDescriptor Parallel() => new(
-        "maf.parallel-split", 1, "Parallel Split", DisplayName, "mdi:source-fork", 216, 112,
+        "maf.parallel-split", 1, "Parallel Split", DisplayName, "mdi:source-fork", 192, 80,
         properties:
         [
             Property("maxConcurrency", "Maximum concurrency", DiagramPropertyTypes.Integer, DiagramPropertyModes.Edit, "Concurrency", defaultValue: Json("4"))
@@ -104,7 +104,7 @@ public static class MafOrchestrationNodeSet
         ], style: DefaultStyle);
 
     private static NodeTypeDescriptor Join() => new(
-        "maf.join", 1, "Join", DisplayName, "mdi:call-merge", 216, 112,
+        "maf.join", 1, "Join", DisplayName, "mdi:call-merge", 192, 80,
         properties:
         [
             Property("strategy", "Join strategy", DiagramPropertyTypes.Enum, DiagramPropertyModes.Edit, "Strategy", defaultValue: Json("\"all\""), options: ["all", "any", "quorum"])
@@ -116,7 +116,7 @@ public static class MafOrchestrationNodeSet
         ], style: DefaultStyle);
 
     private static NodeTypeDescriptor Handoff() => new(
-        "maf.handoff", 1, "Handoff", DisplayName, "mdi:account-arrow-right-outline", 228, 128,
+        "maf.handoff", 1, "Handoff", DisplayName, "mdi:account-arrow-right-outline", 208, 112,
         properties:
         [
             Property("targetComponent", "Target component", label: "Target", required: true, connectable: true),
@@ -130,7 +130,7 @@ public static class MafOrchestrationNodeSet
         ], style: DefaultStyle);
 
     private static NodeTypeDescriptor HumanInput() => new(
-        "maf.human-input", 1, "Human Input", DisplayName, "mdi:account-edit-outline", 236, 144,
+        "maf.human-input", 1, "Human Input", DisplayName, "mdi:account-edit-outline", 224, 160,
         properties:
         [
             Property("prompt", "Prompt", mode: DiagramPropertyModes.Edit, label: "Prompt", required: true),
@@ -144,7 +144,7 @@ public static class MafOrchestrationNodeSet
         ], style: DefaultStyle);
 
     private static NodeTypeDescriptor Loop() => new(
-        "maf.loop-guard", 1, "Loop Guard", DisplayName, "mdi:repeat", 220, 128,
+        "maf.loop-guard", 1, "Loop Guard", DisplayName, "mdi:repeat", 208, 96,
         properties:
         [
             Property("maxIterations", "Maximum iterations", DiagramPropertyTypes.Integer, DiagramPropertyModes.Edit, "Limit", required: true, defaultValue: Json("3")),
@@ -158,7 +158,7 @@ public static class MafOrchestrationNodeSet
         ], style: DefaultStyle, isLoopController: true);
 
     private static NodeTypeDescriptor Complete() => new(
-        "maf.output", 1, "Output", DisplayName, "mdi:stop-circle-outline", 204, 100,
+        "maf.output", 1, "Output", DisplayName, "mdi:stop-circle-outline", 192, 96,
         properties:
         [
             Property("result", "Result", DiagramPropertyTypes.Json, DiagramPropertyModes.Display, "Result", connectable: true)

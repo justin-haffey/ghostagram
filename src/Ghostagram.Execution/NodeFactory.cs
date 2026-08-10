@@ -48,7 +48,9 @@ public sealed class DeterministicNodeFactory(INodeTypeRegistry registry) : INode
                 definition.Required,
                 definition.Connectable,
                 definition.Options?.ToArray(),
-                Clone(definition.Metadata));
+                Clone(definition.Metadata),
+                definition.SectionId,
+                definition.Editor is null ? null : definition.Editor with { });
         }).ToArray();
 
         var node = new DiagramNode(
@@ -63,7 +65,16 @@ public sealed class DeterministicNodeFactory(INodeTypeRegistry registry) : INode
             Style: descriptor.Style,
             TypeId: descriptor.TypeId,
             TypeVersion: descriptor.Version,
-            Properties: properties);
+            Properties: properties,
+            Sections: descriptor.Sections.Count == 0
+                ? null
+                : descriptor.Sections.Select(section => new DiagramNodeSection(
+                    section.Id,
+                    section.Title,
+                    section.ParentSectionId,
+                    section.Order,
+                    section.Collapsible)).ToArray(),
+            Presentation: ClonePresentation(descriptor.Presentation));
         var ports = descriptor.Ports.OrderBy(port => port.Order).ThenBy(port => port.Id, StringComparer.Ordinal)
             .Select(port => new DiagramPort(
                 $"{request.NodeId}:{port.Id}",
@@ -80,4 +91,13 @@ public sealed class DeterministicNodeFactory(INodeTypeRegistry registry) : INode
     }
 
     private static JsonElement? Clone(JsonElement? value) => value?.Clone();
+
+    private static DiagramNodePresentation? ClonePresentation(DiagramNodePresentation? presentation) => presentation is null
+        ? null
+        : presentation with
+        {
+            CollapsedSectionIds = presentation.CollapsedSectionIds is null
+                ? null
+                : presentation.CollapsedSectionIds.ToArray()
+        };
 }

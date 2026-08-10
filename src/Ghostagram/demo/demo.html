@@ -12,7 +12,7 @@
     .toolbar-status { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; align-items: center; color: #475569; min-width: 0; }
     #flow-status, #events { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #events { min-width: 0; text-align: right; }
-    #canvas { width: 100vw; height: calc(100vh - 72px); background: #f8fafc; }
+    #canvas { width: 100vw; height: calc(100vh - 72px); background-color: #f8fafc; background-image: radial-gradient(#cbd3e3 1px, transparent 1.15px); background-position: var(--ghostagram-dot-grid-phase-x, 0) var(--ghostagram-dot-grid-phase-y, 0); background-size: var(--ghostagram-dot-grid-size, 16px) var(--ghostagram-dot-grid-size, 16px); }
   </style>
 </head>
 <body>
@@ -56,7 +56,7 @@
     });
     const hello = ghostagram.create(document.querySelector("#canvas"), {
       protocolVersion: 1,
-      gridSize: 1,
+      gridSize: 16,
       wheelZoom: true,
       respectReducedMotion: false,
       eventSink: onGhostagramEvent

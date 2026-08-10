@@ -17,6 +17,9 @@ const ICONIFY_ICON_SCRIPT = "https://code.iconify.design/iconify-icon/3.0.0/icon
 const NODE_PROPERTY_TOP = 30;
 const NODE_PROPERTY_HEIGHT = 20;
 const NODE_PROPERTY_GAP = 1;
+const NODE_SECTION_HEADER_HEIGHT = 22;
+const NODE_COMPACT_PROPERTY_HEIGHT = 18;
+const NODE_BODY_BOTTOM_PADDING = 8;
 const NODE_PROPERTY_EDITOR_COLOR = "#0f172a";
 const NODE_PROPERTY_EDITOR_BORDER = "#94a3b8";
 const NODE_INTERACTIVE_SELECTOR = "button,input,select,textarea,[contenteditable='true'],[data-ghostagram-interactive]";
@@ -36,7 +39,8 @@ const supported = Object.freeze({
     multiInstance: true, multiSelection: true, portConnectionLimits: true, connectionScopes: true, directNodeRotation: true,
     razorInterop: true, viewport: true, canvasGeometry: true,
     customFactories: true, dynamicAnchors: true, editableWaypoints: true, labelOverlayPlacement: true,
-    nestedGroups: true, perimeterAnchors: true, rotation: true, flowAnimation: true, selectionLasso: true, edgeTypes: true, iconifyIcons: true, selectorSources: false
+    nestedGroups: true, perimeterAnchors: true, rotation: true, flowAnimation: true, selectionLasso: true, edgeTypes: true, iconifyIcons: true,
+    progressiveNodes: true, nestedNodeSections: true, richPropertyEditors: true, selectorSources: false
   }
 });
 
@@ -296,29 +300,38 @@ class GhostagramEngine {
     }
     setBox(el, node);
     el.style.display = isNodeHiddenByCollapsedGroup(this.state, node) ? "none" : "block";
+    const layout = nodeLayoutProjection(node);
+    el.dataset.displayMode = layout.displayMode;
     el.title = ""; el.querySelector(".ghostagram-node-label").textContent = node.label ?? node.id; renderIconifyIcon(el.querySelector(".ghostagram-item-icon"), node.icon);
     applyStyle(el, node.style, { background: "#f8fafc", border: "1px solid #334155", borderRadius: "6px", color: "#0f172a", padding: "6px", boxSizing: "border-box", cursor: "grab", pointerEvents: "auto" });
     el.style.transform = node.rotation ? `rotate(${node.rotation}deg)` : "";
     const label = el.querySelector(".ghostagram-node-label"), icon = el.querySelector(".ghostagram-item-icon"), rotate = el.querySelector(".ghostagram-node-rotate"), handle = el.querySelector(".ghostagram-node-resize"), activeEditor = this.labelEditor?.kind === "node" && this.labelEditor.id === node.id ? this.suspendLabelEditor() : null;
-    rotate.hidden = true; handle.hidden = true; el.replaceChildren(label, icon, rotate, handle);
-    this.renderNodeProperties(el, node);
+    const header = document.createElement("header"); header.className = "ghostagram-node-header"; header.style.cssText = `position:absolute;left:6px;right:6px;top:0;height:${NODE_PROPERTY_TOP}px;display:flex;align-items:center;gap:5px;box-sizing:border-box;z-index:2;`;
+    label.style.cssText = "display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;";
+    icon.style.right = layout.progressive ? "28px" : "4px";
+    header.append(label, icon);
+    if (layout.progressive) {
+      const toggle = document.createElement("button"), next = nextNodePresentationRequest(node, this.options.gridSize);
+      toggle.type = "button"; toggle.className = "ghostagram-node-presentation"; toggle.dataset.ghostagramInteractive = "true"; toggle.textContent = layout.displayMode === "expanded" ? "−" : layout.displayMode === "compact" ? "▾" : "▸";
+      toggle.setAttribute("aria-label", `${next.label} ${node.label ?? node.id}`); toggle.setAttribute("aria-expanded", String(layout.displayMode !== "collapsed")); toggle.title = `${next.label} node`;
+      toggle.style.cssText = "position:absolute;right:0;top:5px;width:20px;height:20px;padding:0;border:1px solid currentColor;border-radius:4px;background:rgba(255,255,255,.88);color:inherit;font:600 14px/18px system-ui;cursor:pointer;";
+      toggle.addEventListener("pointerdown", event => event.stopPropagation()); toggle.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); this.emit("node.presentationRequested", next.payload, "browser"); }); header.append(toggle);
+    }
+    const body = document.createElement("div"); body.className = "ghostagram-node-body"; body.hidden = layout.displayMode === "collapsed"; body.style.cssText = "position:absolute;inset:0;z-index:1;";
+    this.renderNodeProperties(body, node, layout);
+    rotate.hidden = true; handle.hidden = true; el.replaceChildren(header, body, rotate, handle);
     this.restoreLabelEditor(activeEditor);
-    for (const portId of this.state.portsByNode.get(node.id) ?? []) this.renderPort(el, this.state.ports.get(portId));
+    for (const entry of portRenderPlan(this.state, node.id)) this.renderPort(el, entry.port, entry.ports);
   }
-  renderNodeProperties(nodeEl, node) {
-    const properties = node.properties ?? [];
-    if (!properties.length) return;
-    const body = document.createElement("div"); body.className = "ghostagram-node-properties";
-    body.style.cssText = `position:absolute;left:6px;right:6px;top:${NODE_PROPERTY_TOP}px;display:grid;gap:${NODE_PROPERTY_GAP}px;z-index:1;`;
-    for (const property of properties) {
-      if (property.mode === "hidden") continue;
-      const row = document.createElement("label"); row.className = "ghostagram-node-property"; row.dataset.propertyId = property.id;
-      row.style.cssText = `display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:center;gap:5px;height:${NODE_PROPERTY_HEIGHT}px;font-size:11px;line-height:18px;`;
+  renderNodeProperties(body, node, layout) {
+    const renderRow = (container, rowLayout, originY = 0) => {
+      const property = rowLayout.property, row = document.createElement("label"); row.className = "ghostagram-node-property"; row.dataset.propertyId = property.id;
+      row.style.cssText = `position:absolute;left:${6 + Math.min(rowLayout.depth, 4) * 8}px;right:6px;top:${rowLayout.y - originY}px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:center;gap:5px;height:${rowLayout.height}px;font-size:11px;line-height:18px;box-sizing:border-box;`;
       const name = document.createElement("span"); name.className = "ghostagram-node-property-label"; name.textContent = property.label ?? property.name ?? property.id; name.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.75;";
       row.append(name);
-      if ((property.mode === "edit" || property.mode === "displayAndEdit") && editablePropertyTypes.has(property.type)) {
+      if (!rowLayout.compact && (property.mode === "edit" || property.mode === "displayAndEdit") && (editablePropertyTypes.has(property.type) || property.editor?.kind && property.editor.kind !== "auto")) {
         const input = propertyInput(property); input.dataset.propertyId = property.id; input.dataset.ghostagramInteractive = "true"; input.setAttribute("aria-label", `${node.label ?? node.id}: ${property.label ?? property.id}`);
-        input.style.cssText = propertyEditorStyle();
+        input.style.cssText = propertyEditorStyle(rowLayout.height);
         let lastSignature = propertyValueSignature(property.value);
         const commit = () => {
           try {
@@ -338,7 +351,7 @@ class GhostagramEngine {
         input.addEventListener("dblclick", event => event.stopPropagation(), { signal: this.abort.signal });
         input.addEventListener("keydown", event => {
           event.stopPropagation();
-          if (event.key === "Enter") { event.preventDefault(); commit(); input.blur(); }
+          if (event.key === "Enter" && (input.tagName !== "TEXTAREA" || event.ctrlKey || event.metaKey)) { event.preventDefault(); commit(); input.blur(); }
         }, { signal: this.abort.signal });
         input.addEventListener("change", commit, { signal: this.abort.signal });
         input.addEventListener("blur", commit, { signal: this.abort.signal });
@@ -346,17 +359,35 @@ class GhostagramEngine {
       } else {
         const value = document.createElement("output"); value.className = "ghostagram-node-property-value"; value.textContent = propertyDisplayValue(property); value.style.cssText = "min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;"; row.append(value);
       }
-      body.append(row);
-    }
-    nodeEl.append(body);
+      container.append(row);
+    };
+    for (const row of layout.unsectionedRows) renderRow(body, row);
+    const renderSection = (container, sectionLayout, originY = 0) => {
+      const section = document.createElement("section"); section.className = "ghostagram-node-section"; section.dataset.sectionId = sectionLayout.section.id; section.dataset.collapsed = String(sectionLayout.collapsed);
+      section.style.cssText = `position:absolute;left:${6 + Math.min(sectionLayout.depth, 4) * 8}px;right:6px;top:${sectionLayout.y - originY}px;height:${sectionLayout.height}px;box-sizing:border-box;`;
+      const heading = document.createElement(sectionLayout.section.collapsible ? "button" : "div"); heading.className = "ghostagram-node-section-heading"; heading.textContent = `${sectionLayout.section.collapsible ? sectionLayout.collapsed ? "▸ " : "▾ " : ""}${sectionLayout.section.title}`;
+      heading.style.cssText = `position:absolute;left:0;right:0;top:0;height:${NODE_SECTION_HEADER_HEIGHT}px;padding:1px 5px;border:0;border-bottom:1px solid rgba(100,116,139,.35);background:rgba(148,163,184,.10);color:inherit;text-align:left;font:600 11px/18px system-ui;box-sizing:border-box;`;
+      if (sectionLayout.section.collapsible) {
+        const request = nextSectionPresentationRequest(node, sectionLayout.section.id, this.options.gridSize);
+        heading.type = "button"; heading.dataset.ghostagramInteractive = "true"; heading.setAttribute("aria-expanded", String(!sectionLayout.collapsed)); heading.setAttribute("aria-label", `${request.label} ${sectionLayout.section.title}`); heading.title = request.label;
+        heading.addEventListener("pointerdown", event => event.stopPropagation()); heading.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); this.emit("node.presentationRequested", request.payload, "browser"); });
+      }
+      section.append(heading);
+      for (const row of sectionLayout.rows) renderRow(section, row, sectionLayout.y);
+      for (const child of sectionLayout.children) renderSection(section, child, sectionLayout.y);
+      container.append(section);
+    };
+    for (const section of layout.rootSections) renderSection(body, section);
   }
-  renderPort(nodeEl, port) {
+  renderPort(nodeEl, port, proxyPorts = [port]) {
     const endpoint = endpointDescriptor(port);
     if (!port || endpoint.type === "blank") return;
-    const el = document.createElement("button"); el.type = "button"; el.className = "ghostagram-port"; el.dataset.portId = port.id; el.setAttribute("aria-label", port.label ?? port.id); el.title = port.label ?? port.id;
+    const descriptor = proxyPortDescriptor(proxyPorts);
+    const visual = portVisualDescriptor(port, endpoint);
+    const el = document.createElement("button"); el.type = "button"; el.className = `ghostagram-port ghostagram-${visual.kind}-port`; el.dataset.portId = port.id; el.dataset.portKind = visual.kind; el.dataset.proxyPortIds = descriptor.portIds.join(","); el.setAttribute("aria-label", descriptor.label); el.title = descriptor.label;
     const anchor = resolvePortAnchor(this.state, port), size = endpoint.size ?? 12, strokeWidth = endpoint.strokeWidth ?? 1;
-    el.disabled = port.enabled === false;
-    el.style.cssText = `position:absolute;width:${size}px;height:${size}px;border:${strokeWidth}px solid ${endpoint.stroke ?? "#0f766e"};border-radius:${endpoint.type === "rectangle" ? "1px" : "50%"};background:${endpoint.fill ?? "#fff"};padding:0;opacity:${port.enabled === false ? .45 : 1};cursor:${port.enabled === false ? "not-allowed" : "crosshair"};${portAnchorStyle(anchor, size, strokeWidth)}`;
+    el.disabled = !descriptor.enabled;
+    el.style.cssText = `position:absolute;width:${size}px;height:${size}px;border:${strokeWidth}px solid ${endpoint.stroke ?? "#0f766e"};border-radius:${visual.borderRadius};background:${endpoint.fill ?? "#fff"};color:${endpoint.stroke ?? "#0f766e"};padding:0;opacity:${descriptor.enabled ? 1 : .45};cursor:${descriptor.enabled ? "crosshair" : "not-allowed"};${portAnchorStyle(anchor, size, strokeWidth)}`;
     endpointRegistry.get(endpoint.type)?.(el, endpoint, port);
     el.addEventListener("pointerdown", event => this.startConnection(port, event), { signal: this.abort.signal });
     el.addEventListener("contextmenu", event => this.requestContext(port.id, event, "port"), { signal: this.abort.signal }); nodeEl.append(el);
@@ -484,7 +515,14 @@ class GhostagramEngine {
   groupAtPosition(node, position, excludedGroupIds = new Set()) {
     return groupForNodePosition([...this.state.groups.values()].filter(group => !excludedGroupIds.has(group.id) && !isGroupHiddenByCollapsedAncestor(this.state, group)), node, position);
   }
-  renderViewport() { const v = this.state.viewport; this.dom.stage.style.transform = `translate(${-v.x * v.zoom}px, ${-v.y * v.zoom}px) scale(${v.zoom})`; }
+  renderViewport() {
+    const v = this.state.viewport; this.dom.stage.style.transform = `translate(${-v.x * v.zoom}px, ${-v.y * v.zoom}px) scale(${v.zoom})`;
+    const grid = gridCssProjection(v, this.options.gridSize);
+    this.host.style.setProperty("--ghostagram-grid-size", `${grid.modelSize}px`);
+    this.host.style.setProperty("--ghostagram-dot-grid-size", `${grid.screenSize}px`);
+    this.host.style.setProperty("--ghostagram-dot-grid-phase-x", `${grid.phaseX}px`);
+    this.host.style.setProperty("--ghostagram-dot-grid-phase-y", `${grid.phaseY}px`);
+  }
   renderSelection() {
     const selection = this.previewSelection ?? this.state.selection;
     for (const [id, el] of this.dom.nodeById) {
@@ -774,7 +812,7 @@ class GhostagramEngine {
       else if (typeof sink.invokeMethodAsync === "function") this.interopDelivery.enqueue(event, coalesced);
     } catch { /* callback faults cannot break the renderer */ }
   }
-  dispose() { if (this.lifecycle === "disposed") return { ok: true, instanceId: this.instanceId, disposed: true }; this.lifecycle = "disposing"; this.renderer.cancel(); if (this.previewFrame) cancelAnimationFrame(this.previewFrame); this.interopDelivery.dispose(); this.interactions.dispose(); this.abort.abort(); this.dom.root.remove(); this.lifecycle = "disposed"; return { ok: true, instanceId: this.instanceId, disposed: true }; }
+  dispose() { if (this.lifecycle === "disposed") return { ok: true, instanceId: this.instanceId, disposed: true }; this.lifecycle = "disposing"; this.renderer.cancel(); if (this.previewFrame) cancelAnimationFrame(this.previewFrame); this.interopDelivery.dispose(); this.interactions.dispose(); this.abort.abort(); this.dom.root.remove(); for (const name of ["--ghostagram-grid-size", "--ghostagram-dot-grid-size", "--ghostagram-dot-grid-phase-x", "--ghostagram-dot-grid-phase-y"]) this.host.style.removeProperty(name); this.lifecycle = "disposed"; return { ok: true, instanceId: this.instanceId, disposed: true }; }
 }
 
 class InteropEventQueue {
@@ -854,6 +892,7 @@ function applyOperation(state, op, dirty, options) {
 }
 const propertyModes = new Set(["display", "edit", "displayAndEdit", "hidden"]);
 const editablePropertyTypes = new Set(["string", "boolean", "integer", "decimal", "number", "date", "dateTime", "datetime", "enum", "json"]);
+const propertyEditorKinds = new Set(["auto", "text", "multiline", "toggle", "number", "range", "color", "date", "dateTime", "select", "json"]);
 function normaliseNodeProperties(raw) {
   if (raw === null) return [];
   if (!Array.isArray(raw)) throw new GhostagramError("INVALID_MODEL", "Node properties must be an array or null.");
@@ -869,25 +908,186 @@ function normaliseNodeProperties(raw) {
     if (candidate.name !== undefined && typeof candidate.name !== "string") throw new GhostagramError("INVALID_MODEL", "Node property name must be a string.");
     if (candidate.label !== undefined && candidate.label !== null && typeof candidate.label !== "string") throw new GhostagramError("INVALID_MODEL", "Node property label must be a string or null.");
     if (candidate.options !== undefined && candidate.options !== null && (!Array.isArray(candidate.options) || candidate.options.some(option => typeof option !== "string"))) throw new GhostagramError("INVALID_MODEL", "Node property options must be string values.");
-    return { ...candidate, id, name: candidate.name ?? id, type, mode, order: Number.isSafeInteger(candidate.order) ? candidate.order : index, options: candidate.options ?? null };
+    if (candidate.sectionId !== undefined && candidate.sectionId !== null && (typeof candidate.sectionId !== "string" || !candidate.sectionId)) throw new GhostagramError("INVALID_MODEL", `Node property '${id}' sectionId must be a non-empty string or null.`);
+    const property = { ...candidate, id, name: candidate.name ?? id, type, mode, order: Number.isSafeInteger(candidate.order) ? candidate.order : index, options: candidate.options ?? null };
+    const editor = normalisePropertyEditor(candidate.editor, id);
+    if (candidate.sectionId != null) property.sectionId = candidate.sectionId; else delete property.sectionId;
+    if (editor) property.editor = editor; else delete property.editor;
+    return property;
   }).sort((left, right) => left.order - right.order || left.id.localeCompare(right.id));
 }
-function propertyPortAnchor(node, propertyId, direction = "both") {
-  const properties = node?.properties ?? [], index = properties.findIndex(property => property.id === propertyId);
-  if (index < 0) return null;
-  const visible = properties.filter(property => property.mode !== "hidden"), visibleIndex = visible.findIndex(property => property.id === propertyId);
-  const row = visibleIndex < 0 ? index : visibleIndex;
-  return {
-    type: "property",
-    side: direction === "target" ? "left" : "right",
-    offsetY: NODE_PROPERTY_TOP + NODE_PROPERTY_HEIGHT / 2 + row * (NODE_PROPERTY_HEIGHT + NODE_PROPERTY_GAP)
+function normalisePropertyEditor(raw, propertyId) {
+  if (raw === undefined || raw === null) return null;
+  requireObject(raw, "INVALID_MODEL", `Node property '${propertyId}' editor must be an object or null.`);
+  const kind = raw.kind ?? "auto";
+  if (!propertyEditorKinds.has(kind)) throw new GhostagramError("INVALID_MODEL", `Node property '${propertyId}' has unsupported editor kind '${kind}'.`);
+  if (raw.placeholder !== undefined && raw.placeholder !== null && typeof raw.placeholder !== "string") throw new GhostagramError("INVALID_MODEL", `Node property '${propertyId}' editor placeholder must be a string or null.`);
+  for (const key of ["minimum", "maximum", "step"]) if (raw[key] !== undefined && raw[key] !== null && !Number.isFinite(raw[key])) throw new GhostagramError("INVALID_MODEL", `Node property '${propertyId}' editor ${key} must be numeric or null.`);
+  if (raw.minimum != null && raw.maximum != null && raw.minimum > raw.maximum) throw new GhostagramError("INVALID_MODEL", `Node property '${propertyId}' editor minimum cannot exceed maximum.`);
+  if (raw.step != null && raw.step <= 0) throw new GhostagramError("INVALID_MODEL", `Node property '${propertyId}' editor step must be positive.`);
+  return { ...raw, kind, placeholder: raw.placeholder ?? null, minimum: raw.minimum ?? null, maximum: raw.maximum ?? null, step: raw.step ?? null };
+}
+function normaliseNodeSections(raw, properties) {
+  if (raw === undefined || raw === null) {
+    const orphan = properties.find(property => property.sectionId);
+    if (orphan) throw new GhostagramError("MISSING_REFERENCE", `Node property '${orphan.id}' references missing section '${orphan.sectionId}'.`);
+    return null;
+  }
+  if (!Array.isArray(raw)) throw new GhostagramError("INVALID_MODEL", "Node sections must be an array or null.");
+  const ids = new Set();
+  const sections = raw.map((candidate, index) => {
+    requireObject(candidate, "INVALID_MODEL", "Each node section must be an object.");
+    if (!candidate.id || typeof candidate.id !== "string" || ids.has(candidate.id)) throw new GhostagramError("INVALID_MODEL", "Node sections require unique string ids.");
+    ids.add(candidate.id);
+    if (candidate.title !== undefined && typeof candidate.title !== "string") throw new GhostagramError("INVALID_MODEL", `Node section '${candidate.id}' title must be a string.`);
+    if (candidate.parentSectionId !== undefined && candidate.parentSectionId !== null && (typeof candidate.parentSectionId !== "string" || !candidate.parentSectionId)) throw new GhostagramError("INVALID_MODEL", `Node section '${candidate.id}' parentSectionId must be a non-empty string or null.`);
+    if (candidate.collapsible !== undefined && typeof candidate.collapsible !== "boolean") throw new GhostagramError("INVALID_MODEL", `Node section '${candidate.id}' collapsible must be boolean.`);
+    return { ...candidate, title: candidate.title ?? candidate.id, parentSectionId: candidate.parentSectionId ?? null, order: Number.isSafeInteger(candidate.order) ? candidate.order : index, collapsible: candidate.collapsible ?? true };
+  }).sort((left, right) => left.order - right.order || left.id.localeCompare(right.id));
+  for (const section of sections) if (section.parentSectionId && !ids.has(section.parentSectionId)) throw new GhostagramError("MISSING_REFERENCE", `Node section '${section.id}' references missing parent section '${section.parentSectionId}'.`);
+  for (const section of sections) {
+    const ancestors = new Set([section.id]); let parentId = section.parentSectionId, depth = 0;
+    while (parentId) { if (ancestors.has(parentId)) throw new GhostagramError("INVALID_MODEL", "Node section nesting contains a cycle."); if (++depth > 8) throw new GhostagramError("INVALID_MODEL", "Node section nesting cannot exceed 8 levels."); ancestors.add(parentId); parentId = sections.find(candidate => candidate.id === parentId)?.parentSectionId ?? null; }
+  }
+  for (const property of properties) if (property.sectionId && !ids.has(property.sectionId)) throw new GhostagramError("MISSING_REFERENCE", `Node property '${property.id}' references missing section '${property.sectionId}'.`);
+  return sections;
+}
+function normaliseNodePresentation(raw, height, sections) {
+  if (raw === undefined || raw === null) return null;
+  requireObject(raw, "INVALID_MODEL", "Node presentation must be an object or null.");
+  const displayMode = raw.displayMode ?? "expanded";
+  if (!["expanded", "compact", "collapsed"].includes(displayMode)) throw new GhostagramError("INVALID_MODEL", `Node presentation displayMode '${displayMode}' is unsupported.`);
+  const expandedHeight = raw.expandedHeight ?? height;
+  if (!Number.isFinite(expandedHeight) || expandedHeight <= 0) throw new GhostagramError("INVALID_MODEL", "Node presentation expandedHeight must be positive.");
+  const collapsedSectionIds = raw.collapsedSectionIds ?? [];
+  if (!Array.isArray(collapsedSectionIds) || collapsedSectionIds.some(id => typeof id !== "string") || new Set(collapsedSectionIds).size !== collapsedSectionIds.length) throw new GhostagramError("INVALID_MODEL", "Node presentation collapsedSectionIds must contain unique strings.");
+  const byId = new Map((sections ?? []).map(section => [section.id, section]));
+  for (const id of collapsedSectionIds) {
+    const section = byId.get(id);
+    if (!section) throw new GhostagramError("MISSING_REFERENCE", `Node presentation references missing section '${id}'.`);
+    if (!section.collapsible) throw new GhostagramError("INVALID_MODEL", `Node section '${id}' is not collapsible.`);
+  }
+  return { ...raw, displayMode, expandedHeight, collapsedSectionIds: [...collapsedSectionIds] };
+}
+function propertyEditorKind(property) {
+  const explicit = property.editor?.kind;
+  if (explicit && explicit !== "auto") return explicit;
+  if (property.type === "boolean") return "toggle";
+  if (["integer", "decimal", "number"].includes(property.type)) return "number";
+  if (property.type === "date") return "date";
+  if (property.type === "dateTime" || property.type === "datetime") return "dateTime";
+  if (property.type === "enum") return "select";
+  if (property.type === "json") return "json";
+  return "text";
+}
+function propertyRowHeight(property, compact) {
+  if (compact) return NODE_COMPACT_PROPERTY_HEIGHT;
+  return ["multiline", "json"].includes(propertyEditorKind(property)) ? 48 : propertyEditorKind(property) === "range" ? 28 : NODE_PROPERTY_HEIGHT;
+}
+function nodeLayoutProjection(node) {
+  const properties = node?.properties ?? [], sections = node?.sections ?? null, presentation = node?.presentation ?? null;
+  const displayMode = presentation?.displayMode ?? "expanded", compact = displayMode === "compact", progressive = Boolean(sections?.length || presentation), header = { y: 0, height: NODE_PROPERTY_TOP };
+  const layout = { progressive, displayMode, compact, header, rows: [], unsectionedRows: [], sections: [], rootSections: [], propertyAnchors: new Map(), minimumHeight: NODE_PROPERTY_TOP };
+  if (displayMode === "collapsed") {
+    for (const property of properties) layout.propertyAnchors.set(property.id, { type: "property", side: null, offsetY: NODE_PROPERTY_TOP / 2, proxied: true, proxy: "node" });
+    return layout;
+  }
+  let cursor = NODE_PROPERTY_TOP;
+  const visible = properties.filter(property => property.mode !== "hidden"), bySection = new Map(), unsectioned = [];
+  for (const property of visible) (property.sectionId ? (bySection.get(property.sectionId) ?? bySection.set(property.sectionId, []).get(property.sectionId)) : unsectioned).push(property);
+  const addRow = (property, depth, sectionId, target) => {
+    const height = propertyRowHeight(property, compact), row = { property, y: cursor, height, depth, sectionId, compact };
+    cursor += height + NODE_PROPERTY_GAP; layout.rows.push(row); target.push(row);
+    layout.propertyAnchors.set(property.id, { type: "property", side: null, offsetY: row.y + row.height / 2 });
   };
+  for (const property of unsectioned) addRow(property, 0, null, layout.unsectionedRows);
+  const sectionByParent = new Map();
+  for (const section of sections ?? []) (sectionByParent.get(section.parentSectionId) ?? sectionByParent.set(section.parentSectionId, []).get(section.parentSectionId)).push(section);
+  const collapsed = new Set(presentation?.collapsedSectionIds ?? []);
+  const descendantPropertyIds = sectionId => {
+    const result = [...(bySection.get(sectionId) ?? [])].map(property => property.id);
+    for (const child of sectionByParent.get(sectionId) ?? []) result.push(...descendantPropertyIds(child.id));
+    return result;
+  };
+  const addSection = (section, depth) => {
+    const start = cursor, sectionLayout = { section, y: start, height: NODE_SECTION_HEADER_HEIGHT, depth, collapsed: collapsed.has(section.id), rows: [], children: [] };
+    cursor += NODE_SECTION_HEADER_HEIGHT + NODE_PROPERTY_GAP;
+    if (sectionLayout.collapsed) {
+      for (const propertyId of descendantPropertyIds(section.id)) layout.propertyAnchors.set(propertyId, { type: "property", side: null, offsetY: start + NODE_SECTION_HEADER_HEIGHT / 2, proxied: true, proxy: section.id });
+    } else {
+      for (const property of bySection.get(section.id) ?? []) addRow(property, depth + 1, section.id, sectionLayout.rows);
+      for (const child of sectionByParent.get(section.id) ?? []) sectionLayout.children.push(addSection(child, depth + 1));
+    }
+    sectionLayout.height = Math.max(NODE_SECTION_HEADER_HEIGHT, cursor - start - NODE_PROPERTY_GAP); layout.sections.push(sectionLayout); return sectionLayout;
+  };
+  for (const section of sectionByParent.get(null) ?? []) layout.rootSections.push(addSection(section, 0));
+  for (const property of properties) if (!layout.propertyAnchors.has(property.id)) layout.propertyAnchors.set(property.id, { type: "property", side: null, offsetY: NODE_PROPERTY_TOP / 2, proxied: true, proxy: "node" });
+  layout.minimumHeight = layout.rows.length || layout.sections.length
+    ? Math.max(NODE_PROPERTY_TOP, cursor + NODE_BODY_BOTTOM_PADDING - NODE_PROPERTY_GAP)
+    : NODE_PROPERTY_TOP;
+  return layout;
+}
+function nextNodePresentationRequest(node, gridSize = 16) {
+  const current = node.presentation?.displayMode ?? "expanded", displayMode = current === "expanded" ? "compact" : current === "compact" ? "collapsed" : "expanded";
+  const expandedHeight = current === "expanded" ? Math.max(node.height, node.presentation?.expandedHeight ?? node.height) : node.presentation?.expandedHeight ?? node.height;
+  const presentation = { ...(node.presentation ?? {}), displayMode, expandedHeight, collapsedSectionIds: [...(node.presentation?.collapsedSectionIds ?? [])] };
+  const minimumHeight = nodeLayoutProjection({ ...node, presentation }).minimumHeight;
+  const height = ceilToGrid(displayMode === "collapsed" ? NODE_PROPERTY_TOP : displayMode === "expanded" ? Math.max(expandedHeight, minimumHeight) : minimumHeight, gridSize);
+  presentation.expandedHeight = ceilToGrid(presentation.expandedHeight, gridSize);
+  return { label: displayMode === "compact" ? "Use compact view for" : displayMode === "collapsed" ? "Collapse" : "Expand", payload: { nodeId: node.id, height, presentation } };
+}
+function nextSectionPresentationRequest(node, sectionId, gridSize = 16) {
+  const collapsedIds = new Set(node.presentation?.collapsedSectionIds ?? []), collapsed = !collapsedIds.has(sectionId);
+  collapsed ? collapsedIds.add(sectionId) : collapsedIds.delete(sectionId);
+  const expandedHeight = node.presentation?.expandedHeight ?? node.height;
+  const presentation = { ...(node.presentation ?? {}), displayMode: node.presentation?.displayMode ?? "expanded", expandedHeight, collapsedSectionIds: [...collapsedIds] };
+  const minimumHeight = nodeLayoutProjection({ ...node, presentation }).minimumHeight;
+  const projectedHeight = presentation.displayMode === "expanded"
+    ? collapsed ? Math.max(NODE_PROPERTY_TOP, Math.min(node.height, minimumHeight)) : Math.max(minimumHeight, expandedHeight)
+    : minimumHeight;
+  const height = ceilToGrid(projectedHeight, gridSize);
+  presentation.expandedHeight = ceilToGrid(presentation.expandedHeight, gridSize);
+  return { label: collapsed ? "Collapse section" : "Expand section", payload: { nodeId: node.id, sectionId, collapsed, height, presentation } };
+}
+function propertyPortAnchor(node, propertyId, direction = "both") {
+  const anchor = nodeLayoutProjection(node).propertyAnchors.get(propertyId);
+  return anchor ? { ...anchor, side: direction === "target" ? "left" : "right" } : null;
 }
 function resolvePortAnchor(state, port) {
   if (port?.propertyId) return propertyPortAnchor(state.nodes.get(port.nodeId), port.propertyId, port.direction) ?? port.anchor ?? "right";
   if (port?.anchor != null) return port.anchor;
   const node = port && state.nodes.get(port.nodeId);
   return node?.properties?.length ? orderedNodePortAnchor(state, node, port) ?? "right" : "right";
+}
+function portRenderPlan(state, nodeId) {
+  const ports = [...(state.portsByNode.get(nodeId) ?? [])].map(id => state.ports.get(id)).filter(Boolean)
+    .sort((left, right) => left.order - right.order || left.id.localeCompare(right.id));
+  const entries = [], proxies = new Map();
+  for (const port of ports) {
+    const anchor = resolvePortAnchor(state, port);
+    if (!anchor?.proxied) { entries.push({ port, ports: [port], anchor }); continue; }
+    const key = `${anchor.proxy ?? "node"}|${anchor.side}|${anchor.offsetY}`;
+    const entry = proxies.get(key) ?? { port, ports: [], anchor };
+    entry.ports.push(port); proxies.set(key, entry);
+  }
+  for (const entry of proxies.values()) {
+    entry.port = entry.ports.find(port => port.enabled !== false && endpointDescriptor(port).type !== "blank")
+      ?? entry.ports.find(port => endpointDescriptor(port).type !== "blank")
+      ?? entry.ports[0];
+    entries.push(entry);
+  }
+  return entries.sort((left, right) => (left.anchor?.offsetY ?? 0) - (right.anchor?.offsetY ?? 0) || left.port.order - right.port.order || left.port.id.localeCompare(right.port.id));
+}
+function proxyPortDescriptor(ports) {
+  const ordered = [...ports].sort((left, right) => left.order - right.order || left.id.localeCompare(right.id)), labels = ordered.map(port => port.label ?? port.id);
+  return { portIds: ordered.map(port => port.id), enabled: ordered.some(port => port.enabled !== false), label: ordered.length === 1 ? labels[0] : `Collapsed connections (${ordered.length}): ${labels.join(", ")}` };
+}
+function portVisualDescriptor(port, endpoint = endpointDescriptor(port)) {
+  const propertyBound = typeof port?.propertyId === "string" && port.propertyId.length > 0;
+  return {
+    kind: propertyBound ? "property" : "node",
+    borderRadius: propertyBound ? "3px" : endpoint.type === "rectangle" ? "1px" : "50%"
+  };
 }
 function orderedNodePortAnchor(state, node, port) {
   const ordered = [...(state.portsByNode.get(node.id) ?? [])]
@@ -898,10 +1098,7 @@ function orderedNodePortAnchor(state, node, port) {
   return { type: "ordered", side: port.direction === "target" ? "left" : "right", offsetY: NODE_PROPERTY_TOP + NODE_PROPERTY_HEIGHT / 2 + slot * (NODE_PROPERTY_HEIGHT + NODE_PROPERTY_GAP) };
 }
 function nodeContentMinimumHeight(state, node) {
-  const visibleProperties = (node.properties ?? []).filter(property => property.mode !== "hidden");
-  const propertyBottom = visibleProperties.length
-    ? NODE_PROPERTY_TOP + visibleProperties.length * NODE_PROPERTY_HEIGHT + (visibleProperties.length - 1) * NODE_PROPERTY_GAP + 8
-    : 0;
+  const propertyBottom = nodeLayoutProjection(node).minimumHeight;
   let portBottom = 0;
   for (const portId of state.portsByNode.get(node.id) ?? []) {
     const port = state.ports.get(portId), anchor = port && resolvePortAnchor(state, port);
@@ -916,19 +1113,24 @@ function propertyDisplayValue(property) {
   return String(property.value);
 }
 function propertyInput(property) {
-  const type = property.type;
-  if (type === "boolean") { const input = document.createElement("input"); input.type = "checkbox"; input.checked = property.value === true; return input; }
-  if (type === "enum") { const select = document.createElement("select"); for (const optionValue of property.options ?? []) { const option = document.createElement("option"); option.value = optionValue; option.textContent = optionValue; option.selected = optionValue === property.value; select.append(option); } return select; }
-  const input = document.createElement("input");
-  input.type = type === "integer" || type === "decimal" || type === "number" ? "number" : type === "date" ? "date" : type === "dateTime" || type === "datetime" ? "datetime-local" : "text";
+  const type = property.type, kind = propertyEditorKind(property), editor = property.editor ?? {};
+  if (kind === "toggle") { const input = document.createElement("input"); input.type = "checkbox"; input.checked = property.value === true; return input; }
+  if (kind === "select") { const select = document.createElement("select"); for (const optionValue of property.options ?? []) { const option = document.createElement("option"); option.value = optionValue; option.textContent = optionValue; option.selected = optionValue === property.value; select.append(option); } return select; }
+  const input = document.createElement(kind === "multiline" || kind === "json" ? "textarea" : "input");
+  if (input.tagName === "INPUT") input.type = kind === "number" ? "number" : kind === "range" ? "range" : kind === "color" ? "color" : kind === "date" ? "date" : kind === "dateTime" ? "datetime-local" : "text";
+  if (editor.placeholder) input.placeholder = editor.placeholder;
+  if (editor.minimum != null) input.min = String(editor.minimum);
+  if (editor.maximum != null) input.max = String(editor.maximum);
+  if (editor.step != null) input.step = String(editor.step);
   input.value = type === "json"
     ? (property.value === null || property.value === undefined ? "" : JSON.stringify(property.value))
     : type === "dateTime" || type === "datetime" ? dateTimeInputValue(property.value) : property.value ?? "";
   return input;
 }
-function propertyEditorStyle() { return `min-width:0;width:100%;height:${NODE_PROPERTY_HEIGHT}px;border:1px solid ${NODE_PROPERTY_EDITOR_BORDER};border-radius:3px;background:rgba(255,255,255,.92);color:${NODE_PROPERTY_EDITOR_COLOR};font:inherit;padding:1px 4px;box-sizing:border-box;accent-color:#4f46e5;`; }
+function propertyEditorStyle(height = NODE_PROPERTY_HEIGHT) { return `min-width:0;width:100%;height:${height}px;border:1px solid ${NODE_PROPERTY_EDITOR_BORDER};border-radius:3px;background:rgba(255,255,255,.92);color:${NODE_PROPERTY_EDITOR_COLOR};font:inherit;padding:1px 4px;box-sizing:border-box;accent-color:#4f46e5;resize:none;`; }
 function propertyInputValue(input, property) {
-  if (property.type === "boolean") return Boolean(input.checked);
+  const kind = propertyEditorKind(property);
+  if (kind === "toggle" || property.type === "boolean") return Boolean(input.checked);
   if (property.type === "integer") return input.value === "" ? null : Number.parseInt(input.value, 10);
   if (property.type === "decimal" || property.type === "number") return input.value === "" ? null : Number(input.value);
   if (property.type === "dateTime" || property.type === "datetime") return input.value === "" ? null : new Date(input.value).toISOString();
@@ -954,7 +1156,15 @@ function upsertNode(s, raw) {
   const { locked: _legacyLocked, ...value } = raw;
   requireId(value, "node");
   if (value.rotation !== undefined && !Number.isFinite(value.rotation)) throw new GhostagramError("INVALID_MODEL", "Node rotation must be numeric.");
-  const prior = s.nodes.get(value.id), { locked: _legacyPriorLock, ...previous } = prior ?? {}, node = { ...previous, ...value, x: number(value.x, "INVALID_MODEL", "Node x is required."), y: number(value.y, "INVALID_MODEL", "Node y is required."), width: positive(value.width, "INVALID_MODEL", "Node width is required."), height: positive(value.height, "INVALID_MODEL", "Node height is required."), rotation: value.rotation ?? previous.rotation ?? 0, icon: Object.hasOwn(value, "icon") ? iconifyIconName(value.icon) : previous.icon ?? null, resizable: value.resizable ?? previous.resizable ?? true, rotatable: value.rotatable ?? previous.rotatable ?? true, labelEditable: value.labelEditable ?? previous.labelEditable ?? true, style: value.style ?? previous.style ?? {}, properties: Object.hasOwn(value, "properties") ? normaliseNodeProperties(value.properties) : previous.properties ?? [] };
+  const prior = s.nodes.get(value.id), { locked: _legacyPriorLock, ...previous } = prior ?? {};
+  const height = positive(value.height, "INVALID_MODEL", "Node height is required."), properties = Object.hasOwn(value, "properties") ? normaliseNodeProperties(value.properties) : previous.properties ?? [];
+  const sections = Object.hasOwn(value, "sections") ? normaliseNodeSections(value.sections, properties) : previous.sections ?? null;
+  // A property delta can change its section reference while the section catalog is unchanged.
+  normaliseNodeSections(sections, properties);
+  const presentation = Object.hasOwn(value, "presentation") ? normaliseNodePresentation(value.presentation, height, sections) : normaliseNodePresentation(previous.presentation, height, sections);
+  const node = { ...previous, ...value, x: number(value.x, "INVALID_MODEL", "Node x is required."), y: number(value.y, "INVALID_MODEL", "Node y is required."), width: positive(value.width, "INVALID_MODEL", "Node width is required."), height, rotation: value.rotation ?? previous.rotation ?? 0, icon: Object.hasOwn(value, "icon") ? iconifyIconName(value.icon) : previous.icon ?? null, resizable: value.resizable ?? previous.resizable ?? true, rotatable: value.rotatable ?? previous.rotatable ?? true, labelEditable: value.labelEditable ?? previous.labelEditable ?? true, style: value.style ?? previous.style ?? {}, properties };
+  if (sections) node.sections = sections; else delete node.sections;
+  if (presentation) node.presentation = presentation; else delete node.presentation;
   if (typeof node.resizable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Node resizable must be boolean.");
   if (typeof node.rotatable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Node rotatable must be boolean.");
   if (typeof node.labelEditable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Node labelEditable must be boolean.");
@@ -1190,7 +1400,7 @@ function selectedMovePositions(state, selection, dx, dy, gridSize) {
   return { groups, nodes };
 }
 function resizeDimensions(start, pointer, zoom, gridSize, minWidth, minHeight) {
-  return { width: Math.max(minWidth, snap(start.width + (pointer.clientX - start.x) / zoom, gridSize)), height: Math.max(minHeight, snap(start.height + (pointer.clientY - start.y) / zoom, gridSize)) };
+  return { width: Math.max(ceilToGrid(minWidth, gridSize), snap(start.width + (pointer.clientX - start.x) / zoom, gridSize)), height: Math.max(ceilToGrid(minHeight, gridSize), snap(start.height + (pointer.clientY - start.y) / zoom, gridSize)) };
 }
 function reconnectHandlePoint(source, target, end) {
   return end === "source" ? source : target;
@@ -1575,14 +1785,16 @@ function exportSvgDocument(state, options = {}) {
   return `<svg xmlns="${SVG_NS}" viewBox="${left} ${top} ${right - left} ${bottom - top}" role="img"><defs>${Object.entries(markerIds).map(([type, id]) => exportMarker(id, type)).join("")}</defs>${groups}${edges}${nodes}</svg>`;
 }
 function exportSvgNode(node) {
-  const properties = (node.properties ?? []).filter(property => property.mode !== "hidden"), color = node.style?.color ?? "#0f172a";
-  const labelY = properties.length ? node.y + 21 : node.y + node.height / 2 + 5;
-  const rows = properties.map((property, index) => {
-    const y = node.y + 49 + index * 21;
+  const layout = nodeLayoutProjection(node), color = node.style?.color ?? "#0f172a";
+  const labelY = node.y + 20;
+  const rows = layout.rows.map(row => {
+    const property = row.property, y = node.y + row.y + row.height / 2 + 4;
     return `<text x="${node.x + 8}" y="${y}" fill="${xml(color)}" fill-opacity=".7" font-size="11">${xml(property.label ?? property.name ?? property.id)}</text><text x="${node.x + node.width - 8}" y="${y}" fill="${xml(color)}" font-size="11" text-anchor="end">${xml(propertyDisplayValue(property))}</text>`;
   }).join("");
+  const sectionHeadings = layout.sections.map(section => `<text x="${node.x + 8 + Math.min(section.depth, 4) * 8}" y="${node.y + section.y + 15}" fill="${xml(color)}" font-size="11" font-weight="600">${xml(`${section.collapsed ? "▸ " : "▾ "}${section.section.title}`)}</text>`).join("");
   const icon = iconifyIconName(node.icon) ? `<text x="${node.x + node.width - 8}" y="${node.y + 20}" fill="${xml(color)}" font-size="12" text-anchor="end">◇</text>` : "";
-  return `<g transform="rotate(${node.rotation ?? 0} ${node.x + node.width / 2} ${node.y + node.height / 2})"><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${xml(node.style?.background ?? "#f8fafc")}" stroke="${xml(node.style?.borderColor ?? "#334155")}"/><text x="${node.x + 8}" y="${labelY}" fill="${xml(color)}" font-size="14">${xml(node.label ?? node.id)}</text>${icon}${rows}</g>`;
+  const headerRule = layout.progressive ? `<path d="M ${node.x} ${node.y + NODE_PROPERTY_TOP} L ${node.x + node.width} ${node.y + NODE_PROPERTY_TOP}" stroke="${xml(node.style?.borderColor ?? "#334155")}" stroke-opacity=".28"/>` : "";
+  return `<g transform="rotate(${node.rotation ?? 0} ${node.x + node.width / 2} ${node.y + node.height / 2})"><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${xml(node.style?.background ?? "#f8fafc")}" stroke="${xml(node.style?.borderColor ?? "#334155")}"/>${headerRule}<text x="${node.x + 8}" y="${labelY}" fill="${xml(color)}" font-size="14">${xml(node.label ?? node.id)}</text>${icon}${sectionHeadings}${rows}</g>`;
 }
 function exportMarker(id, type) {
   const descriptor = markerDescriptor(type);
@@ -1597,6 +1809,7 @@ function buildRoot(host) {
   const markerIds = Object.fromEntries(markerTypes.map(type => [type, `ghostagram-${type}-${crypto.randomUUID()}`]));
   const flowAnimationName = `ghostagram-flow-${crypto.randomUUID()}`;
   style.textContent = `@keyframes ${flowAnimationName} { to { stroke-dashoffset: -14; } }
+    .ghostagram-property-port::after { position:absolute;left:50%;top:50%;width:3px;height:3px;border-radius:1px;background:currentColor;content:"";transform:translate(-50%,-50%);pointer-events:none; }
     .ghostagram-node.ghostagram-selected { outline:3px solid #0f766e; outline-offset:2px; box-shadow:0 0 0 5px rgba(13,148,136,.18); }
     .ghostagram-group.ghostagram-selected { outline:3px solid #0f766e; outline-offset:2px; box-shadow:0 0 0 5px rgba(13,148,136,.14); }
     .ghostagram-group-visibility { position:absolute;z-index:6;top:-34px;left:50%;display:grid;width:30px;height:25px;padding:0;border:1px solid #0f766e;border-radius:13px;place-items:center;color:#0f766e;background:#fff;box-shadow:0 4px 12px rgba(15,118,110,.22);transform:translateX(-50%);cursor:pointer;transition:background .14s ease,box-shadow .14s ease,transform .14s ease; }
@@ -1665,6 +1878,21 @@ function revision(value, code, message) { if (!Number.isSafeInteger(value) || va
 function positive(value, code, message) { if (!Number.isFinite(value) || value <= 0) throw new GhostagramError(code, message); return value; }
 function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
 function snap(value, grid) { return grid > 1 ? Math.round(value / grid) * grid : value; }
+function ceilToGrid(value, grid) { return grid > 1 ? Math.ceil(value / grid) * grid : value; }
+function gridCssProjection(viewport, gridSize) {
+  const modelSize = gridSize > 1 ? gridSize : 1, screenSize = modelSize * viewport.zoom;
+  const phase = value => ((value % screenSize) + screenSize) % screenSize;
+  // CSS radial gradients paint their dot at the center of each background tile.
+  // Offset the tile origin by half a cell so the visible dot, rather than the
+  // tile corner, represents the same model coordinate used by snap().
+  const tileOffset = screenSize / 2;
+  return {
+    modelSize,
+    screenSize,
+    phaseX: phase(-viewport.x * viewport.zoom - tileOffset),
+    phaseY: phase(-viewport.y * viewport.zoom - tileOffset)
+  };
+}
 function asProblem(error) {
   if (error instanceof GhostagramError) return { code: error.code, message: error.message, details: error.details };
   const message = error instanceof Error && error.message ? error.message : "Ghostagram encountered an internal error.";
@@ -1673,4 +1901,4 @@ function asProblem(error) {
 function ok(requestId, renderedRevision, stats) { return { ok: true, requestId, renderedRevision, stats }; }
 function failed(request, code, message, renderedRevision, details) { return { ok: false, requestId: request?.requestId ?? null, renderedRevision, stats: {}, problem: { code, message, details } }; }
 
-export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteScore, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupVisibilityDescriptor, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nodeContentMinimumHeight, nodesInRectangle, normaliseNodeProperties, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyValueSignature, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };
+export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteScore, gridCssProjection, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupVisibilityDescriptor, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLayoutProjection, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportPoint };

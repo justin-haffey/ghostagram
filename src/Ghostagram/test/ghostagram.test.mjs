@@ -95,6 +95,120 @@ test("dynamic node properties retain explicit null and provide stable property-p
   assert.deepEqual(__testing.resolvePortAnchor(hidden, hidden.ports.get("visible-both")), { type: "property", side: "right", offsetY: 40 });
 });
 
+test("property ports use field sockets while ordinary node connectors remain circular", () => {
+  assert.deepEqual(__testing.portVisualDescriptor({ id: "value", propertyId: "value" }, { type: "dot" }), {
+    kind: "property",
+    borderRadius: "3px"
+  });
+  assert.deepEqual(__testing.portVisualDescriptor({ id: "flow", propertyId: null }, { type: "dot" }), {
+    kind: "node",
+    borderRadius: "50%"
+  });
+});
+
+test("simple nodes remain lightweight and omit progressive state", () => {
+  const state = __testing.buildState(base), node = state.nodes.get("a"), layout = __testing.nodeLayoutProjection(node);
+  assert.equal(Object.hasOwn(node, "sections"), false);
+  assert.equal(Object.hasOwn(node, "presentation"), false);
+  assert.equal(layout.progressive, false);
+  assert.equal(layout.rows.length, 0);
+  assert.equal(layout.minimumHeight, 30);
+});
+
+test("nested progressive sections project deterministic rows and collapsed port proxies", () => {
+  const state = __testing.buildState({
+    ...base,
+    nodes: [{ ...base.nodes[0], width: 300, height: 180, sections: [
+      { id: "details", title: "Details", order: 0 },
+      { id: "advanced", title: "Advanced", parentSectionId: "details", order: 1 }
+    ], presentation: { displayMode: "expanded", expandedHeight: 180, collapsedSectionIds: ["advanced"] }, properties: [
+      { id: "summary", name: "Summary", type: "string", mode: "displayAndEdit", sectionId: "details", editor: { kind: "multiline", placeholder: "Describe it" } },
+      { id: "threshold", name: "Threshold", type: "decimal", mode: "displayAndEdit", sectionId: "advanced", editor: { kind: "range", minimum: 0, maximum: 10, step: .5 } }
+    ] }, base.nodes[1]],
+    ports: [{ id: "threshold-out", nodeId: "a", direction: "source", propertyId: "threshold" }, base.ports[1]],
+    edges: [{ id: "edge-1", sourcePortId: "threshold-out", targetPortId: "b-in", connector: "straight" }]
+  });
+  const node = state.nodes.get("a"), layout = __testing.nodeLayoutProjection(node);
+  assert.equal(layout.progressive, true);
+  assert.deepEqual(layout.rootSections.map(section => section.section.id), ["details"]);
+  assert.deepEqual(layout.rows.map(row => row.property.id), ["summary"]);
+  assert.equal(layout.rootSections[0].children[0].collapsed, true);
+  assert.deepEqual(__testing.resolvePortAnchor(state, state.ports.get("threshold-out")), { type: "property", side: "right", offsetY: 113, proxied: true, proxy: "advanced" });
+  assert.deepEqual(__testing.edgeGeometry(state, state.edges.get("edge-1")).sourcePoint, { x: 300, y: 113 });
+
+  const collapsed = __testing.buildState({ ...__testing.serialiseState(state), nodes: __testing.serialiseState(state).nodes.map(candidate => candidate.id === "a" ? { ...candidate, height: 30, presentation: { ...candidate.presentation, displayMode: "collapsed" } } : candidate) });
+  assert.deepEqual(__testing.resolvePortAnchor(collapsed, collapsed.ports.get("threshold-out")), { type: "property", side: "right", offsetY: 15, proxied: true, proxy: "node" });
+});
+
+test("progressive contracts validate editor kinds, section references, cycles, and depth", () => {
+  assert.equal(__testing.normalisePropertyEditor({ kind: "color" }, "accent").kind, "color");
+  assert.equal(__testing.propertyEditorKind({ type: "string", editor: { kind: "color" } }), "color");
+  assert.throws(() => __testing.normalisePropertyEditor({ kind: "dial" }, "amount"), /unsupported editor kind/i);
+  assert.throws(() => __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], properties: [{ id: "x", sectionId: "missing" }] }, base.nodes[1]] }), /missing section/i);
+  assert.throws(() => __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], sections: [{ id: "one", parentSectionId: "two" }, { id: "two", parentSectionId: "one" }] }, base.nodes[1]] }), /cycle/i);
+  const deep = Array.from({ length: 10 }, (_, index) => ({ id: `s${index}`, parentSectionId: index ? `s${index - 1}` : null }));
+  assert.throws(() => __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], sections: deep }, base.nodes[1]] }), /8 levels/i);
+});
+
+test("presentation controls produce host-authoritative node and section proposals", () => {
+  const node = { id: "progressive", x: 0, y: 0, width: 240, height: 140, sections: [{ id: "details", title: "Details", parentSectionId: null, order: 0, collapsible: true }], properties: [{ id: "name", name: "Name", type: "string", mode: "display", order: 0, options: null, sectionId: "details" }], presentation: { displayMode: "expanded", expandedHeight: 140, collapsedSectionIds: [] } };
+  const compact = __testing.nextNodePresentationRequest(node);
+  assert.equal(compact.payload.presentation.displayMode, "compact");
+  assert.equal(compact.payload.nodeId, "progressive");
+  assert.ok(compact.payload.height < node.height);
+  const collapsed = __testing.nextNodePresentationRequest({ ...node, height: compact.payload.height, presentation: compact.payload.presentation });
+  assert.equal(collapsed.payload.presentation.displayMode, "collapsed");
+  assert.equal(collapsed.payload.height, 32);
+  assert.equal(compact.payload.height % 16, 0);
+  assert.equal(collapsed.payload.presentation.expandedHeight % 16, 0);
+  const section = __testing.nextSectionPresentationRequest(node, "details");
+  assert.deepEqual(section.payload.presentation.collapsedSectionIds, ["details"]);
+  assert.equal(section.payload.sectionId, "details");
+  assert.equal(section.payload.collapsed, true);
+
+  const compactNode = { ...node, height: compact.payload.height, presentation: compact.payload.presentation };
+  const compactCollapsedSection = __testing.nextSectionPresentationRequest(compactNode, "details");
+  const collapsedCompactMinimum = __testing.nodeLayoutProjection({ ...compactNode, presentation: compactCollapsedSection.payload.presentation }).minimumHeight;
+  assert.equal(compactCollapsedSection.payload.height, Math.ceil(collapsedCompactMinimum / 16) * 16);
+  const compactExpandedSection = __testing.nextSectionPresentationRequest({ ...compactNode, height: compactCollapsedSection.payload.height, presentation: compactCollapsedSection.payload.presentation }, "details");
+  const expandedCompactMinimum = __testing.nodeLayoutProjection({ ...compactNode, presentation: compactExpandedSection.payload.presentation }).minimumHeight;
+  assert.equal(compactExpandedSection.payload.height, Math.ceil(expandedCompactMinimum / 16) * 16);
+  assert.ok(compactExpandedSection.payload.height < compactExpandedSection.payload.presentation.expandedHeight);
+});
+
+test("collapsed node and section ports share edge geometry but expose one enabled proxy per side", () => {
+  const model = (displayMode, collapsedSectionIds) => ({
+    ...base,
+    nodes: [{ ...base.nodes[0], width: 240, height: displayMode === "collapsed" ? 30 : 120, sections: [{ id: "details", title: "Details" }], presentation: { displayMode, expandedHeight: 120, collapsedSectionIds }, properties: [
+      { id: "disabledOut", name: "Disabled out", sectionId: "details" },
+      { id: "enabledOut", name: "Enabled out", sectionId: "details" },
+      { id: "firstIn", name: "First in", sectionId: "details" },
+      { id: "secondIn", name: "Second in", sectionId: "details" }
+    ] }, base.nodes[1]],
+    ports: [
+      { id: "disabled-out", nodeId: "a", direction: "source", propertyId: "disabledOut", label: "Disabled out", enabled: false, order: 0 },
+      { id: "enabled-out", nodeId: "a", direction: "source", propertyId: "enabledOut", label: "Enabled out", order: 1 },
+      { id: "first-in", nodeId: "a", direction: "target", propertyId: "firstIn", label: "First in", order: 2 },
+      { id: "second-in", nodeId: "a", direction: "target", propertyId: "secondIn", label: "Second in", order: 3 }
+    ],
+    edges: []
+  });
+  for (const [displayMode, collapsedSections, proxy] of [["collapsed", [], "node"], ["expanded", ["details"], "details"]]) {
+    const state = __testing.buildState(model(displayMode, collapsedSections)), plan = __testing.portRenderPlan(state, "a");
+    assert.equal(plan.length, 2);
+    const source = plan.find(entry => entry.anchor.side === "right"), target = plan.find(entry => entry.anchor.side === "left");
+    assert.equal(source.anchor.proxy, proxy); assert.equal(target.anchor.proxy, proxy);
+    assert.equal(source.port.id, "enabled-out");
+    assert.deepEqual(source.ports.map(port => port.id), ["disabled-out", "enabled-out"]);
+    assert.deepEqual(target.ports.map(port => port.id), ["first-in", "second-in"]);
+    assert.equal(__testing.proxyPortDescriptor(source.ports).enabled, true);
+    assert.match(__testing.proxyPortDescriptor(source.ports).label, /Collapsed connections \(2\).*Disabled out.*Enabled out/);
+    assert.deepEqual(__testing.resolvePortAnchor(state, state.ports.get("disabled-out")), __testing.resolvePortAnchor(state, state.ports.get("enabled-out")));
+  }
+  const expanded = __testing.buildState(model("expanded", []));
+  assert.equal(__testing.portRenderPlan(expanded, "a").length, 4);
+});
+
 test("ordered side ports on complex nodes retain pixel positions when node height changes", () => {
   const model = height => ({
     ...base,
@@ -310,6 +424,15 @@ test("canvas geometry owns center projection and bounded external hit testing", 
 test("drag previews and commits use the same grid-snapped position", () => {
   const position = __testing.dragPosition({ x: 100, y: 100, nodeX: 64, nodeY: 48 }, { clientX: 109, clientY: 117 }, 1, 16);
   assert.deepEqual(position, { x: 80, y: 64 });
+});
+
+test("dot-grid CSS projection and drag/resize math share the same model interval", () => {
+  const grid = __testing.gridCssProjection({ x: 5, y: 3, zoom: 2 }, 16);
+  assert.deepEqual(grid, { modelSize: 16, screenSize: 32, phaseX: 6, phaseY: 10 });
+  assert.equal((grid.phaseX + grid.screenSize / 2) % grid.screenSize, 22);
+  assert.equal((grid.phaseY + grid.screenSize / 2) % grid.screenSize, 26);
+  assert.equal(__testing.snap(25, 16), 32);
+  assert.deepEqual(__testing.resizeDimensions({ x: 100, y: 100, width: 80, height: 40 }, { clientX: 109, clientY: 107 }, 1, 16, 32, 32), { width: 96, height: 48 });
 });
 
 test("dragging a selected node preserves the selected set's relative positions", () => {
@@ -751,6 +874,8 @@ test("group and node resize honor minimum dimensions, zoom, and resizable policy
   assert.deepEqual(grown, { width: 280, height: 180 });
   const clamped = __testing.resizeDimensions({ x: 100, y: 100, width: 240, height: 160 }, { clientX: -500, clientY: -500 }, 1, 1, 80, 64);
   assert.deepEqual(clamped, { width: 80, height: 64 });
+  const gridClamped = __testing.resizeDimensions({ x: 100, y: 100, width: 80, height: 64 }, { clientX: -500, clientY: -500 }, 1, 16, 50, 35);
+  assert.deepEqual(gridClamped, { width: 64, height: 48 });
   assert.equal(__testing.buildState({ ...base, nodes: [{ ...base.nodes[0], resizable: false }, base.nodes[1]] }).nodes.get("a").resizable, false);
   assert.throws(() => __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], resizable: "yes" }, base.nodes[1]] }), /resizable/i);
 });
@@ -830,6 +955,28 @@ test("SVG export is standalone and escapes model text", () => {
   assert.match(svg, /marker-end="url\(#ghostagram-export-erd-zero-many\)"/);
   assert.match(svg, /id="ghostagram-export-erd-zero-many"[^>]*>[\s\S]*?<circle/);
   assert.doesNotMatch(svg, /animation|stroke-dashoffset/);
+});
+
+test("SVG export top-aligns simple node titles", () => {
+  const svg = __testing.exportSvgDocument(__testing.buildState({
+    ...base,
+    nodes: [{ ...base.nodes[0], x: 12, y: 30, width: 160, height: 120, label: "Simple title" }, base.nodes[1]]
+  }));
+  assert.match(svg, /<text x="20" y="50"[^>]*>Simple title<\/text>/);
+  assert.doesNotMatch(svg, /<text x="20" y="95"[^>]*>Simple title<\/text>/);
+});
+
+test("SVG export uses progressive layout and honors node and section collapse", () => {
+  const progressive = {
+    ...base,
+    nodes: [{ ...base.nodes[0], width: 240, height: 120, label: "Progressive", sections: [{ id: "details", title: "Details" }], presentation: { displayMode: "expanded", expandedHeight: 120, collapsedSectionIds: ["details"] }, properties: [{ id: "secret", name: "Secret", label: "Secret", value: "hidden-value", mode: "display", sectionId: "details" }] }, base.nodes[1]]
+  };
+  const sectionCollapsedSvg = __testing.exportSvgDocument(__testing.buildState(progressive));
+  assert.match(sectionCollapsedSvg, /Details/);
+  assert.doesNotMatch(sectionCollapsedSvg, /hidden-value/);
+  const nodeCollapsedSvg = __testing.exportSvgDocument(__testing.buildState({ ...progressive, nodes: progressive.nodes.map(node => node.id === "a" ? { ...node, height: 30, presentation: { ...node.presentation, displayMode: "collapsed" } } : node) }));
+  assert.match(nodeCollapsedSvg, /Progressive/);
+  assert.doesNotMatch(nodeCollapsedSvg, /Details|hidden-value/);
 });
 
 test("SVG export follows ancestor collapse visibility", () => {

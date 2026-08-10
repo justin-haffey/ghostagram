@@ -43,11 +43,15 @@ const string legacyJson = """
 var legacy = JsonSerializer.Deserialize<DiagramDocument>(legacyJson, webJson) ?? throw new InvalidOperationException("Legacy document did not deserialize.");
 Assert(legacy.Nodes.Single().Properties.Count == 0, "Legacy nodes default to no dynamic properties.");
 Assert(legacy.Nodes.Single().TypeId is null && legacy.Nodes.Single().TypeVersion == 1, "Legacy nodes retain neutral type defaults.");
+Assert(legacy.Nodes.Single().Sections is null && legacy.Nodes.Single().Presentation is null, "Legacy nodes remain simple when advanced presentation fields are absent.");
 var legacyRoundTrip = JsonSerializer.Serialize(legacy, webJson);
 using var legacyRoundTripJson = JsonDocument.Parse(legacyRoundTrip);
 Assert(legacyRoundTripJson.RootElement.GetProperty("futureDocumentVersion").GetString() == "vNext", "Unknown document fields survive a typed round trip.");
 Assert(legacyRoundTripJson.RootElement.GetProperty("nodes")[0].GetProperty("futureNodeFlag").GetProperty("enabled").GetBoolean(), "Unknown node fields survive a typed round trip.");
 Assert(legacyRoundTripJson.RootElement.GetProperty("ports")[0].GetProperty("futurePortMode").GetString() == "stream", "Unknown port fields survive a typed round trip.");
+Assert(!legacyRoundTripJson.RootElement.GetProperty("nodes")[0].TryGetProperty("sections", out _) &&
+       !legacyRoundTripJson.RootElement.GetProperty("nodes")[0].TryGetProperty("presentation", out _),
+    "Legacy simple-node JSON does not acquire advanced presentation fields on round trip.");
 
 var values = new[]
 {
@@ -66,6 +70,32 @@ var typedRoundTrip = JsonSerializer.Deserialize<DiagramNode>(JsonSerializer.Seri
 Assert(typedRoundTrip.Properties.Count == values.Length, "All property values survive serialization.");
 Assert(typedRoundTrip.Properties.Single(property => property.Id == "nothing").Value is null, "A JSON null remains a null property value after serialization.");
 Assert(typedRoundTrip.Properties.Single(property => property.Id == "custom").Value?.GetProperty("customerId").GetInt32() == 17, "Custom JSON datatypes remain lossless.");
+
+var advancedNode = new DiagramNode(
+    "advanced", 10, 20, 280, 196, "Advanced",
+    Properties:
+    [
+        new("name", "Name", SectionId: "identity", Editor: new(DiagramPropertyEditorKinds.Text, "Customer name")),
+        new("confidence", "Confidence", DiagramPropertyTypes.Decimal, SectionId: "tuning", Editor: new(DiagramPropertyEditorKinds.Range, Minimum: 0, Maximum: 1, Step: 0.05m))
+    ],
+    Sections:
+    [
+        new("identity", "Identity", Order: 10),
+        new("preferences", "Preferences", Order: 20),
+        new("tuning", "Tuning", "preferences", 10)
+    ],
+    Presentation: new(DiagramNodeDisplayModes.Expanded, 196, ["tuning"]));
+var advancedJson = JsonSerializer.Serialize(advancedNode, webJson);
+using (var advancedShape = JsonDocument.Parse(advancedJson))
+{
+    var root = advancedShape.RootElement;
+    Assert(root.GetProperty("sections")[2].GetProperty("parentSectionId").GetString() == "preferences", "Nested sections use flat parentSectionId references in camel-case JSON.");
+    Assert(root.GetProperty("properties")[1].GetProperty("sectionId").GetString() == "tuning", "Properties serialize their section reference.");
+    Assert(root.GetProperty("properties")[1].GetProperty("editor").GetProperty("kind").GetString() == "range", "Typed editor hints serialize in the property contract.");
+    Assert(root.GetProperty("presentation").GetProperty("collapsedSectionIds")[0].GetString() == "tuning", "Collapsed section state is persisted on node presentation.");
+}
+var advancedRoundTrip = JsonSerializer.Deserialize<DiagramNode>(advancedJson, webJson)!;
+Assert(advancedRoundTrip.Sections!.Count == 3 && advancedRoundTrip.Presentation!.ExpandedHeight == 196, "Advanced node sections and authoritative geometry survive a typed round trip.");
 Console.WriteLine("Ghostagram.Core focused checks passed.");
 
 static DiagramNodeProperty Property(string id, string type, string json) =>

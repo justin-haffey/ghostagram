@@ -38,7 +38,9 @@ public sealed record DiagramNode(
     DiagramNodeStyle? Style = null,
     string? TypeId = null,
     int TypeVersion = 1,
-    IReadOnlyList<DiagramNodeProperty>? Properties = null)
+    IReadOnlyList<DiagramNodeProperty>? Properties = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<DiagramNodeSection>? Sections = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DiagramNodePresentation? Presentation = null)
 {
     public IReadOnlyList<DiagramNodeProperty> Properties { get; init; } = Properties ?? [];
     [JsonExtensionData]
@@ -61,10 +63,74 @@ public sealed record DiagramNodeProperty(
     bool Required = false,
     bool Connectable = false,
     IReadOnlyList<string>? Options = null,
-    JsonElement? Metadata = null)
+    JsonElement? Metadata = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? SectionId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DiagramPropertyEditor? Editor = null)
 {
     [JsonExtensionData]
     public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+
+/// <summary>
+/// A flat, reference-based property grouping. Parent references allow nesting without
+/// introducing a recursive persisted datatype.
+/// </summary>
+public sealed record DiagramNodeSection(
+    string Id,
+    string Title,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ParentSectionId = null,
+    int Order = 0,
+    bool Collapsible = true)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+
+/// <summary>Optional browser/editor hint; property type remains the durable value contract.</summary>
+public sealed record DiagramPropertyEditor(
+    string Kind = DiagramPropertyEditorKinds.Auto,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Placeholder = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? Minimum = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? Maximum = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? Step = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+
+/// <summary>
+/// Authoritative persisted node presentation. Height on <see cref="DiagramNode"/> is the
+/// current rendered height; ExpandedHeight preserves the geometry restored on expansion.
+/// </summary>
+public sealed record DiagramNodePresentation(
+    string DisplayMode = DiagramNodeDisplayModes.Expanded,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? ExpandedHeight = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<string>? CollapsedSectionIds = null)
+{
+    [JsonExtensionData]
+    public IDictionary<string, JsonElement>? ExtensionData { get; init; }
+}
+
+public static class DiagramPropertyEditorKinds
+{
+    public const string Auto = "auto";
+    public const string Text = "text";
+    public const string Multiline = "multiline";
+    public const string Toggle = "toggle";
+    public const string Number = "number";
+    public const string Range = "range";
+    public const string Date = "date";
+    public const string DateTime = "dateTime";
+    public const string Select = "select";
+    public const string Color = "color";
+    public const string Json = "json";
+}
+
+public static class DiagramNodeDisplayModes
+{
+    public const string Expanded = "expanded";
+    public const string Compact = "compact";
+    public const string Collapsed = "collapsed";
 }
 
 public static class DiagramPropertyTypes
