@@ -14,6 +14,7 @@ var checks = new List<(string Name, Func<Task> Check)>
     ("healthy catalogs remain listable beside corrupt files", VerifyMixedHealthyAndCorruptListAsync),
     ("invalid identifiers and snapshots fail closed", VerifyInvalidInputAsync),
     ("document file store survives restart and isolates corrupt files", VerifyDocumentStoreRestartAsync),
+    ("document file store deletes only the requested durable diagram", VerifyDocumentDeleteAsync),
     ("diagram Save As preserves unknown graph fields", VerifyLosslessDiagramCloneAsync),
     ("recovery-mode Save As preserves document extension data", VerifyLosslessRecoverySaveAsAsync),
     ("laboratory palette apply and capture preserve complete definitions", VerifyLaboratoryPaletteProjectionAsync)
@@ -197,6 +198,43 @@ static async Task VerifyDocumentStoreRestartAsync()
         True(summaries.Select(summary => summary.DocumentId).SequenceEqual(["restartable-diagram"]), "corrupt document must not hide healthy documents");
         Equal(corruptContent, await File.ReadAllTextAsync(corruptPath), "corrupt document recovery evidence");
         True(!Directory.EnumerateFiles(directory, "*.tmp").Any(), "document commits must not leave temporary files");
+    }
+    finally
+    {
+        if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+    }
+}
+
+static async Task VerifyDocumentDeleteAsync()
+{
+    var directory = TestDirectory("document-delete");
+    try
+    {
+        var store = new FileDocumentStore(directory);
+        var now = DateTimeOffset.UtcNow;
+        await store.SaveAsync(new StoredDocument
+        {
+            DocumentId = "delete-me",
+            DisplayName = "Delete me",
+            CreatedUtc = now,
+            UpdatedUtc = now,
+            Revision = 0,
+            Model = JsonSerializer.SerializeToElement(new { documentId = "delete-me", nodes = Array.Empty<object>(), ports = Array.Empty<object>(), edges = Array.Empty<object>(), groups = Array.Empty<object>(), edgeTypes = Array.Empty<object>(), selection = Array.Empty<string>(), viewport = new { x = 0, y = 0, zoom = 1 } })
+        }, default);
+        await store.SaveAsync(new StoredDocument
+        {
+            DocumentId = "keep-me",
+            DisplayName = "Keep me",
+            CreatedUtc = now,
+            UpdatedUtc = now,
+            Revision = 0,
+            Model = JsonSerializer.SerializeToElement(new { documentId = "keep-me", nodes = Array.Empty<object>(), ports = Array.Empty<object>(), edges = Array.Empty<object>(), groups = Array.Empty<object>(), edgeTypes = Array.Empty<object>(), selection = Array.Empty<string>(), viewport = new { x = 0, y = 0, zoom = 1 } })
+        }, default);
+
+        True(await store.DeleteAsync("delete-me", default), "existing diagram should delete");
+        True(!await store.DeleteAsync("delete-me", default), "repeated delete should report not found");
+        True(await store.LoadAsync("delete-me", default) is null, "deleted diagram must be absent");
+        True(await store.LoadAsync("keep-me", default) is not null, "other diagram must remain");
     }
     finally
     {

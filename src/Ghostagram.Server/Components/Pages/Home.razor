@@ -233,7 +233,12 @@
                             }
                             else
                             {
-                                <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FolderOpen" OnClick="@(() => OpenDocumentAsync(document.DocumentId))">Open</MudButton>
+                                <div class="library-item-actions">
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FolderOpen" OnClick="@(() => OpenDocumentAsync(document.DocumentId))">Open</MudButton>
+                                    <MudTooltip Text="Delete this diagram">
+                                        <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" OnClick="@(() => OpenDeleteDiagram(document))" aria-label="@($"Delete {document.DisplayName}")" />
+                                    </MudTooltip>
+                                </div>
                             }
                         </MudPaper>
                     }
@@ -690,6 +695,23 @@
         </div>
         <footer class="studio-modal-actions"><MudButton OnClick="CloseExport">Close</MudButton></footer>
         </MudPaper>
+        </div>
+    }
+
+    @if (_isDeleteDiagramOpen && _deleteCandidate is not null)
+    {
+        <div class="studio-modal-backdrop" @onclick="CloseDeleteDiagram">
+            <MudPaper Class="studio-modal compact-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Delete diagram" @onclick:stopPropagation="true">
+                <header class="studio-modal-header">
+                    <div><MudText Typo="Typo.h6">Delete diagram?</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">This permanently removes the saved diagram and its revision history.</MudText></div>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseDeleteDiagram" aria-label="Close delete diagram dialog" />
+                </header>
+                <div class="studio-modal-content"><MudAlert Severity="Severity.Warning" Dense="true">@_deleteCandidate.DisplayName cannot be recovered after deletion.</MudAlert></div>
+                <footer class="studio-modal-actions">
+                    <MudButton OnClick="CloseDeleteDiagram">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteOutline" OnClick="DeleteDiagramAsync">Delete diagram</MudButton>
+                </footer>
+            </MudPaper>
         </div>
     }
 

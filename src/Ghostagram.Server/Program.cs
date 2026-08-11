@@ -83,6 +83,11 @@ app.MapGet("/api/documents/{documentId}", async (string documentId, DiagramComma
     => (await commands.GetSnapshotAsync(documentId, cancellationToken)) is { } snapshot ? Results.Ok(snapshot) : Results.NotFound());
 app.MapGet("/api/documents/{documentId}/changes", async (string documentId, long afterRevision, DiagramCommandService commands, CancellationToken cancellationToken)
     => Results.Ok(await commands.GetChangesAsync(documentId, afterRevision, cancellationToken)));
+app.MapDelete("/api/documents/{documentId}", async (string documentId, DiagramCommandService commands, CancellationToken cancellationToken) =>
+{
+    var result = await commands.DeleteAsync(documentId, cancellationToken);
+    return result.Deleted ? Results.Ok(result) : Results.NotFound(result);
+});
 app.MapPost("/api/documents/{documentId}/commands", async (string documentId, DiagramCommand command, DiagramCommandService commands, CancellationToken cancellationToken) =>
 {
     if (!string.Equals(documentId, command.DocumentId, StringComparison.Ordinal))

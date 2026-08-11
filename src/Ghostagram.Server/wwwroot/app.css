@@ -305,6 +305,12 @@ textarea {
   min-width: 0;
 }
 
+.library-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .studio-modal.style-modal {
   width: min(720px, calc(100vw - 32px));
 }

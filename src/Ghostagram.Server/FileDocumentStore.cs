@@ -69,5 +69,14 @@ public sealed class FileDocumentStore : IDocumentStore, IDocumentCatalog
         return results.OrderByDescending(item => item.UpdatedUtc).ThenBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
+    public Task<bool> DeleteAsync(string documentId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var path = PathFor(DocumentIdRules.Require(documentId));
+        if (!File.Exists(path)) return Task.FromResult(false);
+        File.Delete(path);
+        return Task.FromResult(true);
+    }
+
     private string PathFor(string documentId) => Path.Combine(_directory, $"{documentId}.json");
 }

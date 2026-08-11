@@ -31,9 +31,11 @@ public interface IDocumentStore
 {
     Task<StoredDocument?> LoadAsync(string documentId, CancellationToken cancellationToken);
     Task SaveAsync(StoredDocument document, CancellationToken cancellationToken);
+    Task<bool> DeleteAsync(string documentId, CancellationToken cancellationToken);
 }
 
 public sealed record StoredCommand(string PayloadHash, long Revision, DateTimeOffset CommittedUtc);
+public sealed record DiagramDeleteResult(bool Deleted, string Code, string Message);
 
 public sealed class StoredDocument
 {
@@ -122,6 +124,13 @@ public sealed class DiagramCommandService(
             destinationDocumentId,
             token => CreateFromSnapshotSerializedAsync(destinationDocumentId, displayName.Trim(), detached, token),
             cancellationToken);
+    }
+
+    /// <summary>Deletes one durable diagram through its serialized command lane.</summary>
+    public Task<DiagramDeleteResult> DeleteAsync(string documentId, CancellationToken cancellationToken)
+    {
+        DocumentIdRules.Require(documentId);
+        return queue.EnqueueAsync(documentId, token => DeleteSerializedAsync(documentId, token), cancellationToken);
     }
 
     public Task<DiagramCommandResult> SubmitGeneratedAsync(
@@ -240,6 +249,16 @@ public sealed class DiagramCommandService(
         };
         await store.SaveAsync(recovered, cancellationToken);
         return new(true, "DOCUMENT_CREATED", "Recovered diagram created.", 0, Snapshot(recovered));
+    }
+
+    private async Task<DiagramDeleteResult> DeleteSerializedAsync(string documentId, CancellationToken cancellationToken)
+    {
+        if (await store.LoadAsync(documentId, cancellationToken) is null)
+            return new(false, "DOCUMENT_NOT_FOUND", "That saved diagram is no longer available.");
+
+        return await store.DeleteAsync(documentId, cancellationToken)
+            ? new(true, "DOCUMENT_DELETED", "Diagram deleted.")
+            : new(false, "DOCUMENT_NOT_FOUND", "That saved diagram is no longer available.");
     }
 
     private async Task<DiagramCommandResult> SubmitGeneratedSerializedAsync(

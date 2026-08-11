@@ -613,9 +613,16 @@ sealed record Box(string Id, double X, double Y, double Width, double Height);
 sealed class MemoryStore(StoredDocument document) : IDocumentStore
 {
     public int SaveCount { get; private set; }
+    private bool _deleted;
     public Task<StoredDocument?> LoadAsync(string documentId, CancellationToken cancellationToken)
-        => Task.FromResult<StoredDocument?>(documentId == document.DocumentId ? document : null);
+        => Task.FromResult<StoredDocument?>(!_deleted && documentId == document.DocumentId ? document : null);
     public Task SaveAsync(StoredDocument saved, CancellationToken cancellationToken) { document = saved; SaveCount++; return Task.CompletedTask; }
+    public Task<bool> DeleteAsync(string documentId, CancellationToken cancellationToken)
+    {
+        var deleted = !_deleted && documentId == document.DocumentId;
+        _deleted = _deleted || deleted;
+        return Task.FromResult(deleted);
+    }
 }
 
 sealed class RecordingPublisher : IDocumentEventPublisher

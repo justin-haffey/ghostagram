@@ -84,6 +84,7 @@ public partial class Home : IAsyncDisposable
     private bool _isExportOpen;
     private bool _isImageExportOpen;
     private bool _isDiagramLibraryOpen;
+    private bool _isDeleteDiagramOpen;
     private bool _isSaveAsOpen;
     private bool _isNewDiagramOpen;
     private bool _isPaletteLibraryOpen;
@@ -103,6 +104,7 @@ public partial class Home : IAsyncDisposable
     private string _saveAsName = string.Empty;
     private string _newDiagramName = string.Empty;
     private IReadOnlyList<DiagramDocumentSummary> _documents = [];
+    private DiagramDocumentSummary? _deleteCandidate;
     private string _paletteCatalogId = DefaultPaletteCatalogId;
     private string _paletteCatalogName = "Laboratory palette";
     private string? _paletteCatalogDescription = "Ghostagram node palette";
@@ -686,6 +688,64 @@ public partial class Home : IAsyncDisposable
     }
 
     private void CloseDiagramLibrary() => _isDiagramLibraryOpen = false;
+
+    private void OpenDeleteDiagram(DiagramDocumentSummary document)
+    {
+        if (string.Equals(document.DocumentId, DocumentId, StringComparison.Ordinal))
+        {
+            _activity = "Open another diagram before deleting this one";
+            return;
+        }
+
+        _deleteCandidate = document;
+        _isDeleteDiagramOpen = true;
+    }
+
+    private void CloseDeleteDiagram()
+    {
+        _isDeleteDiagramOpen = false;
+        _deleteCandidate = null;
+    }
+
+    private async Task DeleteDiagramAsync()
+    {
+        var candidate = _deleteCandidate;
+        if (candidate is null || _busy) return;
+        if (string.Equals(candidate.DocumentId, DocumentId, StringComparison.Ordinal))
+        {
+            _activity = "Open another diagram before deleting this one";
+            CloseDeleteDiagram();
+            return;
+        }
+
+        await _eventGate.WaitAsync();
+        await _commandGate.WaitAsync();
+        _busy = true;
+        try
+        {
+            var result = await Commands.DeleteAsync(candidate.DocumentId, CancellationToken.None);
+            if (!result.Deleted)
+            {
+                _activity = $"Diagram was not deleted: {result.Message}";
+                await RefreshDocumentCatalogAsync();
+                return;
+            }
+
+            await RefreshDocumentCatalogAsync();
+            CloseDeleteDiagram();
+            _activity = $"Deleted {candidate.DisplayName}";
+        }
+        catch (Exception exception)
+        {
+            _activity = $"Diagram was not deleted: {exception.Message}";
+        }
+        finally
+        {
+            _busy = false;
+            _commandGate.Release();
+            _eventGate.Release();
+        }
+    }
 
     private async Task SaveAsAsync()
     {
