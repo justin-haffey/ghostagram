@@ -176,7 +176,7 @@ test("presentation controls produce host-authoritative node and section proposal
   assert.ok(compactExpandedSection.payload.height < compactExpandedSection.payload.presentation.expandedHeight);
 });
 
-test("collapsed node and section ports share edge geometry but expose one enabled proxy per side", () => {
+test("fully collapsed nodes hide property ports while collapsed sections proxy them", () => {
   const model = (displayMode, collapsedSectionIds) => ({
     ...base,
     nodes: [{ ...base.nodes[0], width: 240, height: displayMode === "collapsed" ? 30 : 120, sections: [{ id: "details", title: "Details" }], presentation: { displayMode, expandedHeight: 120, collapsedSectionIds }, properties: [
@@ -189,24 +189,29 @@ test("collapsed node and section ports share edge geometry but expose one enable
       { id: "disabled-out", nodeId: "a", direction: "source", propertyId: "disabledOut", label: "Disabled out", enabled: false, order: 0 },
       { id: "enabled-out", nodeId: "a", direction: "source", propertyId: "enabledOut", label: "Enabled out", order: 1 },
       { id: "first-in", nodeId: "a", direction: "target", propertyId: "firstIn", label: "First in", order: 2 },
-      { id: "second-in", nodeId: "a", direction: "target", propertyId: "secondIn", label: "Second in", order: 3 }
+      { id: "second-in", nodeId: "a", direction: "target", propertyId: "secondIn", label: "Second in", order: 3 },
+      { id: "node-in", nodeId: "a", direction: "target", label: "Node in", order: 4 },
+      { id: "node-out", nodeId: "a", direction: "source", label: "Node out", order: 5 }
     ],
     edges: []
   });
-  for (const [displayMode, collapsedSections, proxy] of [["collapsed", [], "node"], ["expanded", ["details"], "details"]]) {
-    const state = __testing.buildState(model(displayMode, collapsedSections)), plan = __testing.portRenderPlan(state, "a");
-    assert.equal(plan.length, 2);
-    const source = plan.find(entry => entry.anchor.side === "right"), target = plan.find(entry => entry.anchor.side === "left");
-    assert.equal(source.anchor.proxy, proxy); assert.equal(target.anchor.proxy, proxy);
-    assert.equal(source.port.id, "enabled-out");
-    assert.deepEqual(source.ports.map(port => port.id), ["disabled-out", "enabled-out"]);
-    assert.deepEqual(target.ports.map(port => port.id), ["first-in", "second-in"]);
-    assert.equal(__testing.proxyPortDescriptor(source.ports).enabled, true);
-    assert.match(__testing.proxyPortDescriptor(source.ports).label, /Collapsed connections \(2\).*Disabled out.*Enabled out/);
-    assert.deepEqual(__testing.resolvePortAnchor(state, state.ports.get("disabled-out")), __testing.resolvePortAnchor(state, state.ports.get("enabled-out")));
-  }
+  const collapsed = __testing.buildState(model("collapsed", [])), collapsedPlan = __testing.portRenderPlan(collapsed, "a");
+  assert.deepEqual(collapsedPlan.map(entry => entry.port.id).sort(), ["node-in", "node-out"]);
+  assert.ok(collapsedPlan.every(entry => !entry.port.propertyId));
+  assert.equal(__testing.resolvePortAnchor(collapsed, collapsed.ports.get("node-in")), "left");
+  assert.equal(__testing.resolvePortAnchor(collapsed, collapsed.ports.get("node-out")), "right");
+
+  const sectionCollapsed = __testing.buildState(model("expanded", ["details"])), sectionPlan = __testing.portRenderPlan(sectionCollapsed, "a");
+  assert.equal(sectionPlan.length, 4);
+  const source = sectionPlan.find(entry => entry.anchor.proxy === "details" && entry.anchor.side === "right"), target = sectionPlan.find(entry => entry.anchor.proxy === "details" && entry.anchor.side === "left");
+  assert.equal(source.port.id, "enabled-out");
+  assert.deepEqual(source.ports.map(port => port.id), ["disabled-out", "enabled-out"]);
+  assert.deepEqual(target.ports.map(port => port.id), ["first-in", "second-in"]);
+  assert.equal(__testing.proxyPortDescriptor(source.ports).enabled, true);
+  assert.match(__testing.proxyPortDescriptor(source.ports).label, /Collapsed connections \(2\).*Disabled out.*Enabled out/);
+  assert.deepEqual(__testing.resolvePortAnchor(sectionCollapsed, sectionCollapsed.ports.get("disabled-out")), __testing.resolvePortAnchor(sectionCollapsed, sectionCollapsed.ports.get("enabled-out")));
   const expanded = __testing.buildState(model("expanded", []));
-  assert.equal(__testing.portRenderPlan(expanded, "a").length, 4);
+  assert.equal(__testing.portRenderPlan(expanded, "a").length, 6);
 });
 
 test("ordered side ports on complex nodes retain pixel positions when node height changes", () => {

@@ -1846,6 +1846,7 @@ public partial class Home : IAsyncDisposable
                 SyncEdgeControlsFromSelection(selection);
                 break;
             case "node.move.commit": await CommitNodeMoveAsync(envelope.Payload); break;
+            case "node.duplicateRequested": await DuplicateNodesAsync(envelope.Payload); break;
             case "node.resize.commit": await CommitNodeAsync(envelope.Payload, node => node with { Width = Number(envelope.Payload, "width"), Height = Number(envelope.Payload, "height") }, "Resized node"); break;
             case "node.rotate.commit": await CommitNodeAsync(envelope.Payload, node => node with { Rotation = Number(envelope.Payload, "rotation") }, "Rotated node"); break;
             case "node.label.commit": await CommitNodeAsync(envelope.Payload, node => node with { Label = NullableLabel(envelope.Payload, "label") }, "Updated node label"); break;
@@ -1934,6 +1935,16 @@ public partial class Home : IAsyncDisposable
         };
         AddNodeGroupAssignment(operations, current, groupId, hasGroupId);
         await SubmitOperationsAsync(operations, "Moved node");
+    }
+
+    private async Task DuplicateNodesAsync(JsonElement payload)
+    {
+        var positions = NodePositions(payload, "nodes")
+            .Select(position => new NodeDuplicatePosition(position.Id, position.X, position.Y, position.GroupId, position.HasGroupId))
+            .ToArray();
+        var plan = NodeDuplication.CreatePlan(_document, positions, NextId);
+        if (plan.Operations.Count > 0)
+            await SubmitOperationsAsync(plan.Operations, $"Duplicated {plan.DuplicateNodeIds.Count} node{(plan.DuplicateNodeIds.Count == 1 ? string.Empty : "s")}");
     }
 
     private async Task CommitNodePositionsAsync(JsonElement payload, string property, string activity)

@@ -660,11 +660,12 @@ class GhostagramEngine {
     const node = this.state.nodes.get(nodeId);
     if (!node || event.button !== 0) return;
     this.dom.root.focus({ preventScroll: true });
+    const duplicate = event.ctrlKey;
     const selected = this.previewSelection ?? this.state.selection;
     const selectedGroupRoots = [...selected].map(id => this.state.groups.get(id)).filter(group => group && ![...selected].some(selectedId => selectedId !== group.id && isGroupDescendant(this.state, selectedId, group.id)));
     const selectedGroupIds = [...new Set(selectedGroupRoots.flatMap(group => [group.id, ...descendantGroupIds(this.state, group.id)]))];
     const selectedNodeIds = new Set(selected.has(node.id) ? [...selected].map(id => this.state.nodes.get(id)).filter(Boolean).map(candidate => candidate.id) : [node.id]);
-    for (const groupId of selectedGroupIds) for (const memberId of descendantNodeIds(this.state, groupId)) selectedNodeIds.add(memberId);
+    if (!duplicate) for (const groupId of selectedGroupIds) for (const memberId of descendantNodeIds(this.state, groupId)) selectedNodeIds.add(memberId);
     const dragged = [...selectedNodeIds].map(id => this.previewNodes.get(id) ?? this.state.nodes.get(id)).filter(Boolean), draggedGroups = selectedGroupIds.map(id => this.previewGroups.get(id) ?? this.state.groups.get(id)).filter(Boolean);
     const initial = dragged.find(candidate => candidate.id === node.id) ?? node, start = { x: event.clientX, y: event.clientY, nodeX: initial.x, nodeY: initial.y };
     const positionsAt = pointer => {
@@ -677,9 +678,17 @@ class GhostagramEngine {
       for (const position of positions.nodes) { const original = this.state.nodes.get(position.id), preview = { ...original, ...position }; this.previewNodes.set(position.id, preview); const el = this.dom.nodeById.get(position.id); if (el) { el.style.left = `${preview.x}px`; el.style.top = `${preview.y}px`; } for (const edgeId of incident(this.state, position.id)) edgeIds.add(edgeId); }
       for (const edgeId of edgeIds) { const edge = this.state.edges.get(edgeId); if (edge) this.renderEdge(edge); }
     };
+    const setDuplicateDragAppearance = active => {
+      for (const candidate of dragged) {
+        const el = this.dom.nodeById.get(candidate.id);
+        if (!el) continue;
+        el.style.cursor = active ? "copy" : "grab";
+        el.style.opacity = active ? ".72" : "";
+      }
+    };
     event.preventDefault();
-    const move = e => { const positions = positionsAt(e), primary = positions.nodes.find(position => position.id === node.id); applyPreview(positions); this.setGroupDropTarget(draggedGroups.length ? null : primary?.groupId); const type = positions.groups.length ? "selection.move.preview" : positions.nodes.length === 1 ? "node.move.preview" : "nodes.move.preview"; this.emit(type, positions.groups.length ? { nodeId: node.id, ...positions } : positions.nodes.length === 1 ? { nodeId: node.id, ...primary } : { nodeId: node.id, nodes: positions.nodes }, "browser", true); };
-    const up = e => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, e); this.setGroupDropTarget(null); if (isClickGesture(start, e)) return; const positions = positionsAt(e), primary = positions.nodes.find(position => position.id === node.id); if (positions.groups.length) this.emit("selection.move.commit", { nodeId: node.id, ...positions }, "browser"); else if (positions.nodes.length === 1) this.emit("node.move.commit", { nodeId: node.id, ...primary }, "browser"); else this.emit("nodes.move.commit", { nodeId: node.id, nodes: positions.nodes }, "browser"); };
+    const move = e => { const positions = positionsAt(e), primary = positions.nodes.find(position => position.id === node.id); if (duplicate) setDuplicateDragAppearance(true); else applyPreview(positions); this.setGroupDropTarget(duplicate || draggedGroups.length ? null : primary?.groupId); if (!duplicate) { const type = positions.groups.length ? "selection.move.preview" : positions.nodes.length === 1 ? "node.move.preview" : "nodes.move.preview"; this.emit(type, positions.groups.length ? { nodeId: node.id, ...positions } : positions.nodes.length === 1 ? { nodeId: node.id, ...primary } : { nodeId: node.id, nodes: positions.nodes }, "browser", true); } };
+    const up = e => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, e); this.setGroupDropTarget(null); setDuplicateDragAppearance(false); if (isClickGesture(start, e)) return; const positions = positionsAt(e), primary = positions.nodes.find(position => position.id === node.id); if (duplicate) this.emit("node.duplicateRequested", { nodeId: node.id, nodes: positions.nodes }, "browser"); else if (positions.groups.length) this.emit("selection.move.commit", { nodeId: node.id, ...positions }, "browser"); else if (positions.nodes.length === 1) this.emit("node.move.commit", { nodeId: node.id, ...primary }, "browser"); else this.emit("nodes.move.commit", { nodeId: node.id, nodes: positions.nodes }, "browser"); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up, { once: true });
   }
   startGroupDrag(groupId, event) {
@@ -1071,10 +1080,12 @@ function resolvePortAnchor(state, port) {
   if (port?.propertyId) return propertyPortAnchor(state.nodes.get(port.nodeId), port.propertyId, port.direction) ?? port.anchor ?? "right";
   if (port?.anchor != null) return port.anchor;
   const node = port && state.nodes.get(port.nodeId);
+  if (node?.presentation?.displayMode === "collapsed") return port.direction === "target" ? "left" : "right";
   return node?.properties?.length ? orderedNodePortAnchor(state, node, port) ?? "right" : "right";
 }
 function portRenderPlan(state, nodeId) {
-  const ports = [...(state.portsByNode.get(nodeId) ?? [])].map(id => state.ports.get(id)).filter(Boolean)
+  const node = state.nodes.get(nodeId), fullyCollapsed = node?.presentation?.displayMode === "collapsed";
+  const ports = [...(state.portsByNode.get(nodeId) ?? [])].map(id => state.ports.get(id)).filter(port => port && (!fullyCollapsed || !port.propertyId))
     .sort((left, right) => left.order - right.order || left.id.localeCompare(right.id));
   const entries = [], proxies = new Map();
   for (const port of ports) {

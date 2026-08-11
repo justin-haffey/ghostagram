@@ -17,6 +17,7 @@ var checks = new List<(string Name, Action Check)>
     ("nested compound containment", VerifyNestedGroups),
     ("group removal preserves and ungroups content", VerifyGroupRemoval),
     ("explicit group assignment supports reparenting and ungrouping", VerifyGroupAssignment),
+    ("node duplication creates independent nodes and ports without copying edges", VerifyNodeDuplication),
     ("server rejects duplicate ids and cyclic group hierarchies", VerifyReducerStructuralValidation),
     ("server validates progressive node sections, editors, and presentation", VerifyProgressiveNodeValidation),
     ("property ports require an existing property on their node", VerifyPropertyPortValidation),
@@ -104,6 +105,33 @@ static void VerifyGroupAssignment()
     ]);
     var custom = moved.GetProperty("nodes").EnumerateArray().Single();
     True(custom.GetProperty("groupId").ValueKind == JsonValueKind.Null, "an explicit null assignment must remove group membership");
+}
+
+static void VerifyNodeDuplication()
+{
+    var source = Node("source", 20, 20, "group-a");
+    var target = Node("target", 400, 20);
+    var model = Model([source, target], [Edge("source", "target")], [Group("group-a", null)]);
+    var document = JsonSerializer.Deserialize<DiagramDocument>(model.GetRawText(), new JsonSerializerOptions(JsonSerializerDefaults.Web))
+        ?? throw new InvalidOperationException("Duplicate test document did not deserialize.");
+
+    var sequence = 0;
+    var plan = NodeDuplication.CreatePlan(
+        document,
+        [new NodeDuplicatePosition("source", 160, 192, "group-a", true)],
+        prefix => $"{prefix}-copy-{++sequence}");
+    var duplicated = GhostagramDocumentReducer.Apply(model, plan.Operations);
+    var nodes = Boxes(duplicated, "nodes");
+    var ports = duplicated.GetProperty("ports").EnumerateArray().ToArray();
+    var edges = duplicated.GetProperty("edges").EnumerateArray().ToArray();
+
+    Equal(3, nodes.Count, "duplication must preserve the source and add one node");
+    True(nodes["source"].X == 20 && nodes["source"].Y == 20, "duplication must not move the source node");
+    True(nodes["node-copy-1"].X == 160 && nodes["node-copy-1"].Y == 192, "duplicate must use the proposed snapped position");
+    Equal("group-a", duplicated.GetProperty("nodes").EnumerateArray().Single(node => node.GetProperty("id").GetString() == "node-copy-1").GetProperty("groupId").GetString()!, "duplicate must retain its dropped group");
+    True(ports.Any(port => port.GetProperty("id").GetString() == "port-copy-2" && port.GetProperty("nodeId").GetString() == "node-copy-1"), "duplicate must receive a freshly identified port");
+    Equal(1, edges.Length, "duplication must not copy connections");
+    Equal("node-copy-1", duplicated.GetProperty("selection").EnumerateArray().Single().GetString()!, "duplicate must become the active selection");
 }
 
 static void VerifyPropertyPortValidation()
