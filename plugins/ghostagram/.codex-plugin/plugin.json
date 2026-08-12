@@ -1,7 +1,7 @@
 {
   "name": "ghostagram",
-  "version": "1.0.2",
-  "description": "Codex workflows for running the local Ghostagram server and creating, inspecting, editing, laying out, and exporting collaborative diagrams through MCP.",
+  "version": "1.0.3",
+  "description": "Codex workflows for compact MudBlazor forms and for running, editing, laying out, and exporting collaborative Ghostagram diagrams through MCP.",
   "author": {
     "name": "Ghostworx"
   },
@@ -10,14 +10,16 @@
     "diagramming",
     "mcp",
     "codex",
-    "collaboration"
+    "collaboration",
+    "mudblazor",
+    "forms"
   ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Ghostagram",
-    "shortDescription": "Edit live diagrams through MCP",
-    "longDescription": "Ten focused skills run the local server and support revision-safe human-and-agent Ghostagram collaboration: start, stop, discover, open, create, inspect, edit, lay out, export, and close.",
+    "shortDescription": "Build forms and edit live diagrams",
+    "longDescription": "Twelve focused skills scaffold and verify compact MudBlazor forms, run the local server, and support revision-safe human-and-agent Ghostagram collaboration.",
     "developerName": "Ghostworx",
     "category": "Productivity",
     "capabilities": [
@@ -34,7 +36,9 @@
       "Use $ghostagram-apply-operations to make a revision-safe diagram change.",
       "Use $ghostagram-layout-diagram to preview or commit deterministic layout.",
       "Use $ghostagram-export-svg to export a revision-pinned SVG.",
-      "Use $ghostagram-close-session to close the current collaboration session."
+      "Use $ghostagram-close-session to close the current collaboration session.",
+      "Use $mudblazor-form-scaffold to create a compact typed form with reusable Blazor UI and server-owned feature behavior.",
+      "Use $mudblazor-form-verify to validate package resolution, builds, tests, visible form behavior, and the browser console."
     ],
     "brandColor": "#0F766E",
     "composerIcon": "./assets/icon.png",

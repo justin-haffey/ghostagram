@@ -15,6 +15,9 @@ public partial class Home : IAsyncDisposable
 {
     private const string DefaultDocumentId = "laboratory-design";
     private const string DefaultPaletteCatalogId = "laboratory-palette";
+    private const string DefaultNodeOutline = "#334155";
+    private const string DefaultNodeBackground = "#f8fafc";
+    private const string DefaultNodeTextColor = "#0f172a";
     private const int GridSize = 16;
     private const int MaxDesignedProperties = 17;
     // Keep these layout constants aligned with Ghostagram's nodeLayoutProjection.
@@ -53,7 +56,7 @@ public partial class Home : IAsyncDisposable
     [Inject] private LaboratoryCircuitState CircuitState { get; set; } = default!;
     [Parameter, SupplyParameterFromQuery(Name = "documentId")] public string? RequestedDocumentId { get; set; }
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260810.1");
+    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260811.2");
     private readonly List<PaletteCategory> _paletteCategories = CreatePaletteCategories();
     private readonly List<NodeTemplate> _templates = CreateBuiltInTemplates();
     private readonly List<DraftPort> _draftPorts = [];
@@ -93,6 +96,7 @@ public partial class Home : IAsyncDisposable
     private bool _documentDurable;
     private string _activity = "Loading saved design…";
     private string _layoutDirection = "right";
+    private string _edgeColor = "#7455dd";
     private string _edgeConnector = "flowchart";
     private string _edgeStartMarker = "none";
     private string _edgeEndMarker = "arrow";
@@ -452,36 +456,7 @@ public partial class Home : IAsyncDisposable
             var category = placementByItem.TryGetValue(node.Id, out var placement) && names.Contains(placement.GroupId)
                 ? placement.GroupId
                 : "Custom";
-            _templates.Add(new(
-                node.Id,
-                category,
-                node.Label,
-                node.Description,
-                node.Width,
-                node.Height,
-                node.Style.BorderColor,
-                node.Style.Background,
-                node.Style.Color,
-                node.Style.TextAlign,
-                node.Ports.Where(port => port.PropertyId is null).OrderBy(port => port.Order).Select(port => new PortTemplate(port.Id, port.Side, port.Direction)).ToArray(),
-                node.IsGroup,
-                NormalizeIcon(node.Icon) ?? "mdi:shape-outline",
-                true,
-                node.Properties.OrderBy(property => property.Order).Select(property => new PropertyTemplate(
-                    property.Id,
-                    property.Name,
-                    property.Type,
-                    property.DefaultValue?.Clone(),
-                    property.Mode,
-                    property.Label,
-                    property.Connectable,
-                    property.Options.ToArray(),
-                    property.Direction,
-                    ReadPropertySectionId(property.Metadata),
-                    ReadPropertyEditor(property.Metadata))).ToArray(),
-                ReadTemplateSections(node.Metadata),
-                ReadTemplatePresentation(node.Metadata),
-                PersistedDefinition: node));
+            _templates.Add(NodeTemplateFromDefinition(node, category));
         }
 
         for (var index = 0; index < _templates.Count; index++)
@@ -518,6 +493,37 @@ public partial class Home : IAsyncDisposable
         _draft.Category = names.Contains(_draft.Category) ? _draft.Category : "Custom";
         UpdateTemplateSequence();
     }
+
+    private static NodeTemplate NodeTemplateFromDefinition(PaletteNodeDefinitionSnapshot node, string category) => new(
+        node.Id,
+        category,
+        node.Label,
+        node.Description,
+        node.Width,
+        node.Height,
+        node.Style.BorderColor,
+        node.Style.Background,
+        node.Style.Color,
+        node.Style.TextAlign,
+        node.Ports.Where(port => port.PropertyId is null).OrderBy(port => port.Order).Select(port => new PortTemplate(port.Id, port.Side, port.Direction)).ToArray(),
+        node.IsGroup,
+        NormalizeIcon(node.Icon) ?? "mdi:shape-outline",
+        true,
+        node.Properties.OrderBy(property => property.Order).Select(property => new PropertyTemplate(
+            property.Id,
+            property.Name,
+            property.Type,
+            property.DefaultValue?.Clone(),
+            property.Mode,
+            property.Label,
+            property.Connectable,
+            property.Options.ToArray(),
+            property.Direction,
+            ReadPropertySectionId(property.Metadata),
+            ReadPropertyEditor(property.Metadata))).ToArray(),
+        ReadTemplateSections(node.Metadata),
+        ReadTemplatePresentation(node.Metadata),
+        PersistedDefinition: node);
 
     private void ApplyCommittedPaletteSnapshot(PaletteCatalogSnapshot snapshot)
     {
@@ -579,6 +585,30 @@ public partial class Home : IAsyncDisposable
         metadata.TryGetValue("ghostagram.editor", out var value)
             ? JsonSerializer.Deserialize<DiagramPropertyEditor>(value.GetRawText(), JsonOptions)
             : null;
+
+    private static JsonElement? ReadCapturedPropertyMetadata(IReadOnlyDictionary<string, JsonElement> metadata) =>
+        metadata.TryGetValue("ghostagram.propertyMetadata", out var value) ? value.Clone() : null;
+
+    private static Dictionary<string, JsonElement>? ReadNestedMetadata(IReadOnlyDictionary<string, JsonElement>? metadata, string key)
+    {
+        if (metadata is null || !metadata.TryGetValue(key, out var value) || value.ValueKind != JsonValueKind.Object) return null;
+        var nested = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(value.GetRawText(), JsonOptions);
+        return nested is { Count: > 0 }
+            ? nested.ToDictionary(pair => pair.Key, pair => pair.Value.Clone(), StringComparer.Ordinal)
+            : null;
+    }
+
+    private static Dictionary<string, JsonElement>? ReadExtensionMetadata(
+        IReadOnlyDictionary<string, JsonElement>? metadata,
+        params string[] reservedKeys)
+    {
+        if (metadata is null || metadata.Count == 0) return null;
+        var reserved = reservedKeys.ToHashSet(StringComparer.Ordinal);
+        var result = metadata
+            .Where(pair => !reserved.Contains(pair.Key))
+            .ToDictionary(pair => pair.Key, pair => pair.Value.Clone(), StringComparer.Ordinal);
+        return result.Count == 0 ? null : result;
+    }
 
     private static DiagramNodePresentation? ClonePresentation(DiagramNodePresentation? presentation) => presentation is null
         ? null
@@ -1003,7 +1033,20 @@ public partial class Home : IAsyncDisposable
             _draft.Category = "Custom";
         _isDesignerOpen = true;
     }
-    private void CloseDesigner() => _isDesignerOpen = false;
+    private void CloseDesigner()
+    {
+        _isDesignerOpen = false;
+        ResetNodeDesignerDraft();
+    }
+
+    private void ResetNodeDesignerDraft()
+    {
+        _draft = new NodeDraft();
+        _draftPorts.Clear();
+        _draftProperties.Clear();
+        _draftSections.Clear();
+        _designerError = null;
+    }
     private void OpenPaletteGroupEditor()
     {
         _paletteGroupName = string.Empty;
@@ -1018,6 +1061,9 @@ public partial class Home : IAsyncDisposable
     private bool HasSelectedGroups => _document.Groups.Any(group => _document.Selection.Contains(group.Id, StringComparer.Ordinal));
     private bool HasSelectedEdges => _document.Edges.Any(edge => _document.Selection.Contains(edge.Id, StringComparer.Ordinal));
     private bool CanEditSelectedNode => SelectedNode() is not null;
+    private bool CanCaptureSelectedNode =>
+        _paletteCatalogDurable && !_paletteLoadFailed &&
+        SelectedNode() is { } node && string.IsNullOrWhiteSpace(node.TypeId);
     private string EdgeApplyLabel => HasSelectedEdges ? "Apply selected" : "Apply all edges";
     private string StyleNodeLabel => _document.Nodes.SingleOrDefault(node => node.Id == _styleNodeId)?.Label ?? "Node style";
     private string PropertiesNodeLabel => _document.Nodes.SingleOrDefault(node => node.Id == _propertiesNodeId)?.Label ?? "Node properties";
@@ -1119,9 +1165,9 @@ public partial class Home : IAsyncDisposable
         _styleNodeId = node.Id;
         _styleDraft = new NodeStyleDraft
         {
-            Background = NormalizeColor(style.Background, "#ffffff"),
-            Outline = NormalizeColor(style.BorderColor, "#4177de"),
-            TextColor = NormalizeColor(style.Color, "#172033"),
+            Background = NormalizeColor(style.Background, DefaultNodeBackground),
+            Outline = NormalizeColor(style.BorderColor, DefaultNodeOutline),
+            TextColor = NormalizeColor(style.Color, DefaultNodeTextColor),
             TextAlign = NormalizeTextAlign(style.TextAlign)
         };
         _isStyleEditorOpen = true;
@@ -1160,10 +1206,10 @@ public partial class Home : IAsyncDisposable
             ExpandedHeight = node.Presentation?.ExpandedHeight ?? node.Height
         };
         _portEditorDrafts.Clear();
-        _portEditorDrafts.AddRange(_document.Ports.Where(port => port.NodeId == node.Id && port.PropertyId is null).OrderBy(port => port.Order).Select(port => new PortEditorDraft(port.Id, port)
-        {
-            Label = port.Label ?? port.Id, Side = PortSideFromAnchor(port.Anchor), Direction = port.Direction
-        }));
+        _portEditorDrafts.AddRange(_document.Ports
+            .Where(port => port.NodeId == node.Id && port.PropertyId is null)
+            .OrderBy(port => port.Order)
+            .Select(port => new PortEditorDraft(port.Id, port)));
         _isPropertiesEditorOpen = true;
     }
 
@@ -1288,7 +1334,7 @@ public partial class Home : IAsyncDisposable
                 });
                 continue;
             }
-            foreach (var generated in PropertyPorts(node.Id, property.value, connection, property.index, node.Style?.BorderColor ?? "#4177de"))
+            foreach (var generated in PropertyPorts(node.Id, property.value, connection, property.index, node.Style?.BorderColor ?? DefaultNodeOutline))
             {
                 var lane = generated.Direction;
                 var current = existing.Values.FirstOrDefault(port => !matchedPortIds.Contains(port.Id) && port.PropertyId == property.value.Id && PortAllows(port.Direction, lane));
@@ -1306,7 +1352,7 @@ public partial class Home : IAsyncDisposable
         }
         foreach (var draft in _portEditorDrafts.Select((value, index) => (value, index)))
         {
-            var port = new DiagramPort(draft.value.Id, node.Id, draft.value.Direction, Anchor: draft.value.Side, Endpoint: new DiagramEndpoint("dot", 10, node.Style?.BorderColor ?? "#4177de", "#ffffff", 2), Label: draft.value.Label.Trim(), Order: properties.Count + draft.index);
+            var port = new DiagramPort(draft.value.Id, node.Id, draft.value.Direction, Anchor: draft.value.Side, Endpoint: new DiagramEndpoint("dot", 10, node.Style?.BorderColor ?? DefaultNodeOutline, "#ffffff", 2), Label: draft.value.Label.Trim(), Order: properties.Count + draft.index);
             result.Add(existing.TryGetValue(port.Id, out var current)
                 ? current with
                 {
@@ -1542,7 +1588,54 @@ public partial class Home : IAsyncDisposable
         var directions = _document.Ports.Where(port => port.NodeId == node.Id && port.PropertyId == propertyId).Select(port => port.Direction).ToHashSet(StringComparer.Ordinal);
         return directions.Contains("both") || directions.Contains("source") && directions.Contains("target") ? "both" : directions.Contains("source") ? "source" : directions.Contains("target") ? "target" : "none";
     }
-    private static string PortSideFromAnchor(object? anchor) => anchor is string value && value is "left" or "right" or "top" or "bottom" ? value : "right";
+    private static string PortSideFromAnchor(object? anchor) => anchor switch
+    {
+        string value => NormalizePortSide(value),
+        JsonElement element => PortSideFromJsonAnchor(element),
+        IReadOnlyList<double> values when values.Count >= 2 => RelativeAnchorSide(values[0], values[1]),
+        _ => "right"
+    };
+
+    private static string PortSideFromJsonAnchor(JsonElement anchor)
+    {
+        if (anchor.ValueKind == JsonValueKind.String) return NormalizePortSide(anchor.GetString());
+        if (anchor.ValueKind == JsonValueKind.Array)
+        {
+            var values = anchor.EnumerateArray().Take(2).ToArray();
+            if (values.Length == 2 && values.All(value => value.ValueKind == JsonValueKind.Number && value.TryGetDouble(out _)))
+                return RelativeAnchorSide(values[0].GetDouble(), values[1].GetDouble());
+        }
+        if (anchor.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var propertyName in new[] { "side", "type" })
+                if (anchor.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String)
+                    return NormalizePortSide(value.GetString());
+            if (anchor.TryGetProperty("x", out var x) && x.TryGetDouble(out var relativeX)
+                && anchor.TryGetProperty("y", out var y) && y.TryGetDouble(out var relativeY))
+                return RelativeAnchorSide(relativeX, relativeY);
+        }
+        return "right";
+    }
+
+    private static string RelativeAnchorSide(double x, double y) => y switch
+    {
+        0 => "top",
+        1 => "bottom",
+        _ when x == 0 => "left",
+        _ when x == 1 => "right",
+        _ => "right"
+    };
+
+    private static string NormalizePortSide(string? value) => value is "left" or "right" or "top" or "bottom" ? value : "right";
+
+    private static string PortEditorLabel(DiagramPort port)
+    {
+        if (!string.IsNullOrWhiteSpace(port.Label)) return port.Label;
+        var prefix = $"{port.NodeId}-";
+        var candidate = port.Id.StartsWith(prefix, StringComparison.Ordinal) ? port.Id[prefix.Length..] : port.Id;
+        var separator = candidate.LastIndexOf('-');
+        return separator > 0 && int.TryParse(candidate[(separator + 1)..], out _) ? candidate[..separator] : candidate;
+    }
     private bool EdgeRolesRemainCompatible(DiagramEdge edge, IEnumerable<DiagramPort> desiredPorts)
     {
         var ports = desiredPorts.ToDictionary(port => port.Id, StringComparer.Ordinal);
@@ -1574,9 +1667,9 @@ public partial class Home : IAsyncDisposable
         }
 
         var style = new DiagramNodeStyle(
-            NormalizeColor(_styleDraft.Background, "#ffffff"),
-            NormalizeColor(_styleDraft.Outline, "#4177de"),
-            NormalizeColor(_styleDraft.TextColor, "#172033"),
+            NormalizeColor(_styleDraft.Background, DefaultNodeBackground),
+            NormalizeColor(_styleDraft.Outline, DefaultNodeOutline),
+            NormalizeColor(_styleDraft.TextColor, DefaultNodeTextColor),
             NormalizeTextAlign(_styleDraft.TextAlign));
         if (await SubmitOperationsAsync([DiagramOperations.Upsert(node with { Style = style })], $"Updated {node.Label ?? "node"} style"))
             _isStyleEditorOpen = false;
@@ -1682,13 +1775,23 @@ public partial class Home : IAsyncDisposable
                         property.Label,
                         Connectable: property.Connectable,
                         Options: property.Options.ToArray(),
-                        Metadata: property.Metadata.Count == 0 ? null : JsonSerializer.SerializeToElement(property.Metadata, JsonOptions),
+                        Metadata: ReadCapturedPropertyMetadata(property.Metadata),
                         SectionId: ReadPropertySectionId(property.Metadata),
-                        Editor: ReadPropertyEditor(property.Metadata))).ToArray();
+                        Editor: ReadPropertyEditor(property.Metadata))
+                    {
+                        ExtensionData = ReadExtensionMetadata(property.Metadata, "ghostagram.propertyMetadata", "ghostagram.sectionId", "ghostagram.editor")
+                    }).ToArray();
+                var style = new DiagramNodeStyle(template.Background, template.Outline, template.TextColor, template.TextAlign)
+                {
+                    ExtensionData = ReadNestedMetadata(template.PersistedDefinition?.Metadata, "ghostagram.styleExtensions")
+                };
                 var node = FitNodeToGrid(new DiagramNode(id, x, y, templateWidth, templateHeight, template.Label, GroupId: groupId, Icon: template.Icon,
-                    Style: new DiagramNodeStyle(template.Background, template.Outline, template.TextColor, template.TextAlign), Properties: properties,
+                    Style: style, Properties: properties,
                     Sections: template.Sections.Count == 0 ? null : template.Sections.Select(section => section with { }).ToArray(),
-                    Presentation: ClonePresentation(template.Presentation)));
+                    Presentation: ClonePresentation(template.Presentation))
+                {
+                    ExtensionData = ReadExtensionMetadata(template.PersistedDefinition?.Metadata, "ghostagram.sections", "ghostagram.presentation", "ghostagram.styleExtensions")
+                });
                 var persistedPorts = template.PersistedDefinition?.Ports.OrderBy(port => port.Order).ToArray();
                 var ports = persistedPorts is null
                     ? template.Ports.Select((port, index) => new DiagramPort(
@@ -1701,12 +1804,20 @@ public partial class Home : IAsyncDisposable
                         Anchor: port.Anchor ?? port.Side,
                         Endpoint: port.Endpoint is null
                             ? new DiagramEndpoint("dot", 11, template.Outline, "#ffffff", 2)
-                            : new DiagramEndpoint(port.Endpoint.Type, port.Endpoint.Size, port.Endpoint.Stroke, port.Endpoint.Fill, port.Endpoint.StrokeWidth),
+                            : new DiagramEndpoint(
+                                Type: port.Endpoint.Type,
+                                Size: port.Endpoint.Size,
+                                Fill: port.Endpoint.Fill,
+                                Stroke: port.Endpoint.Stroke,
+                                StrokeWidth: port.Endpoint.StrokeWidth)
+                            {
+                                ExtensionData = ReadNestedMetadata(port.Metadata, "ghostagram.endpointExtensions")
+                            },
                         PropertyId: port.PropertyId,
                         Label: port.Label,
                         Order: port.Order)
                     {
-                        ExtensionData = CloneMetadata(port.Metadata).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal)
+                        ExtensionData = ReadExtensionMetadata(port.Metadata, "ghostagram.endpointExtensions")
                     }).ToArray();
                 var operations = new List<GhostagramOperation> { DiagramOperations.Upsert(node) };
                 operations.AddRange(ports.Select(DiagramOperations.Upsert));
@@ -1758,27 +1869,16 @@ public partial class Home : IAsyncDisposable
         foreach (var property in _draftProperties.Where(property => property.SectionId == id)) property.SectionId = null;
         foreach (var section in _draftSections.Where(section => section.ParentSectionId == id)) section.ParentSectionId = null;
     }
-    private int PreviewSectionDepth(string id)
-    {
-        var depth = 0;
-        var section = _draftSections.SingleOrDefault(item => item.Id == id);
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        while (section?.ParentSectionId is { } parent && seen.Add(parent))
-        {
-            depth++;
-            section = _draftSections.SingleOrDefault(item => item.Id == parent);
-            if (depth == 4) break;
-        }
-        return depth;
-    }
+    private double DesignerPreviewWidth => Math.Clamp(_draft.Width, 96, 360);
+    private double DesignerPreviewHeight => Math.Clamp(_draft.Height, 48, 420);
 
     private async Task AddCustomTemplate()
     {
         _designerError = null;
         var label = string.IsNullOrWhiteSpace(_draft.Label) ? "Custom node" : _draft.Label.Trim();
-        var outline = NormalizeColor(_draft.Outline, "#d24686");
-        var background = NormalizeColor(_draft.Background, "#ffffff");
-        var textColor = NormalizeColor(_draft.TextColor, "#172033");
+        var outline = NormalizeColor(_draft.Outline, DefaultNodeOutline);
+        var background = NormalizeColor(_draft.Background, DefaultNodeBackground);
+        var textColor = NormalizeColor(_draft.TextColor, DefaultNodeTextColor);
         var textAlign = NormalizeTextAlign(_draft.TextAlign);
         var category = _paletteCategories.Any(item => item.Name == _draft.Category) ? _draft.Category : "Custom";
         var ports = _draftPorts.Select((port, index) => new PortTemplate($"port-{index + 1}", port.Side, port.Direction)).ToArray();
@@ -1802,15 +1902,51 @@ public partial class Home : IAsyncDisposable
         _templates.Add(new NodeTemplate($"custom-{++_templateSequence}", category, label, "Custom component",
             width, height, outline, background, textColor, textAlign,
             ports, false, NormalizeIcon(_draft.Icon) ?? "mdi:shape-outline", true, properties, Sections: sections, Presentation: presentation));
-        _draft = new NodeDraft();
-        _draftPorts.Clear();
-        _draftProperties.Clear();
-        _draftSections.Clear();
+        ResetNodeDesignerDraft();
         _isDesignerOpen = false;
         _paletteOpen = true;
         _expandedCategories.Add(category);
         _activity = $"Added {label} to {category}";
         await PersistPaletteCatalogAsync();
+    }
+
+    private async Task AddSelectedNodeToPaletteAsync()
+    {
+        var selected = SelectedNode();
+        if (selected is null) return;
+        if (!string.IsNullOrWhiteSpace(selected.TypeId))
+        {
+            _activity = "Registered node types already belong to their registered palette set";
+            return;
+        }
+
+        var templateId = NextCustomTemplateId();
+        var definition = PaletteNodeDefinitionCapture.Capture(selected, _document.Ports, "Captured from the diagram") with
+        {
+            Id = templateId
+        };
+        var template = NodeTemplateFromDefinition(definition, "Custom");
+        var paletteWasOpen = _paletteOpen;
+        var customWasExpanded = _expandedCategories.Contains("Custom");
+        _templates.Add(template);
+        _paletteOpen = true;
+        _expandedCategories.Add("Custom");
+        if (!await PersistPaletteCatalogAsync())
+        {
+            _templates.Remove(template);
+            _paletteOpen = paletteWasOpen;
+            if (!customWasExpanded) _expandedCategories.Remove("Custom");
+            return;
+        }
+        _activity = $"Added {definition.Label} to Custom";
+    }
+
+    private string NextCustomTemplateId()
+    {
+        string id;
+        do id = $"custom-{++_templateSequence}";
+        while (_templates.Any(template => string.Equals(template.Id, id, StringComparison.Ordinal)));
+        return id;
     }
 
     private async Task OnGhostagramEvent(GhostagramEvent envelope)
@@ -1855,6 +1991,7 @@ public partial class Home : IAsyncDisposable
             case "nodes.move.commit": await CommitNodePositionsAsync(envelope.Payload, "nodes", "Moved nodes"); break;
             case "selection.move.commit": await CommitNodeAndGroupPositionsAsync(envelope.Payload, "Moved selection"); break;
             case "group.move.commit": await CommitGroupMoveAsync(envelope.Payload); break;
+            case "group.duplicateRequested": await DuplicateGroupAsync(envelope.Payload); break;
             case "group.resize.commit": await CommitGroupAsync(envelope.Payload, group => group with { Width = Number(envelope.Payload, "width"), Height = Number(envelope.Payload, "height") }, "Resized group"); break;
             case "group.visibilityRequested": await SetGroupVisibilityAsync(envelope.Payload); break;
             case "group.label.commit": await CommitGroupAsync(envelope.Payload, group => group with { Label = NullableLabel(envelope.Payload, "label") }, "Updated group label"); break;
@@ -1996,6 +2133,24 @@ public partial class Home : IAsyncDisposable
         await SubmitOperationsAsync(operations, "Moved group");
     }
 
+    private async Task DuplicateGroupAsync(JsonElement payload)
+    {
+        var hasParent = TryNullableString(payload, "parentGroupId", out var parentGroupId);
+        var plan = GroupDuplication.CreatePlan(
+            _document,
+            new GroupDuplicatePosition(
+                String(payload, "groupId"),
+                Number(payload, "x"),
+                Number(payload, "y"),
+                parentGroupId,
+                hasParent),
+            NextId);
+        if (plan.Operations.Count == 0) return;
+        var childGroupCount = plan.DuplicateGroupIds.Count - 1;
+        var contents = $"{childGroupCount} child group{(childGroupCount == 1 ? string.Empty : "s")} and {plan.DuplicateNodeIds.Count} node{(plan.DuplicateNodeIds.Count == 1 ? string.Empty : "s")}";
+        await SubmitOperationsAsync(plan.Operations, $"Duplicated group with {contents}");
+    }
+
     private void AddNodePositionOperations(List<GhostagramOperation> operations, IReadOnlyDictionary<string, NodePosition> positions)
     {
         foreach (var node in _document.Nodes.Where(node => positions.ContainsKey(node.Id)))
@@ -2045,6 +2200,20 @@ public partial class Home : IAsyncDisposable
             Animation = _edgeAnimated
         })).ToArray();
         await SubmitOperationsAsync(operations, $"Updated {edges.Length} edge{(edges.Length == 1 ? string.Empty : "s")}");
+    }
+
+    private async Task OnEdgeColorChangedAsync(ChangeEventArgs args)
+    {
+        _edgeColor = NormalizeColor(args.Value?.ToString(), "#7455dd");
+        var edges = SelectedEdges();
+        if (edges.Length == 0) return;
+        var operations = edges
+            .Select(edge => DiagramOperations.Upsert(edge with
+            {
+                Style = (edge.Style ?? new DiagramEdgeStyle()) with { Stroke = _edgeColor }
+            }))
+            .ToArray();
+        await SubmitOperationsAsync(operations, $"Changed the color of {SelectedEdgeDescription(edges.Length)}");
     }
 
     private async Task OnEdgeConnectorChangedAsync(string value)
@@ -2439,12 +2608,12 @@ public partial class Home : IAsyncDisposable
         id, source, target, label, _edgeConnector,
         Overlays: WithEdgeMarkers([], _edgeStartMarker, _edgeEndMarker),
         ConnectorOptions: _edgeConnector == "flowchart" ? new DiagramFlowchartOptions(32, 0) : null,
-        Style: new DiagramEdgeStyle("#7455dd", 2.5, null, .9),
+        Style: new DiagramEdgeStyle(_edgeColor, 2.5, null, .9),
         Animation: _edgeAnimated);
 
     private void SyncEdgeControlsFromSelection(IReadOnlyList<string> selection)
     {
-        var edge = _document.Edges.SingleOrDefault(item => selection.Contains(item.Id, StringComparer.Ordinal));
+        var edge = _document.Edges.FirstOrDefault(item => selection.Contains(item.Id, StringComparer.Ordinal));
         if (edge is null) return;
         SyncEdgeControls(edge);
     }
@@ -2456,6 +2625,8 @@ public partial class Home : IAsyncDisposable
 
     private void SyncEdgeControls(DiagramEdge edge)
     {
+        var inheritedStroke = _document.EdgeTypes.SingleOrDefault(type => type.Id == edge.Type)?.Style?.Stroke;
+        _edgeColor = NormalizeColor(edge.Style?.Stroke ?? inheritedStroke, "#0f766e");
         _edgeConnector = edge.Connector is "straight" or "bezier" ? edge.Connector : "flowchart";
         var overlays = EffectiveOverlays(edge);
         _edgeStartMarker = MarkerAt(overlays, 0);
@@ -2663,9 +2834,9 @@ public partial class Home : IAsyncDisposable
                         : set.Description ?? "Registered node type",
                     descriptor.Width,
                     descriptor.Height,
-                    descriptor.Style?.BorderColor ?? "#5b5bd6",
-                    descriptor.Style?.Background ?? "#ffffff",
-                    descriptor.Style?.Color ?? "#172033",
+                    descriptor.Style?.BorderColor ?? DefaultNodeOutline,
+                    descriptor.Style?.Background ?? DefaultNodeBackground,
+                    descriptor.Style?.Color ?? DefaultNodeTextColor,
                     descriptor.Style?.TextAlign ?? "left",
                     ports,
                     false,
@@ -2773,12 +2944,12 @@ public partial class Home : IAsyncDisposable
 
     private sealed class NodeDraft
     {
-        public string Label { get; set; } = "Human review";
+        public string Label { get; set; } = string.Empty;
         public double Width { get; set; } = 176;
         public double Height { get; set; } = 80;
-        public string Outline { get; set; } = "#d24686";
-        public string Background { get; set; } = "#ffffff";
-        public string TextColor { get; set; } = "#172033";
+        public string Outline { get; set; } = DefaultNodeOutline;
+        public string Background { get; set; } = DefaultNodeBackground;
+        public string TextColor { get; set; } = DefaultNodeTextColor;
         public string TextAlign { get; set; } = "center";
         public string Category { get; set; } = "Custom";
         public string Direction { get; set; } = "both";
@@ -2788,9 +2959,9 @@ public partial class Home : IAsyncDisposable
 
     private sealed class NodeStyleDraft
     {
-        public string Outline { get; set; } = "#4177de";
-        public string Background { get; set; } = "#ffffff";
-        public string TextColor { get; set; } = "#172033";
+        public string Outline { get; set; } = DefaultNodeOutline;
+        public string Background { get; set; } = DefaultNodeBackground;
+        public string TextColor { get; set; } = DefaultNodeTextColor;
         public string TextAlign { get; set; } = "center";
     }
 
@@ -2860,11 +3031,11 @@ public partial class Home : IAsyncDisposable
     private sealed class PortEditorDraft(string id, DiagramPort? original = null)
     {
         public string Id { get; } = id;
-        public string? OriginalLabel { get; } = original?.Label;
+        public string OriginalLabel { get; } = original is null ? "Connection" : PortEditorLabel(original);
         public string OriginalSide { get; } = original is null ? "right" : PortSideFromAnchor(original.Anchor);
-        public string Label { get; set; } = "Connection";
-        public string Side { get; set; } = "right";
-        public string Direction { get; set; } = "both";
+        public string Label { get; set; } = original is null ? "Connection" : PortEditorLabel(original);
+        public string Side { get; set; } = original is null ? "right" : PortSideFromAnchor(original.Anchor);
+        public string Direction { get; set; } = original?.Direction ?? "both";
     }
     private sealed record PropertiesEditPlan(IReadOnlyList<GhostagramOperation> Operations, IReadOnlyList<string> RemovedEdgeIds, string? Error)
     {

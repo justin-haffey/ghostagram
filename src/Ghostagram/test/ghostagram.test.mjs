@@ -805,6 +805,59 @@ test("nested groups support out-of-order model input, reparenting, and cycle rej
   assert.throws(() => __testing.buildState({ ...model, groups: [{ ...model.groups[0], parentGroupId: "outer" }, { ...model.groups[1], parentGroupId: "inner" }] }), /cycle/i);
 });
 
+test("contained group selections retain reparent-aware dragging at arbitrary nesting depth", () => {
+  const model = {
+    ...structuredClone(base),
+    groups: [
+      { id: "outer", x: 0, y: 0, width: 360, height: 280, collapsed: false },
+      { id: "middle", parentGroupId: "outer", x: 24, y: 32, width: 240, height: 184, collapsed: false },
+      { id: "inner", parentGroupId: "middle", x: 48, y: 64, width: 144, height: 104, collapsed: false },
+      { id: "sibling", parentGroupId: "outer", x: 272, y: 40, width: 72, height: 96, collapsed: false }
+    ],
+    nodes: [{ ...base.nodes[0], groupId: "inner" }, { ...base.nodes[1], groupId: "sibling" }]
+  };
+  const state = __testing.buildState(model);
+  assert.equal(__testing.selectionRequiresMultiGroupDrag(state, "middle", new Set(["middle"])), false);
+  assert.equal(__testing.selectionRequiresMultiGroupDrag(state, "middle", new Set(["middle", "inner", "a"])), false);
+  assert.equal(__testing.selectionRequiresMultiGroupDrag(state, "outer", new Set(["outer", "middle", "inner", "sibling", "a", "b"])), false);
+  assert.equal(__testing.selectionRequiresMultiGroupDrag(state, "middle", new Set(["middle", "sibling"])), true);
+});
+
+test("ctrl-drag selects group subtree duplication even when other items are selected", () => {
+  const state = __testing.buildState({
+    ...structuredClone(base),
+    groups: [
+      { id: "outer", x: 0, y: 0, width: 320, height: 240, collapsed: false },
+      { id: "inner", parentGroupId: "outer", x: 32, y: 48, width: 160, height: 112, collapsed: false },
+      { id: "sibling", x: 400, y: 0, width: 160, height: 112, collapsed: false }
+    ]
+  });
+  const selection = new Set(["outer", "sibling"]);
+  assert.equal(__testing.groupDragMode(state, "outer", selection, false), "selection");
+  assert.equal(__testing.groupDragMode(state, "outer", selection, true), "duplicate");
+  assert.deepEqual(
+    __testing.groupDuplicatePayload("outer", "sibling", { x: 192, y: 160 }),
+    { groupId: "outer", parentGroupId: "sibling", x: 192, y: 160 }
+  );
+});
+
+test("overlapping group interactions cycle through layers and preserve a selected group behind another", () => {
+  const state = __testing.buildState({
+    ...structuredClone(base),
+    groups: [
+      { id: "outer", x: 0, y: 0, width: 300, height: 240, collapsed: false },
+      { id: "left", parentGroupId: "outer", x: 32, y: 32, width: 180, height: 150, collapsed: false },
+      { id: "right", parentGroupId: "outer", x: 80, y: 64, width: 180, height: 150, collapsed: false }
+    ]
+  });
+  const point = { x: 120, y: 100 };
+  assert.deepEqual(__testing.groupsAtPosition(state, point).map(group => group.id), ["right", "left", "outer"]);
+  assert.equal(__testing.groupInteractionTarget(state, point, "right", new Set(), "cycle")?.id, "right");
+  assert.equal(__testing.groupInteractionTarget(state, point, "right", new Set(["right"]), "cycle")?.id, "left");
+  assert.equal(__testing.groupInteractionTarget(state, point, "right", new Set(["left"]), "cycle")?.id, "outer");
+  assert.equal(__testing.groupInteractionTarget(state, point, "right", new Set(["left"]), "drag")?.id, "left");
+});
+
 test("collapsing a parent group invalidates nested groups, members, and their edges", () => {
   const model = {
     ...structuredClone(base),
@@ -863,6 +916,8 @@ test("dragging a nested group outside its parent proposes disassociation without
   };
   const state = __testing.buildState(model);
   assert.equal(__testing.groupForGroupPosition(state, "inner", { x: 60, y: 60 })?.id, "outer");
+  assert.equal(__testing.groupForGroupPosition(state, "inner", { x: 300, y: 300 }, { x: 20, y: 20 })?.id, "outer");
+  assert.equal(__testing.groupForGroupPosition(state, "outer", { x: 40, y: 40 }, { x: 80, y: 80 }), null, "descendants cannot become drop targets");
   assert.equal(__testing.groupForGroupPosition(state, "inner", { x: 300, y: 300 }), null);
 });
 

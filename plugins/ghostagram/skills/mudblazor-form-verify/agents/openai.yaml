@@ -1,0 +1,10 @@
+interface:
+  display_name: "MudBlazor Form Verify"
+  short_description: "Verify MudBlazor forms end to end"
+  default_prompt: "Use $mudblazor-form-verify to validate package resolution, builds, tests, and visible browser behavior for a MudBlazor form."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools: []

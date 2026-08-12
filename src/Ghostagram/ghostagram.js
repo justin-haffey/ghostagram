@@ -288,10 +288,10 @@ class GhostagramEngine {
       visibility.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); const current = this.state.groups.get(group.id); if (!current) return; const hidden = !current.collapsed; this.emit("group.visibilityRequested", { groupId: group.id, hidden, collapsed: hidden }, "browser"); }, { signal: this.abort.signal });
       const handle = document.createElement("button"); handle.type = "button"; handle.className = "ghostagram-group-resize"; handle.setAttribute("aria-label", `Resize ${group.label ?? group.id}`); handle.title = "Resize group"; handle.style.cssText = "position:absolute;right:-7px;bottom:-7px;width:14px;height:14px;padding:0;border:1px solid #0f766e;background:#fff;cursor:nwse-resize;z-index:2;";
       handle.addEventListener("pointerdown", event => { event.stopPropagation(); this.startGroupResize(group.id, event); }, { signal: this.abort.signal });
-      el.addEventListener("click", event => this.selectFromElement(group.id, event, "group"), { signal: this.abort.signal });
-      el.addEventListener("dblclick", event => { if (!event.target.closest?.("button,input")) this.startLabelEdit("group", group.id); }, { signal: this.abort.signal });
-      el.addEventListener("contextmenu", event => this.requestContext(group.id, event, "group"), { signal: this.abort.signal });
-      el.addEventListener("pointerdown", event => { if (!event.shiftKey && event.detail < 2) this.startGroupDrag(group.id, event); }, { signal: this.abort.signal }); el.append(label, icon, visibility, handle); this.dom.groups.append(el); this.dom.groupById.set(group.id, el);
+      el.addEventListener("click", event => this.selectGroupFromPointer(group.id, event), { signal: this.abort.signal });
+      el.addEventListener("dblclick", event => { if (!event.target.closest?.("button,input")) this.startLabelEdit("group", this.groupInteractionTarget(group.id, event, "selected")?.id ?? group.id); }, { signal: this.abort.signal });
+      el.addEventListener("contextmenu", event => this.requestContext(this.groupInteractionTarget(group.id, event, "selected")?.id ?? group.id, event, "group"), { signal: this.abort.signal });
+      el.addEventListener("pointerdown", event => { if (!event.shiftKey && event.detail < 2) this.startGroupDrag(this.groupInteractionTarget(group.id, event, "drag")?.id ?? group.id, event); }, { signal: this.abort.signal }); el.append(label, icon, visibility, handle); this.dom.groups.append(el); this.dom.groupById.set(group.id, el);
     }
     const selected = (this.previewSelection ?? this.state.selection).has(group.id);
     setBox(el, group); el.style.display = isGroupHiddenByCollapsedAncestor(this.state, group) ? "none" : "block"; el.style.removeProperty("z-index"); el.dataset.collapsed = String(group.collapsed); el.title = ""; el.querySelector(".ghostagram-group-label").textContent = group.label ?? group.id; renderIconifyIcon(el.querySelector(".ghostagram-item-icon"), group.icon); el.querySelector(".ghostagram-group-resize").hidden = !selected; updateGroupVisibilityControl(el, group, selected); applyStyle(el, group.style, { border: group.collapsed ? "1px solid #64748b" : "1px dashed #64748b", background: group.collapsed ? "rgba(148,163,184,.14)" : "rgba(148,163,184,.08)", cursor: "move" });
@@ -529,6 +529,13 @@ class GhostagramEngine {
   groupAtPosition(node, position, excludedGroupIds = new Set()) {
     return groupForNodePosition([...this.state.groups.values()].filter(group => !excludedGroupIds.has(group.id) && !isGroupHiddenByCollapsedAncestor(this.state, group)), node, position);
   }
+  groupInteractionTarget(fallbackId, pointer, mode = "drag") {
+    return groupInteractionTarget(this.state, this.canvasPoint(pointer), fallbackId, this.previewSelection ?? this.state.selection, mode);
+  }
+  selectGroupFromPointer(fallbackId, event) {
+    const target = this.groupInteractionTarget(fallbackId, event, event.shiftKey ? "fallback" : "cycle");
+    this.selectFromElement(target?.id ?? fallbackId, event, "group");
+  }
   renderViewport() {
     const v = this.state.viewport; this.dom.stage.style.transform = `translate(${-v.x * v.zoom}px, ${-v.y * v.zoom}px) scale(${v.zoom})`;
     const grid = gridCssProjection(v, this.options.gridSize);
@@ -696,16 +703,26 @@ class GhostagramEngine {
     if (!group || event.button !== 0) return;
     this.dom.root.focus({ preventScroll: true });
     const selection = this.previewSelection ?? this.state.selection;
-    if (selection.has(groupId)) { this.startSelectedGroupDrag(groupId, event, selection); return; }
+    const mode = groupDragMode(this.state, groupId, selection, event.ctrlKey);
+    if (mode === "selection") { this.startSelectedGroupDrag(groupId, event, selection); return; }
+    const duplicate = mode === "duplicate";
     event.preventDefault(); const initial = this.previewGroups.get(groupId) ?? group, childGroups = descendantGroupIds(this.state, groupId).map(id => this.previewGroups.get(id) ?? this.state.groups.get(id)).filter(Boolean), members = descendantNodeIds(this.state, groupId).map(nodeId => this.previewNodes.get(nodeId) ?? this.state.nodes.get(nodeId)).filter(Boolean), start = { x: event.clientX, y: event.clientY, nodeX: initial.x, nodeY: initial.y };
-    const move = e => {
-      const position = dragPosition(start, e, this.state.viewport.zoom, this.options.gridSize), dx = position.x - initial.x, dy = position.y - initial.y, targetGroup = groupForGroupPosition(this.state, groupId, position);
-      this.previewGroups.set(groupId, { ...group, ...initial, ...position }); this.renderGroup(group);
-      for (const child of childGroups) { const preview = { ...child, x: child.x + dx, y: child.y + dy }; this.previewGroups.set(child.id, preview); this.renderGroup(child); }
-      for (const member of members) { const preview = { ...member, x: member.x + dx, y: member.y + dy }; this.previewNodes.set(member.id, preview); const el = this.dom.nodeById.get(member.id); if (el) { el.style.left = `${preview.x}px`; el.style.top = `${preview.y}px`; } for (const edgeId of incident(this.state, member.id)) { const edge = this.state.edges.get(edgeId); if (edge) this.renderEdge(edge); } }
-      this.setGroupDropTarget(targetGroup?.id); this.emit("group.move.preview", { groupId, parentGroupId: targetGroup?.id ?? null, ...position, dx, dy }, "browser", true);
+    const setDuplicateDragAppearance = active => {
+      for (const candidate of [initial, ...childGroups]) { const el = this.dom.groupById.get(candidate.id); if (el) { el.style.cursor = active ? "copy" : "move"; el.style.opacity = active ? ".72" : ""; } }
+      for (const candidate of members) { const el = this.dom.nodeById.get(candidate.id); if (el) { el.style.cursor = active ? "copy" : "grab"; el.style.opacity = active ? ".72" : ""; } }
     };
-    const up = e => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, e); this.setGroupDropTarget(null); if (isClickGesture(start, e)) return; const position = dragPosition(start, e, this.state.viewport.zoom, this.options.gridSize), dx = position.x - initial.x, dy = position.y - initial.y, targetGroup = groupForGroupPosition(this.state, groupId, position); this.emit("group.move.commit", groupMovePayload(groupId, targetGroup?.id ?? null, position, dx, dy, childGroups, members), "browser"); };
+    const move = e => {
+      const position = dragPosition(start, e, this.state.viewport.zoom, this.options.gridSize), dx = position.x - initial.x, dy = position.y - initial.y, targetGroup = groupForGroupPosition(this.state, groupId, position, this.canvasPoint(e));
+      if (duplicate) setDuplicateDragAppearance(true);
+      else {
+        this.previewGroups.set(groupId, { ...group, ...initial, ...position }); this.renderGroup(group);
+        for (const child of childGroups) { const preview = { ...child, x: child.x + dx, y: child.y + dy }; this.previewGroups.set(child.id, preview); this.renderGroup(child); }
+        for (const member of members) { const preview = { ...member, x: member.x + dx, y: member.y + dy }; this.previewNodes.set(member.id, preview); const el = this.dom.nodeById.get(member.id); if (el) { el.style.left = `${preview.x}px`; el.style.top = `${preview.y}px`; } for (const edgeId of incident(this.state, member.id)) { const edge = this.state.edges.get(edgeId); if (edge) this.renderEdge(edge); } }
+        this.emit("group.move.preview", { groupId, parentGroupId: targetGroup?.id ?? null, ...position, dx, dy }, "browser", true);
+      }
+      this.setGroupDropTarget(targetGroup?.id);
+    };
+    const up = e => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); this.suppressSelectionClickForDrag(start, e); this.setGroupDropTarget(null); setDuplicateDragAppearance(false); if (isClickGesture(start, e)) return; const position = dragPosition(start, e, this.state.viewport.zoom, this.options.gridSize), dx = position.x - initial.x, dy = position.y - initial.y, targetGroup = groupForGroupPosition(this.state, groupId, position, this.canvasPoint(e)); if (duplicate) this.emit("group.duplicateRequested", groupDuplicatePayload(groupId, targetGroup?.id ?? null, position), "browser"); else this.emit("group.move.commit", groupMovePayload(groupId, targetGroup?.id ?? null, position, dx, dy, childGroups, members), "browser"); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up, { once: true });
   }
   startSelectedGroupDrag(groupId, event, selection) {
@@ -1315,6 +1332,28 @@ function edgeGeometry(state, edge, previewNodes = new Map()) {
 }
 function groupDepth(s, groupId) { let depth = 0, parentId = s.groups.get(groupId)?.parentGroupId; while (parentId) { depth += 1; parentId = s.groups.get(parentId)?.parentGroupId; } return depth; }
 function groupsForRender(s) { return [...s.groups.values()].sort((left, right) => groupDepth(s, left.id) - groupDepth(s, right.id) || left.id.localeCompare(right.id)); }
+function groupsAtPosition(s, point) {
+  return groupsForRender(s)
+    .filter(group => !group.collapsed && !isGroupHiddenByCollapsedAncestor(s, group) && point.x >= group.x && point.x <= group.x + group.width && point.y >= group.y && point.y <= group.y + group.height)
+    .reverse();
+}
+function groupInteractionTarget(s, point, fallbackId, selection = new Set(), mode = "drag") {
+  const candidates = groupsAtPosition(s, point), fallback = candidates.find(group => group.id === fallbackId) ?? s.groups.get(fallbackId) ?? candidates[0] ?? null;
+  if (mode === "fallback") return fallback;
+  const selectedIndex = candidates.findIndex(group => selection.has(group.id));
+  if (mode === "cycle" && selectedIndex >= 0 && candidates.length > 1) return candidates[(selectedIndex + 1) % candidates.length];
+  if ((mode === "drag" || mode === "selected") && selectedIndex >= 0) return candidates[selectedIndex];
+  return fallback;
+}
+function selectionRequiresMultiGroupDrag(s, groupId, selection) {
+  if (!selection.has(groupId)) return false;
+  const contained = new Set([groupId, ...descendantGroupIds(s, groupId), ...descendantNodeIds(s, groupId)]);
+  return [...selection].some(id => !contained.has(id));
+}
+function groupDragMode(s, groupId, selection, ctrlKey) {
+  if (ctrlKey) return "duplicate";
+  return selectionRequiresMultiGroupDrag(s, groupId, selection) ? "selection" : "group";
+}
 function dirtyGroupTree(s, groupId, dirty) {
   const groupIds = [groupId, ...descendantGroupIds(s, groupId)];
   for (const id of groupIds) dirty.groups.add(id);
@@ -1436,11 +1475,18 @@ function groupForNodePosition(groups, node, position) {
     .filter(group => !group.collapsed && x >= group.x && x <= group.x + group.width && y >= group.y && y <= group.y + group.height)
     .sort((left, right) => left.width * left.height - right.width * right.height || left.id.localeCompare(right.id))[0] ?? null;
 }
-function groupForGroupPosition(state, groupId, position) {
+function groupForGroupPosition(state, groupId, position, pointer = null) {
   const group = state.groups.get(groupId);
   if (!group) return null;
   const excluded = new Set([groupId, ...descendantGroupIds(state, groupId)]);
-  return groupForNodePosition([...state.groups.values()].filter(candidate => !excluded.has(candidate.id) && !isGroupHiddenByCollapsedAncestor(state, candidate)), group, position);
+  const candidates = [...state.groups.values()].filter(candidate => !excluded.has(candidate.id) && !isGroupHiddenByCollapsedAncestor(state, candidate));
+  if (!pointer) return groupForNodePosition(candidates, group, position);
+  return candidates
+    .filter(candidate => !candidate.collapsed && pointer.x >= candidate.x && pointer.x <= candidate.x + candidate.width && pointer.y >= candidate.y && pointer.y <= candidate.y + candidate.height)
+    .sort((left, right) => groupDepth(state, right.id) - groupDepth(state, left.id) || left.width * left.height - right.width * right.height || left.id.localeCompare(right.id))[0] ?? null;
+}
+function groupDuplicatePayload(groupId, parentGroupId, position) {
+  return { groupId, parentGroupId, x: position.x, y: position.y };
 }
 function markerFor(overlays, markerIds, end = "end") { const type = markerTypeFor(overlays, end); return type ? `url(#${markerIds[type]})` : ""; }
 function markerTypeFor(overlays, end = "end") {
@@ -1953,4 +1999,4 @@ function asProblem(error) {
 function ok(requestId, renderedRevision, stats) { return { ok: true, requestId, renderedRevision, stats }; }
 function failed(request, code, message, renderedRevision, details) { return { ok: false, requestId: request?.requestId ?? null, renderedRevision, stats: {}, problem: { code, message, details } }; }
 
-export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgBounds, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteScore, gridCssProjection, groupForGroupPosition, groupForNodePosition, groupMovePayload, groupVisibilityDescriptor, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLayoutProjection, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportExportBounds, viewportPoint };
+export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgBounds, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteScore, gridCssProjection, groupDragMode, groupDuplicatePayload, groupForGroupPosition, groupForNodePosition, groupInteractionTarget, groupMovePayload, groupVisibilityDescriptor, groupsAtPosition, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLayoutProjection, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, selectionRequiresMultiGroupDrag, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportExportBounds, viewportPoint };

@@ -39,6 +39,7 @@
             <MudMenu Label="Edit" Color="Color.Inherit" Dense="true">
                 <MudMenuItem OnClick="OpenNodeStyleEditor" Disabled="@(!CanEditSelectedNode)" Icon="@Icons.Material.Filled.Palette">Node style</MudMenuItem>
                 <MudMenuItem OnClick="OpenNodePropertiesEditor" Disabled="@(!CanEditSelectedNode)" Icon="@Icons.Material.Filled.Tune">Node detailsâ€¦</MudMenuItem>
+                <MudMenuItem OnClick="AddSelectedNodeToPaletteAsync" Disabled="@(!CanCaptureSelectedNode)" Icon="@Icons.Material.Filled.LibraryAdd">Add selected node to palette</MudMenuItem>
                 <MudMenuItem OnClick="DeleteSelectedAsync" Disabled="@(!_document.Selection.Any())" Icon="@Icons.Material.Filled.DeleteOutline">Delete selected</MudMenuItem>
                 <MudMenuItem OnClick="RemoveSelectedGroupFramesAsync" Disabled="@(!HasSelectedGroups)" Icon="@Icons.Material.Filled.FolderOff">Remove group frame</MudMenuItem>
                 <MudMenuItem OnClick="UndoAsync" Disabled="@(!_undo.Any())" Icon="@Icons.Material.Filled.Undo">Undo</MudMenuItem>
@@ -60,7 +61,7 @@
                    Overlay="false"
                    Elevation="2"
                    Class="laboratory-palette"
-                   Width="320px">
+                   Width="288px">
             <GhostPalette @ref="_palette"
                           Title="@_paletteCatalogName"
                           Groups="PaletteGroups"
@@ -73,10 +74,11 @@
                           GroupExpandedChanged="SetCategoryExpanded">
                 <HeaderActions>
                     <MudTooltip Text="Add a palette group">
-                        <MudIconButton Icon="@Icons.Material.Filled.CreateNewFolder" OnClick="OpenPaletteGroupEditor" aria-label="Add a palette group" />
+                        <MudIconButton Icon="@Icons.Material.Filled.CreateNewFolder" Size="Size.Small" OnClick="OpenPaletteGroupEditor" aria-label="Add a palette group" />
                     </MudTooltip>
                     <MudIconButton Icon="@(_palettePinned ? Icons.Material.Filled.PushPin : Icons.Material.Outlined.PushPin)"
                                    Color="@(_palettePinned ? Color.Primary : Color.Default)"
+                                   Size="Size.Small"
                                    OnClick="TogglePalettePin"
                                    aria-label="@(_palettePinned ? "Unpin palette" : "Pin palette")" />
                 </HeaderActions>
@@ -84,7 +86,7 @@
                     <MudIcon Icon="@TemplateIcon(item.Id)" Size="Size.Medium" />
                 </ItemIcon>
                 <FooterContent>
-                    <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddBox" OnClick="OpenDesigner">
+                    <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.AddBox" OnClick="OpenDesigner">
                         Design a node type
                     </MudButton>
                 </FooterContent>
@@ -111,6 +113,10 @@
                         <MudSelectItem T="string" Value="@("straight")">Straight</MudSelectItem>
                         <MudSelectItem T="string" Value="@("bezier")">Curved</MudSelectItem>
                     </MudSelect>
+                    <label class="edge-color-control" title="Change selected edge color">
+                        <span>Color</span>
+                        <input type="color" value="@_edgeColor" @onchange="OnEdgeColorChangedAsync" disabled="@(!HasSelectedEdges)" aria-label="Change selected edge color" />
+                    </label>
                     <MudSelect T="string" Value="_edgeStartMarker" ValueChanged="OnEdgeStartMarkerChangedAsync" Label="Start marker" Dense="true" Variant="Variant.Outlined" Class="toolbar-select marker-select">
                         @foreach (var marker in EdgeMarkerChoices)
                         {
@@ -136,6 +142,9 @@
                 </MudTooltip>
                 <MudTooltip Text="Edit selected-node presentation, properties, and connection points">
                     <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" OnClick="OpenNodePropertiesEditor" Disabled="@(!CanEditSelectedNode)" aria-label="Edit selected node details" />
+                </MudTooltip>
+                <MudTooltip Text="Add the selected node to the Custom palette group">
+                    <MudIconButton Icon="@Icons.Material.Filled.LibraryAdd" Color="Color.Primary" OnClick="AddSelectedNodeToPaletteAsync" Disabled="@(!CanCaptureSelectedNode)" aria-label="Add selected node to palette" />
                 </MudTooltip>
                 <MudTooltip Text="Delete the current node, group, or edge selection">
                     <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" OnClick="DeleteSelectedAsync" Disabled="@(!_document.Selection.Any())" aria-label="Delete selected" />
@@ -170,7 +179,7 @@
                 </div>
 
                 <footer class="canvas-footer">
-                    <span>Drag nodes and groups · Ctrl-drag duplicates nodes · Shift-drag to select · F2 edits labels · Delete removes a selection</span>
+                    <span>Drag nodes and groups · Ctrl-drag duplicates nodes or group contents · Shift-drag to select · F2 edits labels · Delete removes a selection</span>
                     <span>Changes save automatically</span>
                 </footer>
             </section>
@@ -185,7 +194,7 @@
                     <div><MudText Typo="Typo.h6">Save diagram as</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">Create an independent, fully editable diagram.</MudText></div>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseSaveAs" aria-label="Close save dialog" />
                 </header>
-                <MudTextField @bind-Value="_saveAsName" Label="Diagram name" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
+                <MudTextField @bind-Value="_saveAsName" Label="Diagram name" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
                 <footer class="studio-modal-actions">
                     <MudButton OnClick="CloseSaveAs">Cancel</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.SaveAs" OnClick="SaveAsAsync">Save and open</MudButton>
@@ -202,7 +211,7 @@
                     <div><MudText Typo="Typo.h6">New diagram</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">Start with a blank, saved diagram.</MudText></div>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseNewDiagram" aria-label="Close new diagram dialog" />
                 </header>
-                <MudTextField @bind-Value="_newDiagramName" Label="Diagram name" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
+                <MudTextField @bind-Value="_newDiagramName" Label="Diagram name" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
                 <footer class="studio-modal-actions">
                     <MudButton OnClick="CloseNewDiagram">Cancel</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.NoteAdd" OnClick="CreateNewDiagramAsync">Create and open</MudButton>
@@ -255,7 +264,7 @@
                     <div><MudText Typo="Typo.h6">Save palette as</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">Copy custom groups, node definitions, organization, and open folders.</MudText></div>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="ClosePaletteSaveAs" aria-label="Close palette save dialog" />
                 </header>
-                <MudTextField @bind-Value="_paletteSaveAsName" Label="Palette name" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
+                <MudTextField @bind-Value="_paletteSaveAsName" Label="Palette name" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
                 <footer class="studio-modal-actions">
                     <MudButton OnClick="ClosePaletteSaveAs">Cancel</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.SaveAs" OnClick="SavePaletteAsAsync">Save and open</MudButton>
@@ -309,12 +318,12 @@
             <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                 Start with a lightweight node. Organize properties into nested, collapsible sections only when the node needs them.
             </MudText>
-            <MudGrid Spacing="2">
+            <MudGrid Spacing="1">
                 <MudItem xs="12">
-                    <MudTextField @bind-Value="_draft.Label" Label="Node name" Variant="Variant.Outlined" Immediate="true" />
+                    <MudTextField @bind-Value="_draft.Label" Label="Node name" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="string" @bind-Value="_draft.Icon" Label="Node icon preset" Variant="Variant.Outlined" aria-label="Choose an Iconify node icon preset">
+                    <MudSelect T="string" @bind-Value="_draft.Icon" Label="Node icon preset" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" aria-label="Choose an Iconify node icon preset">
                         <MudSelectItem T="string" Value="@("mdi:shape-outline")">Generic shape</MudSelectItem>
                         <MudSelectItem T="string" Value="@("mdi:account-voice")">Voice agent</MudSelectItem>
                         <MudSelectItem T="string" Value="@("mdi:robot-outline")">Agent</MudSelectItem>
@@ -324,16 +333,16 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_draft.Icon" Label="Iconify icon name" Variant="Variant.Outlined" Immediate="true" HelperText="For example: mdi:robot-outline" aria-label="Iconify icon name" />
+                    <MudTextField @bind-Value="_draft.Icon" Label="Iconify icon name" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" HelperText="For example: mdi:robot-outline" aria-label="Iconify icon name" />
                 </MudItem>
                 <MudItem xs="6">
-                    <MudNumericField T="double" @bind-Value="_draft.Width" Label="Width" Min="96" Max="360" Step="8" Variant="Variant.Outlined" />
+                    <MudNumericField T="double" @bind-Value="_draft.Width" Label="Width" Margin="Margin.Dense" Min="96" Max="360" Step="8" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="6">
-                    <MudNumericField T="double" @bind-Value="_draft.Height" Label="Height" Min="48" Max="420" Step="8" Variant="Variant.Outlined" />
+                    <MudNumericField T="double" @bind-Value="_draft.Height" Label="Height" Margin="Margin.Dense" Min="48" Max="420" Step="8" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="6">
-                    <MudSelect T="string" @bind-Value="_draft.Category" Label="Palette group" Variant="Variant.Outlined">
+                    <MudSelect T="string" @bind-Value="_draft.Category" Label="Palette group" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined">
                         @foreach (var category in _paletteCategories)
                         {
                             <MudSelectItem T="string" Value="@category.Name">@category.Name</MudSelectItem>
@@ -341,7 +350,7 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="6">
-                    <MudSelect T="string" @bind-Value="_draft.Direction" Label="New point direction" Variant="Variant.Outlined">
+                    <MudSelect T="string" @bind-Value="_draft.Direction" Label="New point direction" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined">
                         <MudSelectItem T="string" Value="@("both")">Both</MudSelectItem>
                         <MudSelectItem T="string" Value="@("source")">Output</MudSelectItem>
                         <MudSelectItem T="string" Value="@("target")">Input</MudSelectItem>
@@ -352,7 +361,7 @@
                         <label for="node-outline-color">Outline</label>
                         <div class="designer-color-control">
                             <input id="node-outline-color" type="color" @bind="_draft.Outline" @bind:event="oninput" aria-label="Select node outline color" />
-                            <MudTextField @bind-Value="_draft.Outline" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                            <MudTextField @bind-Value="_draft.Outline" Label="Hex" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" />
                         </div>
                     </div>
                 </MudItem>
@@ -361,7 +370,7 @@
                         <label for="node-background-color">Background</label>
                         <div class="designer-color-control">
                             <input id="node-background-color" type="color" @bind="_draft.Background" @bind:event="oninput" aria-label="Select node background color" />
-                            <MudTextField @bind-Value="_draft.Background" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                            <MudTextField @bind-Value="_draft.Background" Label="Hex" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" />
                         </div>
                     </div>
                 </MudItem>
@@ -370,12 +379,12 @@
                         <label for="node-text-color">Text</label>
                         <div class="designer-color-control">
                             <input id="node-text-color" type="color" @bind="_draft.TextColor" @bind:event="oninput" aria-label="Select node text color" />
-                            <MudTextField @bind-Value="_draft.TextColor" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                            <MudTextField @bind-Value="_draft.TextColor" Label="Hex" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" />
                         </div>
                     </div>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudSelect T="string" @bind-Value="_draft.TextAlign" Label="Text alignment" Variant="Variant.Outlined">
+                    <MudSelect T="string" @bind-Value="_draft.TextAlign" Label="Text alignment" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined">
                         <MudSelectItem T="string" Value="@("left")">Left</MudSelectItem>
                         <MudSelectItem T="string" Value="@("center")">Center</MudSelectItem>
                         <MudSelectItem T="string" Value="@("right")">Right</MudSelectItem>
@@ -398,8 +407,8 @@
                         @foreach (var section in _draftSections)
                         {
                             <div class="designer-section-row" @key="section.Id">
-                                <MudTextField @bind-Value="section.Title" Label="Section title" Variant="Variant.Outlined" />
-                                <MudSelect T="string" @bind-Value="section.ParentSectionId" Label="Parent" Dense="true" Variant="Variant.Outlined" Clearable="true">
+                                <MudTextField @bind-Value="section.Title" Label="Section title" Margin="Margin.Dense" Variant="Variant.Outlined" />
+                                <MudSelect T="string" @bind-Value="section.ParentSectionId" Label="Parent" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Clearable="true">
                                     @foreach (var parent in _draftSections.Where(parent => parent.Id != section.Id)) { <MudSelectItem T="string" Value="@parent.Id">@parent.Title</MudSelectItem> }
                                 </MudSelect>
                                 <MudCheckBox @bind-Value="section.Collapsible" Label="Collapsible" Dense="true" />
@@ -416,8 +425,8 @@
                 @foreach (var property in _draftProperties)
                 {
                     <div class="designer-property-row" @key="property.Id">
-                        <MudTextField @bind-Value="property.Name" Label="Name" Variant="Variant.Outlined" Immediate="true" />
-                        <MudSelect T="string" @bind-Value="property.Type" Label="Type" Dense="true" Variant="Variant.Outlined">
+                        <MudTextField @bind-Value="property.Name" Label="Name" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" />
+                        <MudSelect T="string" @bind-Value="property.Type" Label="Type" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined">
                             <MudSelectItem T="string" Value="@DiagramPropertyTypes.String">Text</MudSelectItem>
                             <MudSelectItem T="string" Value="@DiagramPropertyTypes.Boolean">Boolean</MudSelectItem>
                             <MudSelectItem T="string" Value="@DiagramPropertyTypes.Integer">Integer</MudSelectItem>
@@ -427,33 +436,33 @@
                             <MudSelectItem T="string" Value="@DiagramPropertyTypes.Enum">Choice</MudSelectItem>
                             <MudSelectItem T="string" Value="@DiagramPropertyTypes.Json">JSON</MudSelectItem>
                         </MudSelect>
-                        <MudSelect T="string" @bind-Value="property.Mode" Label="Node mode" Dense="true" Variant="Variant.Outlined">
+                        <MudSelect T="string" @bind-Value="property.Mode" Label="Node mode" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined">
                             <MudSelectItem T="string" Value="@DiagramPropertyModes.Display">Display</MudSelectItem>
                             <MudSelectItem T="string" Value="@DiagramPropertyModes.Edit">Edit</MudSelectItem>
                             <MudSelectItem T="string" Value="@DiagramPropertyModes.DisplayAndEdit">Display and edit</MudSelectItem>
                         </MudSelect>
                         @if (_draft.IsOrganized)
                         {
-                            <MudSelect T="string" @bind-Value="property.SectionId" Label="Section" Dense="true" Variant="Variant.Outlined" Clearable="true">
+                            <MudSelect T="string" @bind-Value="property.SectionId" Label="Section" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Clearable="true">
                                 @foreach (var section in _draftSections) { <MudSelectItem T="string" Value="@section.Id">@section.Title</MudSelectItem> }
                             </MudSelect>
                         }
-                        <MudSelect T="string" @bind-Value="property.EditorKind" Label="Editor" Dense="true" Variant="Variant.Outlined">
+                        <MudSelect T="string" @bind-Value="property.EditorKind" Label="Editor" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined">
                             <MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Auto">Automatic</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Text">Text</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Multiline">Multiline</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Toggle">Toggle</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Number">Number</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Range">Range</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Date">Date</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.DateTime">Date/time</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Select">Select</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Color">Color</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Json">JSON</MudSelectItem>
                         </MudSelect>
-                        <MudTextField @bind-Value="property.DefaultValue" Label="Default" Variant="Variant.Outlined" Immediate="true" />
+                        <MudTextField @bind-Value="property.DefaultValue" Label="Default" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" />
                         @if (property.Type == DiagramPropertyTypes.Enum)
                         {
-                            <MudTextField @bind-Value="property.Options" Label="Choices (comma separated)" Variant="Variant.Outlined" Immediate="true" />
+                            <MudTextField @bind-Value="property.Options" Label="Choices (comma separated)" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" />
                         }
                         @if (property.EditorKind is DiagramPropertyEditorKinds.Text or DiagramPropertyEditorKinds.Multiline)
-                        { <MudTextField @bind-Value="property.Placeholder" Label="Placeholder" Variant="Variant.Outlined" Immediate="true" /> }
+                        { <MudTextField @bind-Value="property.Placeholder" Label="Placeholder" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" /> }
                         @if (property.EditorKind is DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range)
-                                                    { <MudTextField @bind-Value="property.Minimum" Label="Minimum" Immediate="true" Variant="Variant.Outlined" /><MudTextField @bind-Value="property.Maximum" Label="Maximum" Immediate="true" Variant="Variant.Outlined" /><MudTextField @bind-Value="property.Step" Label="Step" Immediate="true" Variant="Variant.Outlined" /> }
-                        <MudCheckBox @bind-Value="property.Connectable" Label="Connectable" Dense="true" />
+                                                    { <MudTextField @bind-Value="property.Minimum" Label="Minimum" Margin="Margin.Dense" Immediate="true" Variant="Variant.Outlined" /><MudTextField @bind-Value="property.Maximum" Label="Maximum" Margin="Margin.Dense" Immediate="true" Variant="Variant.Outlined" /><MudTextField @bind-Value="property.Step" Label="Step" Margin="Margin.Dense" Immediate="true" Variant="Variant.Outlined" /> }
+                        <MudCheckBox @bind-Value="property.Connectable" Label="Connectable" Dense="true" Class="designer-property-connectable" />
                         @if (property.Connectable)
                         {
-                            <MudSelect T="string" @bind-Value="property.Direction" Label="Port" Dense="true" Variant="Variant.Outlined">
+                            <MudSelect T="string" @bind-Value="property.Direction" Label="Port" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined">
                                 <MudSelectItem T="string" Value="@("source")">Output (right)</MudSelectItem>
                                 <MudSelectItem T="string" Value="@("target")">Input (left)</MudSelectItem>
                                 <MudSelectItem T="string" Value="@("both")">Both</MudSelectItem>
@@ -467,20 +476,21 @@
             </div>
             <aside class="node-designer-preview-panel" aria-label="Node preview">
                 <MudText Typo="Typo.overline">Live preview</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Shows the semantic header, sections, and active editor choices.</MudText>
-            <div class="node-designer-preview" style="@($"--node-outline:{NormalizeColor(_draft.Outline, "#d24686")};--node-background:{NormalizeColor(_draft.Background, "#ffffff")};--node-text:{NormalizeColor(_draft.TextColor, "#172033")};--node-align:{NormalizeTextAlign(_draft.TextAlign)}")">
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-top" OnClick="AddTopConnectionPoint" aria-label="Add top connection point" />
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-right" OnClick="AddRightConnectionPoint" aria-label="Add right connection point" />
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-bottom" OnClick="AddBottomConnectionPoint" aria-label="Add bottom connection point" />
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Class="designer-port port-left" OnClick="AddLeftConnectionPoint" aria-label="Add left connection point" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Matches the label, alignment, colors, and dimensions used on the canvas.</MudText>
+            <div class="node-designer-preview" style="@($"--node-outline:{NormalizeColor(_draft.Outline, DefaultNodeOutline)};--node-background:{NormalizeColor(_draft.Background, DefaultNodeBackground)};--node-text:{NormalizeColor(_draft.TextColor, DefaultNodeTextColor)};--node-align:{NormalizeTextAlign(_draft.TextAlign)};--designer-node-width:{DesignerPreviewWidth}px;--designer-node-height:{DesignerPreviewHeight}px")">
+                <div class="node-designer-preview-node">
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="designer-port port-top" OnClick="AddTopConnectionPoint" aria-label="Add top connection point" />
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="designer-port port-right" OnClick="AddRightConnectionPoint" aria-label="Add right connection point" />
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="designer-port port-bottom" OnClick="AddBottomConnectionPoint" aria-label="Add bottom connection point" />
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="designer-port port-left" OnClick="AddLeftConnectionPoint" aria-label="Add left connection point" />
                 <div class="node-designer-card">
-                    <MudText Typo="Typo.overline">@(_draft.IsOrganized ? "Organized node" : "Simple node")</MudText>
-                    <MudText Typo="Typo.h6">@(string.IsNullOrWhiteSpace(_draft.Label) ? "Untitled" : _draft.Label)</MudText>
-                    @if (_draft.IsOrganized) { @foreach (var section in _draftSections) { <div class="node-preview-section" style="@($"margin-left:{PreviewSectionDepth(section.Id) * 10}px")"><span>@section.Title</span>@if (section.Collapsible) { <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" /> }</div> } }
-                    @foreach (var property in _draftProperties.Take(4)) { <div class="node-preview-property">@property.Name <span>@property.EditorKind</span></div> }
-                    <MudText Typo="Typo.caption">@_draftPorts.Count connection point@(_draftPorts.Count == 1 ? string.Empty : "s")</MudText>
+                    <div class="node-designer-card-header">
+                        <span class="node-designer-card-title">@(string.IsNullOrWhiteSpace(_draft.Label) ? "Untitled" : _draft.Label)</span>
+                    </div>
+                </div>
                 </div>
             </div>
+            <MudText Typo="Typo.caption" Align="Align.Center" Class="node-designer-preview-metadata">@_draftPorts.Count connection point@(_draftPorts.Count == 1 ? string.Empty : "s")</MudText>
 
             <MudList T="string" Dense="true" Class="designer-port-list">
                 @if (_draftPorts.Count == 0)
@@ -492,7 +502,7 @@
                     <MudListItem T="string">
                         <div class="designer-port-row">
                             <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@port.Side</MudChip>
-                            <MudSelect T="string" @bind-Value="port.Direction" Dense="true" Variant="Variant.Outlined" Class="port-direction-select">
+                            <MudSelect T="string" @bind-Value="port.Direction" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Class="port-direction-select">
                                 <MudSelectItem T="string" Value="@("both")">Both</MudSelectItem>
                                 <MudSelectItem T="string" Value="@("source")">Output</MudSelectItem>
                                 <MudSelectItem T="string" Value="@("target")">Input</MudSelectItem>
@@ -523,7 +533,7 @@
             </header>
             <div class="studio-modal-content">
                 <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">Create a folder for organizing reusable node types. Removing it later moves its contents to Custom.</MudText>
-                <MudTextField @bind-Value="_paletteGroupName" Label="Group name" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
+                <MudTextField @bind-Value="_paletteGroupName" Label="Group name" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" AutoFocus="true" />
             </div>
             <footer class="studio-modal-actions">
                 <MudButton OnClick="ClosePaletteGroupEditor">Cancel</MudButton>
@@ -552,7 +562,7 @@
                             <label for="style-outline-color">Outline</label>
                             <div class="designer-color-control">
                                 <input id="style-outline-color" type="color" @bind="_styleDraft.Outline" @bind:event="oninput" aria-label="Select outline color" />
-                                <MudTextField @bind-Value="_styleDraft.Outline" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                                <MudTextField @bind-Value="_styleDraft.Outline" Label="Hex" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" />
                             </div>
                         </div>
                     </MudItem>
@@ -561,7 +571,7 @@
                             <label for="style-background-color">Background</label>
                             <div class="designer-color-control">
                                 <input id="style-background-color" type="color" @bind="_styleDraft.Background" @bind:event="oninput" aria-label="Select background color" />
-                                <MudTextField @bind-Value="_styleDraft.Background" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                                <MudTextField @bind-Value="_styleDraft.Background" Label="Hex" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" />
                             </div>
                         </div>
                     </MudItem>
@@ -570,19 +580,19 @@
                             <label for="style-text-color">Text</label>
                             <div class="designer-color-control">
                                 <input id="style-text-color" type="color" @bind="_styleDraft.TextColor" @bind:event="oninput" aria-label="Select text color" />
-                                <MudTextField @bind-Value="_styleDraft.TextColor" Label="Hex" Variant="Variant.Outlined" Immediate="true" />
+                                <MudTextField @bind-Value="_styleDraft.TextColor" Label="Hex" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" />
                             </div>
                         </div>
                     </MudItem>
                     <MudItem xs="12">
-                        <MudSelect T="string" @bind-Value="_styleDraft.TextAlign" Label="Text alignment" Variant="Variant.Outlined">
+                        <MudSelect T="string" @bind-Value="_styleDraft.TextAlign" Label="Text alignment" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined">
                             <MudSelectItem T="string" Value="@("left")">Left</MudSelectItem>
                             <MudSelectItem T="string" Value="@("center")">Center</MudSelectItem>
                             <MudSelectItem T="string" Value="@("right")">Right</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                 </MudGrid>
-                <div class="style-editor-preview" style="@($"--node-outline:{NormalizeColor(_styleDraft.Outline, "#4177de")};--node-background:{NormalizeColor(_styleDraft.Background, "#ffffff")};--node-text:{NormalizeColor(_styleDraft.TextColor, "#172033")};--node-align:{NormalizeTextAlign(_styleDraft.TextAlign)}")">
+                <div class="style-editor-preview" style="@($"--node-outline:{NormalizeColor(_styleDraft.Outline, DefaultNodeOutline)};--node-background:{NormalizeColor(_styleDraft.Background, DefaultNodeBackground)};--node-text:{NormalizeColor(_styleDraft.TextColor, DefaultNodeTextColor)};--node-align:{NormalizeTextAlign(_styleDraft.TextAlign)}")">
                     @StyleNodeLabel
                 </div>
             </div>
@@ -612,8 +622,8 @@
                     @if (_presentationDraft.Enabled)
                     {
                         <div class="presentation-editor-row">
-                            <MudSelect T="string" @bind-Value="_presentationDraft.DisplayMode" Label="Node display" Dense="true" Variant="Variant.Outlined"><MudSelectItem Value="@DiagramNodeDisplayModes.Expanded">Expanded</MudSelectItem><MudSelectItem Value="@DiagramNodeDisplayModes.Compact">Compact</MudSelectItem><MudSelectItem Value="@DiagramNodeDisplayModes.Collapsed">Collapsed</MudSelectItem></MudSelect>
-                            <MudNumericField T="double" @bind-Value="_presentationDraft.ExpandedHeight" Label="Expanded height" Min="48" Variant="Variant.Outlined" />
+                            <MudSelect T="string" @bind-Value="_presentationDraft.DisplayMode" Label="Node display" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined"><MudSelectItem Value="@DiagramNodeDisplayModes.Expanded">Expanded</MudSelectItem><MudSelectItem Value="@DiagramNodeDisplayModes.Compact">Compact</MudSelectItem><MudSelectItem Value="@DiagramNodeDisplayModes.Collapsed">Collapsed</MudSelectItem></MudSelect>
+                            <MudNumericField T="double" @bind-Value="_presentationDraft.ExpandedHeight" Label="Expanded height" Margin="Margin.Dense" Min="48" Variant="Variant.Outlined" />
                         </div>
                         @if (_sectionEditorDrafts.Count > 0)
                         {
@@ -632,7 +642,7 @@
                         <div class="properties-editor-heading"><div><MudText Typo="Typo.subtitle1">Sections</MudText><MudText Typo="Typo.caption">Use a parent to nest a section; moving a property never changes its value.</MudText></div><MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.AccountTree" OnClick="AddEditorSection">Add section</MudButton></div>
                         @foreach (var section in _sectionEditorDrafts)
                         {
-                            <div class="section-editor-row" @key="section.Id"><MudTextField @bind-Value="section.Title" Label="Section title" Variant="Variant.Outlined" /><MudSelect T="string" @bind-Value="section.ParentSectionId" Label="Parent" Dense="true" Variant="Variant.Outlined" Clearable="true">@foreach (var parent in _sectionEditorDrafts.Where(parent => parent.Id != section.Id)) { <MudSelectItem T="string" Value="@parent.Id">@parent.Title</MudSelectItem> }</MudSelect><MudCheckBox @bind-Value="section.Collapsible" Label="Collapsible" Dense="true" /><MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveEditorSection(section.Id))" aria-label="Remove section" /></div>
+                            <div class="section-editor-row" @key="section.Id"><MudTextField @bind-Value="section.Title" Label="Section title" Margin="Margin.Dense" Variant="Variant.Outlined" /><MudSelect T="string" @bind-Value="section.ParentSectionId" Label="Parent" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Clearable="true">@foreach (var parent in _sectionEditorDrafts.Where(parent => parent.Id != section.Id)) { <MudSelectItem T="string" Value="@parent.Id">@parent.Title</MudSelectItem> }</MudSelect><MudCheckBox @bind-Value="section.Collapsible" Label="Collapsible" Dense="true" /><MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveEditorSection(section.Id))" aria-label="Remove section" /></div>
                         }
                     </section>
                 }
@@ -642,14 +652,14 @@
                     {
                         <div class="properties-editor-row" @key="property.Id">
                             <div class="property-reorder"><MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp" Size="Size.Small" Disabled="@IsRegisteredPropertiesLocked" OnClick="@(() => MoveEditorProperty(property.Id, -1))" /><MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown" Size="Size.Small" Disabled="@IsRegisteredPropertiesLocked" OnClick="@(() => MoveEditorProperty(property.Id, 1))" /></div>
-                            <MudTextField @bind-Value="property.Name" Label="Name" Variant="Variant.Outlined" Immediate="true" Disabled="@IsRegisteredPropertiesLocked" />
+                            <MudTextField @bind-Value="property.Name" Label="Name" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" Disabled="@IsRegisteredPropertiesLocked" />
                             @if (IsCustomPropertyType(property.Type))
                             {
-                                <MudTextField Value="@property.Type" Label="Custom type" Variant="Variant.Outlined" Disabled="true" HelperText="Preserved without conversion" />
+                                <MudTextField Value="@property.Type" Label="Custom type" Margin="Margin.Dense" Variant="Variant.Outlined" Disabled="true" HelperText="Preserved without conversion" />
                             }
                             else
                             {
-                                <MudSelect T="string" @bind-Value="property.Type" Label="Type" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked">
+                                <MudSelect T="string" @bind-Value="property.Type" Label="Type" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked">
                                     <MudSelectItem Value="@DiagramPropertyTypes.String">Text</MudSelectItem>
                                     <MudSelectItem Value="@DiagramPropertyTypes.Boolean">Boolean</MudSelectItem>
                                     <MudSelectItem Value="@DiagramPropertyTypes.Integer">Integer</MudSelectItem>
@@ -660,15 +670,15 @@
                                     <MudSelectItem Value="@DiagramPropertyTypes.Json">JSON</MudSelectItem>
                                 </MudSelect>
                             }
-                            <MudSelect T="string" @bind-Value="property.Mode" Label="Mode" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem Value="@DiagramPropertyModes.Display">Display</MudSelectItem><MudSelectItem Value="@DiagramPropertyModes.Edit">Edit</MudSelectItem><MudSelectItem Value="@DiagramPropertyModes.DisplayAndEdit">Display and edit</MudSelectItem><MudSelectItem Value="@DiagramPropertyModes.Hidden">Hidden</MudSelectItem></MudSelect>
+                            <MudSelect T="string" @bind-Value="property.Mode" Label="Mode" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem Value="@DiagramPropertyModes.Display">Display</MudSelectItem><MudSelectItem Value="@DiagramPropertyModes.Edit">Edit</MudSelectItem><MudSelectItem Value="@DiagramPropertyModes.DisplayAndEdit">Display and edit</MudSelectItem><MudSelectItem Value="@DiagramPropertyModes.Hidden">Hidden</MudSelectItem></MudSelect>
                             @if (_sectionEditorDrafts.Count > 0)
-                            { <MudSelect T="string" @bind-Value="property.SectionId" Label="Section" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" Clearable="true">@foreach (var section in _sectionEditorDrafts) { <MudSelectItem T="string" Value="@section.Id">@section.Title</MudSelectItem> }</MudSelect> }
-                            <MudSelect T="string" @bind-Value="property.EditorKind" Label="Editor" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Auto">Automatic</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Text">Text</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Multiline">Multiline</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Toggle">Toggle</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Number">Number</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Range">Range</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Date">Date</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.DateTime">Date/time</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Select">Select</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Color">Color</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Json">JSON</MudSelectItem></MudSelect>
-                            <MudTextField @bind-Value="property.Value" Label="Current value" Variant="Variant.Outlined" Immediate="true" Disabled="@IsCustomPropertyType(property.Type)" />
-                            @if (property.Type == DiagramPropertyTypes.Enum) { <MudTextField @bind-Value="property.Options" Label="Choices (comma separated)" Variant="Variant.Outlined" Immediate="true" Disabled="@IsRegisteredPropertiesLocked" /> }
-                            @if (property.EditorKind is DiagramPropertyEditorKinds.Text or DiagramPropertyEditorKinds.Multiline) { <MudTextField @bind-Value="property.Placeholder" Label="Placeholder" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /> }
-                                        @if (property.EditorKind is DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range) { <MudTextField @bind-Value="property.Minimum" Label="Minimum" Immediate="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /><MudTextField @bind-Value="property.Maximum" Label="Maximum" Immediate="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /><MudTextField @bind-Value="property.Step" Label="Step" Immediate="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /> }
-                            <MudSelect T="string" @bind-Value="property.Connection" Label="Connection" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem Value="@("none")">None</MudSelectItem><MudSelectItem Value="@("target")">Input</MudSelectItem><MudSelectItem Value="@("source")">Output</MudSelectItem><MudSelectItem Value="@("both")">Both</MudSelectItem></MudSelect>
+                            { <MudSelect T="string" @bind-Value="property.SectionId" Label="Section" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" Clearable="true">@foreach (var section in _sectionEditorDrafts) { <MudSelectItem T="string" Value="@section.Id">@section.Title</MudSelectItem> }</MudSelect> }
+                            <MudSelect T="string" @bind-Value="property.EditorKind" Label="Editor" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Auto">Automatic</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Text">Text</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Multiline">Multiline</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Toggle">Toggle</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Number">Number</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Range">Range</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Date">Date</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.DateTime">Date/time</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Select">Select</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Color">Color</MudSelectItem><MudSelectItem T="string" Value="@DiagramPropertyEditorKinds.Json">JSON</MudSelectItem></MudSelect>
+                            <MudTextField @bind-Value="property.Value" Label="Current value" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" Disabled="@IsCustomPropertyType(property.Type)" />
+                            @if (property.Type == DiagramPropertyTypes.Enum) { <MudTextField @bind-Value="property.Options" Label="Choices (comma separated)" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" Disabled="@IsRegisteredPropertiesLocked" /> }
+                            @if (property.EditorKind is DiagramPropertyEditorKinds.Text or DiagramPropertyEditorKinds.Multiline) { <MudTextField @bind-Value="property.Placeholder" Label="Placeholder" Margin="Margin.Dense" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /> }
+                                        @if (property.EditorKind is DiagramPropertyEditorKinds.Number or DiagramPropertyEditorKinds.Range) { <MudTextField @bind-Value="property.Minimum" Label="Minimum" Margin="Margin.Dense" Immediate="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /><MudTextField @bind-Value="property.Maximum" Label="Maximum" Margin="Margin.Dense" Immediate="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /><MudTextField @bind-Value="property.Step" Label="Step" Margin="Margin.Dense" Immediate="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked" /> }
+                            <MudSelect T="string" @bind-Value="property.Connection" Label="Connection" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem Value="@("none")">None</MudSelectItem><MudSelectItem Value="@("target")">Input</MudSelectItem><MudSelectItem Value="@("source")">Output</MudSelectItem><MudSelectItem Value="@("both")">Both</MudSelectItem></MudSelect>
                             <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" Disabled="@IsRegisteredPropertiesLocked" OnClick="@(() => RemoveEditorProperty(property.Id))" aria-label="Remove property" />
                         </div>
                     }
@@ -676,7 +686,7 @@
                 <section class="properties-editor-section">
                     <div class="properties-editor-heading"><div><MudText Typo="Typo.subtitle1">Unbound connection points</MudText><MudText Typo="Typo.caption">Ports not associated with a property.</MudText></div><MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Disabled="@IsRegisteredPropertiesLocked" OnClick="AddEditorPort">Add connection point</MudButton></div>
                     @foreach (var port in _portEditorDrafts)
-                    { <div class="unbound-port-row" @key="port.Id"><MudTextField @bind-Value="port.Label" Label="Label" Variant="Variant.Outlined" Immediate="true" Disabled="@IsRegisteredPropertiesLocked" /><MudSelect T="string" @bind-Value="port.Side" Label="Side" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem Value="@("left")">Left</MudSelectItem><MudSelectItem Value="@("right")">Right</MudSelectItem><MudSelectItem Value="@("top")">Top</MudSelectItem><MudSelectItem Value="@("bottom")">Bottom</MudSelectItem></MudSelect><MudSelect T="string" @bind-Value="port.Direction" Label="Direction" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem Value="@("target")">Input</MudSelectItem><MudSelectItem Value="@("source")">Output</MudSelectItem><MudSelectItem Value="@("both")">Both</MudSelectItem></MudSelect><MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" Disabled="@IsRegisteredPropertiesLocked" OnClick="@(() => RemoveEditorPort(port.Id))" aria-label="Remove connection point" /></div> }
+                    { <div class="unbound-port-row" @key="port.Id"><MudTextField @bind-Value="port.Label" Label="Label" Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true" Disabled="@IsRegisteredPropertiesLocked" /><MudSelect T="string" @bind-Value="port.Side" Label="Side" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem Value="@("left")">Left</MudSelectItem><MudSelectItem Value="@("right")">Right</MudSelectItem><MudSelectItem Value="@("top")">Top</MudSelectItem><MudSelectItem Value="@("bottom")">Bottom</MudSelectItem></MudSelect><MudSelect T="string" @bind-Value="port.Direction" Label="Direction" Margin="Margin.Dense" Dense="true" Variant="Variant.Outlined" Disabled="@IsRegisteredPropertiesLocked"><MudSelectItem Value="@("target")">Input</MudSelectItem><MudSelectItem Value="@("source")">Output</MudSelectItem><MudSelectItem Value="@("both")">Both</MudSelectItem></MudSelect><MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" Disabled="@IsRegisteredPropertiesLocked" OnClick="@(() => RemoveEditorPort(port.Id))" aria-label="Remove connection point" /></div> }
                 </section>
                 @if (ConnectionsToRemove > 0) { <MudAlert Severity="Severity.Warning" Dense="true">Apply will remove @ConnectionsToRemove connection@(ConnectionsToRemove == 1 ? string.Empty : "s") attached to ports you removed.</MudAlert> }
                 @if (!string.IsNullOrWhiteSpace(_propertiesEditorError)) { <MudAlert Severity="Severity.Error" Dense="true">@_propertiesEditorError</MudAlert> }
@@ -691,7 +701,7 @@
         <MudPaper Class="studio-modal export-modal" Elevation="18" role="dialog" aria-modal="true" aria-label="Exported SVG" @onclick:stopPropagation="true">
         <header class="studio-modal-header"><MudText Typo="Typo.h6">Exported SVG</MudText></header>
         <div class="studio-modal-content">
-            <MudTextField T="string" Value="@_exportedSvg" Lines="18" ReadOnly="true" Variant="Variant.Outlined" Class="export-field" />
+            <MudTextField T="string" Value="@_exportedSvg" Lines="18" ReadOnly="true" Margin="Margin.Dense" Variant="Variant.Outlined" Class="export-field" />
         </div>
         <footer class="studio-modal-actions"><MudButton OnClick="CloseExport">Close</MudButton></footer>
         </MudPaper>

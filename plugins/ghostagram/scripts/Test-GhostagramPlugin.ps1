@@ -51,7 +51,7 @@ foreach ($skillDirectory in $skillDirectories) {
     }
 
     $skillText = Get-Content -LiteralPath $skillPath -Raw
-    $nameMatch = [regex]::Match($skillText, '(?m)^name:\s*([^\r\n]+)$')
+    $nameMatch = [regex]::Match($skillText, '(?m)^name:\s*([^\r\n]+)\r?$')
     Assert-PluginCondition ($nameMatch.Success) "Skill $($skillDirectory.Name) has no frontmatter name."
     if ($nameMatch.Success) {
         Assert-PluginCondition ($nameMatch.Groups[1].Value.Trim() -eq $skillDirectory.Name) "Skill folder and frontmatter name differ for $($skillDirectory.Name)."
@@ -66,7 +66,7 @@ foreach ($skillDirectory in $skillDirectories) {
     Assert-PluginCondition (Test-Path -LiteralPath $agentMetadataPath -PathType Leaf) "Missing agents/openai.yaml for $($skillDirectory.Name)."
     if (Test-Path -LiteralPath $agentMetadataPath -PathType Leaf) {
         $agentMetadata = Get-Content -LiteralPath $agentMetadataPath -Raw
-        $declaresMcp = $agentMetadata -match '(?m)^\s*-\s+type:\s*"?mcp"?\s*$'
+        $declaresMcp = $agentMetadata -match '(?m)^\s*-\s+type:\s*"?mcp"?\s*\r?$'
         if ($declaresMcp) {
             Assert-PluginCondition ($agentMetadata -match [regex]::Escape($canonicalMcpUrl)) "Skill $($skillDirectory.Name) uses a non-canonical MCP URL."
         }

@@ -59,7 +59,7 @@ public sealed class SvgDiagramExporter : IDiagramExporter
             if (!TryPoint(edge.SourcePortId, ports, nodes, out var source) ||
                 !TryPoint(edge.TargetPortId, ports, nodes, out var target)) continue;
             svg.Append("<g data-edge-id=\"").Append(Escape(edge.Id)).Append("\"><path d=\"").Append(EdgePath(edge.Connector, source, target))
-                .Append("\" fill=\"none\" stroke=\"#0f766e\" stroke-width=\"2\"");
+                .Append("\" fill=\"none\" stroke=\"").Append(Escape(edge.Stroke)).Append("\" stroke-width=\"2\"");
             if (!string.IsNullOrWhiteSpace(edge.StartMarker)) svg.Append(" marker-start=\"url(#gp-").Append(edge.StartMarker).Append(")\"");
             if (!string.IsNullOrWhiteSpace(edge.EndMarker)) svg.Append(" marker-end=\"url(#gp-").Append(edge.EndMarker).Append(")\"");
             svg.Append("/>");
@@ -209,19 +209,19 @@ public sealed class SvgDiagramExporter : IDiagramExporter
 
     private static string MarkerSvg(string type)
     {
-        var openPath = "fill=\"white\" stroke=\"#0f766e\" stroke-width=\"1.35\" stroke-linecap=\"round\" stroke-linejoin=\"round\"";
-        var linePath = "fill=\"none\" stroke=\"#0f766e\" stroke-width=\"1.35\" stroke-linecap=\"round\" stroke-linejoin=\"round\"";
+        var openPath = "fill=\"white\" stroke=\"context-stroke\" stroke-width=\"1.35\" stroke-linecap=\"round\" stroke-linejoin=\"round\"";
+        var linePath = "fill=\"none\" stroke=\"context-stroke\" stroke-width=\"1.35\" stroke-linecap=\"round\" stroke-linejoin=\"round\"";
         var (viewBox, refX, refY, width, height, shape) = type switch
         {
             "plain-arrow" => ("0 0 10 10", "9", "5", "7", "7", $"<path d=\"M 0 0 L 10 5 L 0 10\" {linePath}/>") ,
             "triangle-open" => ("0 0 10 10", "9", "5", "7", "7", $"<path d=\"M 0 0 L 10 5 L 0 10 z\" {openPath}/>") ,
-            "diamond" => ("0 0 10 10", "9", "5", "7", "7", "<path d=\"M 0 5 L 5 0 L 10 5 L 5 10 z\" fill=\"#0f766e\"/>") ,
+            "diamond" => ("0 0 10 10", "9", "5", "7", "7", "<path d=\"M 0 5 L 5 0 L 10 5 L 5 10 z\" fill=\"context-stroke\"/>") ,
             "diamond-open" => ("0 0 10 10", "9", "5", "7", "7", $"<path d=\"M 0 5 L 5 0 L 10 5 L 5 10 z\" {openPath}/>") ,
             "erd-one" => Cardinality($"<path d=\"M 15 1 L 15 11 M 20 1 L 20 11\" {linePath}/>") ,
-            "erd-zero-one" => Cardinality($"<circle cx=\"12\" cy=\"6\" r=\"3.25\" fill=\"white\" stroke=\"#0f766e\" stroke-width=\"1.35\"/><path d=\"M 20 1 L 20 11\" {linePath}/>") ,
+            "erd-zero-one" => Cardinality($"<circle cx=\"12\" cy=\"6\" r=\"3.25\" fill=\"white\" stroke=\"context-stroke\" stroke-width=\"1.35\"/><path d=\"M 20 1 L 20 11\" {linePath}/>") ,
             "erd-one-many" => Cardinality($"<path d=\"M 9 1 L 9 11 M 14 6 L 22 1 M 14 6 L 22 6 M 14 6 L 22 11\" {linePath}/>") ,
-            "erd-zero-many" => Cardinality($"<circle cx=\"9\" cy=\"6\" r=\"3.25\" fill=\"white\" stroke=\"#0f766e\" stroke-width=\"1.35\"/><path d=\"M 14 6 L 22 1 M 14 6 L 22 6 M 14 6 L 22 11\" {linePath}/>") ,
-            _ => ("0 0 10 10", "9", "5", "7", "7", "<path d=\"M 0 0 L 10 5 L 0 10 z\" fill=\"#0f766e\"/>")
+            "erd-zero-many" => Cardinality($"<circle cx=\"9\" cy=\"6\" r=\"3.25\" fill=\"white\" stroke=\"context-stroke\" stroke-width=\"1.35\"/><path d=\"M 14 6 L 22 1 M 14 6 L 22 6 M 14 6 L 22 11\" {linePath}/>") ,
+            _ => ("0 0 10 10", "9", "5", "7", "7", "<path d=\"M 0 0 L 10 5 L 0 10 z\" fill=\"context-stroke\"/>")
         };
         return $"<marker id=\"gp-{type}\" viewBox=\"{viewBox}\" refX=\"{refX}\" refY=\"{refY}\" markerWidth=\"{width}\" markerHeight=\"{height}\" orient=\"auto-start-reverse\">{shape}</marker>";
     }
@@ -430,7 +430,7 @@ public sealed class SvgDiagramExporter : IDiagramExporter
         public static Port Parse(JsonElement item) => new(
             S(item, "id"), S(item, "nodeId"), S(item, "anchor"), S(item, "direction", "both"), S(item, "propertyId"), I(item, "order", 0));
     }
-    private sealed record Edge(string Id, string SourcePortId, string TargetPortId, string Label, string Connector, string StartMarker, string EndMarker)
+    private sealed record Edge(string Id, string SourcePortId, string TargetPortId, string Label, string Connector, string Stroke, string StartMarker, string EndMarker)
     {
         public static Edge Parse(JsonElement item, IReadOnlyDictionary<string, JsonElement> edgeTypes)
         {
@@ -445,10 +445,28 @@ public sealed class SvgDiagramExporter : IDiagramExporter
                 : edgeType.ValueKind == JsonValueKind.Object
                     ? S(edgeType, "connector", "flowchart")
                     : "flowchart";
+            var stroke = StyleStroke(item, edgeType);
             var resolvedOverlays = overlays.ToArray();
             return new(
-                S(item, "id"), S(item, "sourcePortId"), S(item, "targetPortId"), S(item, "label"), connector,
+                S(item, "id"), S(item, "sourcePortId"), S(item, "targetPortId"), S(item, "label"), connector, stroke,
                 MarkerAt(resolvedOverlays, 0), MarkerAt(resolvedOverlays, 1));
+        }
+
+        private static string StyleStroke(JsonElement item, JsonElement edgeType)
+        {
+            if (item.TryGetProperty("style", out var directStyle) && directStyle.ValueKind == JsonValueKind.Object)
+            {
+                var directStroke = S(directStyle, "stroke");
+                if (!string.IsNullOrWhiteSpace(directStroke)) return directStroke;
+            }
+
+            if (edgeType.ValueKind == JsonValueKind.Object && edgeType.TryGetProperty("style", out var typeStyle) && typeStyle.ValueKind == JsonValueKind.Object)
+            {
+                var typeStroke = S(typeStyle, "stroke");
+                if (!string.IsNullOrWhiteSpace(typeStroke)) return typeStroke;
+            }
+
+            return "#0f766e";
         }
     }
 }

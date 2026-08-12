@@ -1,6 +1,6 @@
 # Ghostagram Codex plugin
 
-This project-scoped plugin gives Codex agents a safe workflow for starting the local Ghostagram host and collaborating with a live diagram through the `ghostagram` MCP server.
+This project-scoped plugin gives Codex agents focused workflows for compact MudBlazor forms, starting the local Ghostagram host, and collaborating with a live diagram through the `ghostagram` MCP server.
 
 ## Skills and tools
 
@@ -16,6 +16,8 @@ This project-scoped plugin gives Codex agents a safe workflow for starting the l
 | `$ghostagram-layout-diagram` | `mcp__ghostagram__layout_diagram` | Preview or commit deterministic server layout. |
 | `$ghostagram-export-svg` | `mcp__ghostagram__export_svg` | Export SVG pinned to a known revision. |
 | `$ghostagram-close-session` | `mcp__ghostagram__close_session` | Close only the caller's collaboration session. |
+| `$mudblazor-form-scaffold` | Local repository tools | Create a compact typed form split between reusable Blazor UI and server feature ownership. |
+| `$mudblazor-form-verify` | Local build, test, and Browser tools | Verify package resolution, builds, tests, visible form behavior, and the browser console. |
 
 Every MCP diagram skill reads the shared contract in [`contracts/mcp-tools.md`](contracts/mcp-tools.md). The live workflow also reads [`contracts/live-collaboration.md`](contracts/live-collaboration.md). Agents can call `describe_capabilities` for the complete authoring schema and `list_diagrams` for durable document discovery, direct Laboratory URLs, live view counts, and acknowledged render revisions. Mutations use optimistic revision checks, exact-payload idempotency, one bounded conflict rebase, and a `get_diagram` verification read. The lifecycle skills instead use their bundled local PowerShell scripts and ownership state beneath the system temporary directory.
 

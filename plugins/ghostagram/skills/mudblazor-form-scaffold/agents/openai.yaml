@@ -1,0 +1,10 @@
+interface:
+  display_name: "MudBlazor Form Scaffold"
+  short_description: "Scaffold compact typed MudBlazor forms"
+  default_prompt: "Use $mudblazor-form-scaffold to scaffold a compact typed MudBlazor form with reusable UI and server-owned feature behavior."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools: []

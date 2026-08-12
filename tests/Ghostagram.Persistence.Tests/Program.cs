@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
+using Ghostagram.Core;
 using Ghostagram.Server;
 using Ghostagram.Server.Components.Pages;
 using Ghostagram.Server.Persistence;
@@ -17,6 +18,11 @@ var checks = new List<(string Name, Func<Task> Check)>
     ("document file store deletes only the requested durable diagram", VerifyDocumentDeleteAsync),
     ("diagram Save As preserves unknown graph fields", VerifyLosslessDiagramCloneAsync),
     ("recovery-mode Save As preserves document extension data", VerifyLosslessRecoverySaveAsAsync),
+    ("selected node capture preserves schema-v1 palette fidelity", VerifyPaletteNodeCaptureFidelityAsync),
+    ("selected node capture does not retain mutable source metadata", VerifyPaletteNodeCaptureSourceImmutabilityAsync),
+    ("selected node capture rejects registered definitions", VerifyPaletteNodeCaptureRegisteredRejectionAsync),
+    ("selected node capture falls back unsupported anchors", VerifyPaletteNodeCaptureAnchorFallbackAsync),
+    ("node properties editor restores persisted connection point values", VerifyPortEditorProjectionAsync),
     ("laboratory palette apply and capture preserve complete definitions", VerifyLaboratoryPaletteProjectionAsync)
 };
 
@@ -326,6 +332,146 @@ static async Task VerifyLosslessRecoverySaveAsAsync()
     {
         if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
     }
+}
+
+static Task VerifyPaletteNodeCaptureFidelityAsync()
+{
+    using var defaultValue = JsonDocument.Parse("{\"prompt\":\"hello\"}");
+    using var propertyMetadata = JsonDocument.Parse("{\"source\":\"designer\"}");
+    using var extension = JsonDocument.Parse("{\"keep\":true}");
+    var property = new DiagramNodeProperty(
+        "prompt", "Prompt", DiagramPropertyTypes.Json, defaultValue.RootElement.Clone(), DiagramPropertyModes.DisplayAndEdit,
+        "Prompt text", Connectable: true, Options: ["hello", "goodbye"], Metadata: propertyMetadata.RootElement.Clone(),
+        SectionId: "details", Editor: new DiagramPropertyEditor(DiagramPropertyEditorKinds.Multiline, "Write a prompt"))
+    {
+        ExtensionData = new Dictionary<string, JsonElement> { ["futureProperty"] = extension.RootElement.Clone() }
+    };
+    var node = new DiagramNode(
+        "capture-me", 40, 80, 224, 144, "Capture me", Icon: "mdi:robot-outline",
+        Style: new DiagramNodeStyle("#fafafa", "#123456", "#111111", "center")
+        {
+            ExtensionData = new Dictionary<string, JsonElement> { ["futureStyle"] = extension.RootElement.Clone() }
+        },
+        Properties: [property],
+        Sections: [new DiagramNodeSection("details", "Details", Order: 2)],
+        Presentation: new DiagramNodePresentation(DiagramNodeDisplayModes.Compact, 180, ["details"]))
+    {
+        ExtensionData = new Dictionary<string, JsonElement>
+        {
+            ["description"] = JsonSerializer.SerializeToElement("Captured description"),
+            ["futureNode"] = extension.RootElement.Clone()
+        }
+    };
+    var endpoint = new DiagramEndpoint("rectangle", 14, "#aabbcc", "#ddeeff", 3)
+    {
+        ExtensionData = new Dictionary<string, JsonElement> { ["futureEndpoint"] = extension.RootElement.Clone() }
+    };
+    var ports = new[]
+    {
+        new DiagramPort("prompt-in", node.Id, "target", Anchor: "left", Endpoint: endpoint, PropertyId: "prompt", Label: "Prompt input", Order: 1)
+        {
+            ExtensionData = new Dictionary<string, JsonElement> { ["futurePort"] = extension.RootElement.Clone() }
+        },
+        new DiagramPort("prompt-out", node.Id, "source", Anchor: "bottom", PropertyId: "prompt", Label: "Prompt output", Order: 3),
+        new DiagramPort("other", "other-node", "source", Anchor: "right")
+    };
+
+    var captured = PaletteNodeDefinitionCapture.Capture(node, ports);
+    Equal(node.Id, captured.Id, "captured node ID");
+    Equal("Capture me", captured.Label, "captured label");
+    Equal("Captured description", captured.Description, "captured description");
+    Equal(224d, captured.Width, "captured width");
+    Equal("mdi:robot-outline", captured.Icon, "captured icon");
+    Equal("#123456", captured.Style.BorderColor, "captured border color");
+    Equal("center", captured.Style.TextAlign, "captured text alignment");
+    Equal(2, captured.Ports.Count, "captured node port count");
+    var input = captured.Ports.Single(port => port.Id == "prompt-in");
+    Equal("left", input.Side, "captured port side");
+    Equal("left", input.Anchor, "captured string anchor");
+    Equal("Prompt input", input.Label, "captured port label");
+    Equal("prompt", input.PropertyId, "captured port property link");
+    Equal(1, input.Order, "captured port order");
+    Equal("rectangle", input.Endpoint?.Type, "captured endpoint type");
+    Equal((double?)14d, input.Endpoint?.Size, "captured endpoint size");
+    Equal(true, input.Metadata["futurePort"].GetProperty("keep").GetBoolean(), "captured port extension metadata");
+    Equal(true, input.Metadata["ghostagram.endpointExtensions"].GetProperty("futureEndpoint").GetProperty("keep").GetBoolean(), "captured endpoint extension metadata");
+    var capturedProperty = captured.Properties.Single();
+    Equal("hello", capturedProperty.DefaultValue?.GetProperty("prompt").GetString(), "captured property default value");
+    Equal("both", capturedProperty.Direction, "captured property direction");
+    Equal(0, capturedProperty.Order, "captured property order");
+    Equal("details", capturedProperty.Metadata["ghostagram.sectionId"].GetString(), "captured property section");
+    Equal(DiagramPropertyEditorKinds.Multiline, capturedProperty.Metadata["ghostagram.editor"].GetProperty("kind").GetString(), "captured property editor");
+    Equal("designer", capturedProperty.Metadata["ghostagram.propertyMetadata"].GetProperty("source").GetString(), "captured property metadata");
+    Equal(true, captured.Metadata["futureNode"].GetProperty("keep").GetBoolean(), "captured node extension metadata");
+    Equal("Details", captured.Metadata["ghostagram.sections"][0].GetProperty("title").GetString(), "captured sections metadata");
+    Equal(DiagramNodeDisplayModes.Compact, captured.Metadata["ghostagram.presentation"].GetProperty("displayMode").GetString(), "captured presentation metadata");
+    return Task.CompletedTask;
+}
+
+static Task VerifyPaletteNodeCaptureSourceImmutabilityAsync()
+{
+    var sourceMetadata = new Dictionary<string, JsonElement>
+    {
+        ["futureNode"] = JsonSerializer.SerializeToElement(new { value = "original" })
+    };
+    var node = new DiagramNode("immutable", 0, 0, Label: "Immutable") { ExtensionData = sourceMetadata };
+    var captured = PaletteNodeDefinitionCapture.Capture(node, []);
+    sourceMetadata["futureNode"] = JsonSerializer.SerializeToElement(new { value = "changed" });
+
+    Equal("original", captured.Metadata["futureNode"].GetProperty("value").GetString(), "captured metadata must be cloned");
+    Equal("changed", node.ExtensionData?["futureNode"].GetProperty("value").GetString(), "source node remains independently mutable");
+    Equal(0d, node.X, "capture must not mutate source node geometry");
+    return Task.CompletedTask;
+}
+
+static async Task VerifyPaletteNodeCaptureRegisteredRejectionAsync()
+{
+    var registered = new DiagramNode("registered", 0, 0, Label: "Registered", TypeId: "acme.registered");
+    await ThrowsAsync<ArgumentException>(() => Task.Run(() => PaletteNodeDefinitionCapture.Capture(registered, [])), "registered node capture");
+}
+
+static Task VerifyPaletteNodeCaptureAnchorFallbackAsync()
+{
+    var node = new DiagramNode("anchors", 0, 0, Label: "Anchors");
+    var captured = PaletteNodeDefinitionCapture.Capture(node,
+    [
+        new DiagramPort("target", node.Id, "target", Anchor: new { unsupported = true }),
+        new DiagramPort("source", node.Id, "source", Anchor: null),
+        new DiagramPort("both", node.Id, "both", Anchor: "diagonal")
+    ]);
+
+    Equal("left", captured.Ports.Single(port => port.Id == "target").Anchor, "target fallback anchor");
+    Equal("right", captured.Ports.Single(port => port.Id == "source").Anchor, "source fallback anchor");
+    Equal("right", captured.Ports.Single(port => port.Id == "both").Anchor, "both fallback anchor");
+    return Task.CompletedTask;
+}
+
+static Task VerifyPortEditorProjectionAsync()
+{
+    var flags = BindingFlags.Static | BindingFlags.NonPublic;
+    var sideFromAnchor = typeof(Home).GetMethod("PortSideFromAnchor", flags)
+        ?? throw new Exception("Home.PortSideFromAnchor was not found");
+    Equal("left", (string)sideFromAnchor.Invoke(null, [JsonSerializer.SerializeToElement("left")])!, "persisted string anchor side");
+    Equal("top", (string)sideFromAnchor.Invoke(null, [JsonSerializer.SerializeToElement(new { x = 0.5, y = 0 })])!, "persisted object anchor side");
+    Equal("bottom", (string)sideFromAnchor.Invoke(null, [JsonSerializer.SerializeToElement(new[] { 0.5, 1.0 })])!, "persisted relative anchor side");
+
+    var port = new DiagramPort(
+        "node-abc-port-3-4",
+        "node-abc",
+        "source",
+        Anchor: JsonSerializer.SerializeToElement("top"));
+    var draftType = typeof(Home).GetNestedType("PortEditorDraft", BindingFlags.NonPublic)
+        ?? throw new Exception("Home.PortEditorDraft was not found");
+    var draft = Activator.CreateInstance(
+        draftType,
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+        binder: null,
+        args: [port.Id, port],
+        culture: null) ?? throw new Exception("Home.PortEditorDraft could not be constructed");
+    Equal("port-3", (string)draftType.GetProperty("Label")!.GetValue(draft)!, "derived connection point label");
+    Equal("top", (string)draftType.GetProperty("Side")!.GetValue(draft)!, "connection point side");
+    Equal("source", (string)draftType.GetProperty("Direction")!.GetValue(draft)!, "connection point direction");
+    return Task.CompletedTask;
 }
 
 static Task VerifyLaboratoryPaletteProjectionAsync()

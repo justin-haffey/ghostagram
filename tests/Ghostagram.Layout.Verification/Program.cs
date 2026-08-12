@@ -15,9 +15,11 @@ var checks = new List<(string Name, Action Check)>
     ("deterministic output", VerifyDeterminism),
     ("directed flow and crossing monotonicity", VerifyDirectedFlow),
     ("nested compound containment", VerifyNestedGroups),
+    ("three-level and sibling group containment", VerifyDeepAndSiblingGroups),
     ("group removal preserves and ungroups content", VerifyGroupRemoval),
     ("explicit group assignment supports reparenting and ungrouping", VerifyGroupAssignment),
     ("node duplication creates independent nodes and ports without copying edges", VerifyNodeDuplication),
+    ("group duplication preserves nested contents and internal edges", VerifyGroupDuplication),
     ("server rejects duplicate ids and cyclic group hierarchies", VerifyReducerStructuralValidation),
     ("server validates progressive node sections, editors, and presentation", VerifyProgressiveNodeValidation),
     ("property ports require an existing property on their node", VerifyPropertyPortValidation),
@@ -77,6 +79,33 @@ static void VerifyNestedGroups()
     Contains(groups["outer"], nodes["approve"], "outer group must contain its direct node");
 }
 
+static void VerifyDeepAndSiblingGroups()
+{
+    var model = Model(
+        [
+            Node("deep-node", 800, 640, "leaf"),
+            Node("sibling-node", 560, 520, "branch-b"),
+            Node("direct-node", 240, 160, "outer")
+        ],
+        [Edge("deep-node", "sibling-node"), Edge("sibling-node", "direct-node")],
+        [
+            Group("outer", null),
+            Group("branch-a", "outer"),
+            Group("branch-b", "outer"),
+            Group("leaf", "branch-a")
+        ]);
+    var result = new GhostLayeredLayoutStrategy().Compute(new("deep-groups", 0, model), new(GroupPadding: 36, GroupHeader: 30), 19, default);
+    var laidOut = GhostagramDocumentReducer.Apply(model, result.Operations);
+    var nodes = Boxes(laidOut, "nodes");
+    var groups = Boxes(laidOut, "groups");
+    Contains(groups["leaf"], nodes["deep-node"], "third-level group must contain its node");
+    Contains(groups["branch-a"], groups["leaf"], "middle group must contain the third-level group");
+    Contains(groups["outer"], groups["branch-a"], "outer group must contain the first sibling group");
+    Contains(groups["outer"], groups["branch-b"], "outer group must contain the second sibling group");
+    Contains(groups["branch-b"], nodes["sibling-node"], "second sibling group must contain its node");
+    Contains(groups["outer"], nodes["direct-node"], "outer group must contain its direct node");
+}
+
 static void VerifyGroupRemoval()
 {
     var model = Model(
@@ -132,6 +161,81 @@ static void VerifyNodeDuplication()
     True(ports.Any(port => port.GetProperty("id").GetString() == "port-copy-2" && port.GetProperty("nodeId").GetString() == "node-copy-1"), "duplicate must receive a freshly identified port");
     Equal(1, edges.Length, "duplication must not copy connections");
     Equal("node-copy-1", duplicated.GetProperty("selection").EnumerateArray().Single().GetString()!, "duplicate must become the active selection");
+}
+
+static void VerifyGroupDuplication()
+{
+    var document = new DiagramDocument(
+        "group-copy",
+        [
+            new DiagramNode("root-node", 20, 40, 80, 48, "Root node", GroupId: "root"),
+            new DiagramNode("deep-node", 72, 96, 80, 48, "Deep node", GroupId: "grandchild"),
+            new DiagramNode("outside-node", 520, 40, 80, 48, "Outside node")
+        ],
+        [
+            new DiagramPort("root-port", "root-node", "source", Anchor: "right", ConnectionPolicy: new(
+                AllowPortIds: ["deep-port"],
+                DenyPortIds: ["outside-port"],
+                AllowNodeIds: ["deep-node"],
+                DenyNodeIds: ["outside-node"])),
+            new DiagramPort("deep-port", "deep-node", "both", Anchor: "left"),
+            new DiagramPort("outside-port", "outside-node", "target", Anchor: "left")
+        ],
+        [
+            new DiagramEdge("internal", "root-port", "deep-port", Waypoints: [new DiagramPoint(48, 64)]),
+            new DiagramEdge("boundary", "deep-port", "outside-port")
+        ],
+        [
+            new DiagramGroup("root", 0, 0, 320, 240, "Root"),
+            new DiagramGroup("child", 32, 48, 240, 160, "Child", "root"),
+            new DiagramGroup("grandchild", 64, 80, 160, 96, "Grandchild", "child"),
+            new DiagramGroup("outside", 480, 0, 400, 320, "Outside")
+        ]);
+
+    var sequence = 0;
+    var plan = GroupDuplication.CreatePlan(
+        document,
+        new GroupDuplicatePosition("root", 208, 176, "outside", true),
+        prefix => $"{prefix}-copy-{++sequence}");
+    var duplicated = GhostagramDocumentReducer.Apply(
+        JsonSerializer.SerializeToElement(document, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+        plan.Operations);
+    var groups = duplicated.GetProperty("groups").EnumerateArray().ToDictionary(item => item.GetProperty("id").GetString()!, StringComparer.Ordinal);
+    var nodes = duplicated.GetProperty("nodes").EnumerateArray().ToDictionary(item => item.GetProperty("id").GetString()!, StringComparer.Ordinal);
+    var ports = duplicated.GetProperty("ports").EnumerateArray().ToDictionary(item => item.GetProperty("id").GetString()!, StringComparer.Ordinal);
+    var edges = duplicated.GetProperty("edges").EnumerateArray().ToDictionary(item => item.GetProperty("id").GetString()!, StringComparer.Ordinal);
+    var copiedRoot = groups[plan.DuplicateRootGroupId!];
+    var copiedChildren = plan.DuplicateGroupIds.Where(id => id != plan.DuplicateRootGroupId).Select(id => groups[id]).ToArray();
+    var copiedChild = copiedChildren.Single(item => item.GetProperty("label").GetString() == "Child");
+    var copiedGrandchild = copiedChildren.Single(item => item.GetProperty("label").GetString() == "Grandchild");
+    var copiedRootNode = plan.DuplicateNodeIds.Select(id => nodes[id]).Single(item => item.GetProperty("label").GetString() == "Root node");
+    var copiedDeepNode = plan.DuplicateNodeIds.Select(id => nodes[id]).Single(item => item.GetProperty("label").GetString() == "Deep node");
+    var copiedRootPort = plan.DuplicatePortIds.Select(id => ports[id]).Single(item => item.GetProperty("nodeId").GetString() == copiedRootNode.GetProperty("id").GetString());
+    var copiedDeepPort = plan.DuplicatePortIds.Select(id => ports[id]).Single(item => item.GetProperty("nodeId").GetString() == copiedDeepNode.GetProperty("id").GetString());
+    var copiedEdge = edges[plan.DuplicateEdgeIds.Single()];
+
+    Equal(7, groups.Count, "copying a three-level subtree must add three groups");
+    Equal("outside", copiedRoot.GetProperty("parentGroupId").GetString()!, "copied root must use its requested parent");
+    Equal(plan.DuplicateRootGroupId!, copiedChild.GetProperty("parentGroupId").GetString()!, "copied child must reference the copied root");
+    Equal(copiedChild.GetProperty("id").GetString()!, copiedGrandchild.GetProperty("parentGroupId").GetString()!, "copied grandchild must reference the copied child");
+    Equal(208d, copiedRoot.GetProperty("x").GetDouble(), "copied root x position");
+    Equal(176d, copiedRoot.GetProperty("y").GetDouble(), "copied root y position");
+    Equal(plan.DuplicateRootGroupId!, copiedRootNode.GetProperty("groupId").GetString()!, "direct node must join the copied root");
+    Equal(copiedGrandchild.GetProperty("id").GetString()!, copiedDeepNode.GetProperty("groupId").GetString()!, "deep node must join the copied grandchild");
+    Equal(5, nodes.Count, "only contained nodes must be copied");
+    Equal(5, duplicated.GetProperty("ports").GetArrayLength(), "each copied node must receive copied ports");
+    Equal(3, edges.Count, "only the internal edge must be copied");
+    True(plan.DuplicatePortIds.Contains(copiedEdge.GetProperty("sourcePortId").GetString()!), "copied edge source must use a copied port");
+    True(plan.DuplicatePortIds.Contains(copiedEdge.GetProperty("targetPortId").GetString()!), "copied edge target must use a copied port");
+    var copiedPolicy = copiedRootPort.GetProperty("connectionPolicy");
+    Equal(copiedDeepPort.GetProperty("id").GetString()!, copiedPolicy.GetProperty("allowPortIds")[0].GetString()!, "internal allow-port references must target the copied port");
+    Equal(copiedDeepNode.GetProperty("id").GetString()!, copiedPolicy.GetProperty("allowNodeIds")[0].GetString()!, "internal allow-node references must target the copied node");
+    Equal("outside-port", copiedPolicy.GetProperty("denyPortIds")[0].GetString()!, "external port policy references must remain external");
+    Equal("outside-node", copiedPolicy.GetProperty("denyNodeIds")[0].GetString()!, "external node policy references must remain external");
+    Equal(256d, copiedEdge.GetProperty("waypoints")[0].GetProperty("x").GetDouble(), "copied waypoint x must translate with the subtree");
+    Equal(240d, copiedEdge.GetProperty("waypoints")[0].GetProperty("y").GetDouble(), "copied waypoint y must translate with the subtree");
+    Equal(plan.DuplicateRootGroupId!, duplicated.GetProperty("selection").EnumerateArray().Single().GetString()!, "copied root must become the active selection");
+    Equal("root", nodes["root-node"].GetProperty("groupId").GetString()!, "source contents must remain unchanged");
 }
 
 static void VerifyPropertyPortValidation()
@@ -301,6 +405,7 @@ static void VerifyEnhancedSvgExport()
             new JsonObject
             {
                 ["id"] = "edge", ["sourcePortId"] = "source-prompt", ["targetPortId"] = "target-in", ["connector"] = "bezier",
+                ["style"] = new JsonObject { ["stroke"] = "#dc2626" },
                 ["overlays"] = new JsonArray
                 {
                     new JsonObject { ["type"] = "diamond-open", ["location"] = 0 },
@@ -318,6 +423,7 @@ static void VerifyEnhancedSvgExport()
             new JsonObject
             {
                 ["id"] = "uml-aggregation", ["connector"] = "straight",
+                ["style"] = new JsonObject { ["stroke"] = "#2563eb" },
                 ["overlays"] = new JsonArray
                 {
                     new JsonObject { ["type"] = "diamond-open", ["location"] = 0 },
@@ -327,6 +433,15 @@ static void VerifyEnhancedSvgExport()
         }
     };
     var artifact = new SvgDiagramExporter().Export(new("svg", 3, JsonSerializer.SerializeToElement(model)));
+    static string EdgePath(string svg, string edgeId)
+    {
+        var start = svg.IndexOf($"<g data-edge-id=\"{edgeId}\"><path", StringComparison.Ordinal);
+        var end = start < 0 ? -1 : svg.IndexOf("/>", start, StringComparison.Ordinal);
+        return start < 0 || end < 0 ? string.Empty : svg[start..(end + 2)];
+    }
+
+    var directEdgePath = EdgePath(artifact.Content, "edge");
+    var typedEdgePath = EdgePath(artifact.Content, "typed-edge");
     True(artifact.Content.Contains(">Prompt</text>", StringComparison.Ordinal), "property label must be exported");
     True(artifact.Content.Contains(">Hello</text>", StringComparison.Ordinal), "property value must be exported");
     True(artifact.Content.Contains(" C ", StringComparison.Ordinal), "Bezier connector must remain curved in SVG");
@@ -338,10 +453,15 @@ static void VerifyEnhancedSvgExport()
     True(artifact.Content.Contains("marker-start=\"url(#gp-diamond-open)\"", StringComparison.Ordinal), "server SVG must preserve the selected UML source marker");
     True(artifact.Content.Contains("marker-end=\"url(#gp-erd-zero-many)\"", StringComparison.Ordinal), "server SVG must preserve the selected crow's-foot target marker");
     True(artifact.Content.Contains("id=\"gp-erd-zero-many\"", StringComparison.Ordinal) && artifact.Content.Contains("<circle cx=\"9\"", StringComparison.Ordinal), "server SVG must define the composite zero-to-many marker");
-    True(artifact.Content.Contains("data-edge-id=\"typed-edge\"><path d=\"M 180 61 L 300 40\"", StringComparison.Ordinal), "server SVG must inherit connector geometry from a reusable edge type");
-    True(artifact.Content.Contains("data-edge-id=\"typed-edge\"><path", StringComparison.Ordinal)
-        && artifact.Content.Contains("marker-start=\"url(#gp-diamond-open)\" marker-end=\"url(#gp-plain-arrow)\"", StringComparison.Ordinal),
-        "server SVG must inherit both endpoint markers from a reusable edge type");
+    True(directEdgePath.Contains("stroke=\"#dc2626\"", StringComparison.Ordinal),
+        "server SVG must export a direct edge stroke color");
+    True(typedEdgePath.Contains("d=\"M 180 61 L 300 40\"", StringComparison.Ordinal), "server SVG must inherit connector geometry from a reusable edge type");
+    True(typedEdgePath.Contains("stroke=\"#2563eb\"", StringComparison.Ordinal)
+        && typedEdgePath.Contains("marker-start=\"url(#gp-diamond-open)\" marker-end=\"url(#gp-plain-arrow)\"", StringComparison.Ordinal),
+        "server SVG must inherit its stroke color and endpoint markers from a reusable edge type");
+    True(artifact.Content.Contains("stroke=\"context-stroke\"", StringComparison.Ordinal)
+        && artifact.Content.Contains("fill=\"context-stroke\"", StringComparison.Ordinal),
+        "server SVG marker shapes must inherit the edge stroke color");
 }
 
 static void VerifyProgressiveSvgExport()

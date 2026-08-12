@@ -1,0 +1,20 @@
+{
+  "name": "ghostagram-plugin",
+  "interface": {
+    "displayName": "Ghostagram Colaborative Diagramming"
+  },
+  "plugins": [
+    {
+      "name": "ghostagram",
+      "source": {
+        "source": "local",
+        "path": "./plugins/ghostagram"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
