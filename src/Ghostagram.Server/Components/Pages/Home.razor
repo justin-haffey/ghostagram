@@ -111,7 +111,8 @@
                     <MudSelect T="string" Value="_edgeConnector" ValueChanged="OnEdgeConnectorChangedAsync" Label="Edge shape" Dense="true" Variant="Variant.Outlined" Class="toolbar-select edge-select">
                         <MudSelectItem T="string" Value="@("flowchart")">Square</MudSelectItem>
                         <MudSelectItem T="string" Value="@("straight")">Straight</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("bezier")">Curved</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("bezier")">Bezier</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("curved")">Curved</MudSelectItem>
                     </MudSelect>
                     <label class="edge-color-control" title="Change selected edge color">
                         <span>Color</span>

@@ -56,7 +56,7 @@ public partial class Home : IAsyncDisposable
     [Inject] private LaboratoryCircuitState CircuitState { get; set; } = default!;
     [Parameter, SupplyParameterFromQuery(Name = "documentId")] public string? RequestedDocumentId { get; set; }
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260811.2");
+    private readonly GhostDiagramOptions _options = new(Height: "100%", GridSize: GridSize, MinZoom: .25, MaxZoom: 2.5, RespectReducedMotion: false, ModulePath: "/ghostagram/ghostagram.js?v=20260813.1");
     private readonly List<PaletteCategory> _paletteCategories = CreatePaletteCategories();
     private readonly List<NodeTemplate> _templates = CreateBuiltInTemplates();
     private readonly List<DraftPort> _draftPorts = [];
@@ -1062,7 +1062,6 @@ public partial class Home : IAsyncDisposable
     private bool HasSelectedEdges => _document.Edges.Any(edge => _document.Selection.Contains(edge.Id, StringComparer.Ordinal));
     private bool CanEditSelectedNode => SelectedNode() is not null;
     private bool CanCaptureSelectedNode =>
-        _paletteCatalogDurable && !_paletteLoadFailed &&
         SelectedNode() is { } node && string.IsNullOrWhiteSpace(node.TypeId);
     private string EdgeApplyLabel => HasSelectedEdges ? "Apply selected" : "Apply all edges";
     private string StyleNodeLabel => _document.Nodes.SingleOrDefault(node => node.Id == _styleNodeId)?.Label ?? "Node style";
@@ -1980,6 +1979,7 @@ public partial class Home : IAsyncDisposable
                 var selection = StringArray(envelope.Payload, "ids");
                 await SubmitOperationsAsync([DiagramOperations.Select(selection)], $"Selected {selection.Count} item{(selection.Count == 1 ? string.Empty : "s")}", false);
                 SyncEdgeControlsFromSelection(selection);
+                await InvokeAsync(StateHasChanged);
                 break;
             case "node.move.commit": await CommitNodeMoveAsync(envelope.Payload); break;
             case "node.duplicateRequested": await DuplicateNodesAsync(envelope.Payload); break;
@@ -2227,7 +2227,7 @@ public partial class Home : IAsyncDisposable
             ConnectorOptions = value == "flowchart" ? new DiagramFlowchartOptions(32, 0) : null,
             Waypoints = edge.Connector == value ? edge.Waypoints : []
         })).ToArray();
-        await SubmitOperationsAsync(operations, $"Changed {SelectedEdgeDescription(edges.Length)} to {(value == "bezier" ? "curved" : "square")}");
+        await SubmitOperationsAsync(operations, $"Changed {SelectedEdgeDescription(edges.Length)} to {EdgeShapeName(value)}");
     }
 
     private async Task OnEdgeAnimatedChangedAsync(bool value)
@@ -2627,7 +2627,7 @@ public partial class Home : IAsyncDisposable
     {
         var inheritedStroke = _document.EdgeTypes.SingleOrDefault(type => type.Id == edge.Type)?.Style?.Stroke;
         _edgeColor = NormalizeColor(edge.Style?.Stroke ?? inheritedStroke, "#0f766e");
-        _edgeConnector = edge.Connector is "straight" or "bezier" ? edge.Connector : "flowchart";
+        _edgeConnector = edge.Connector is "straight" or "bezier" or "curved" ? edge.Connector : "flowchart";
         var overlays = EffectiveOverlays(edge);
         _edgeStartMarker = MarkerAt(overlays, 0);
         _edgeEndMarker = MarkerAt(overlays, 1);
@@ -2636,6 +2636,14 @@ public partial class Home : IAsyncDisposable
 
     private IReadOnlyList<DiagramOverlay> EffectiveOverlays(DiagramEdge edge) =>
         edge.Overlays ?? _document.EdgeTypes.SingleOrDefault(type => type.Id == edge.Type)?.Overlays ?? [];
+
+    private static string EdgeShapeName(string connector) => connector switch
+    {
+        "bezier" => "Bezier",
+        "curved" => "curved",
+        "straight" => "straight",
+        _ => "square"
+    };
 
     private IReadOnlyList<DiagramOverlay> WithEdgeMarkers(DiagramEdge edge, string startMarker, string endMarker) =>
         WithEdgeMarkers(EffectiveOverlays(edge), startMarker, endMarker);

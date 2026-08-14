@@ -198,7 +198,7 @@
         "sourcePortId": { "$ref": "#/$defs/identifier" },
         "targetPortId": { "$ref": "#/$defs/identifier" },
         "label": { "type": ["string", "null"] },
-        "connector": { "enum": ["straight", "flowchart", "bezier", "state-machine"], "default": "flowchart" },
+        "connector": { "enum": ["straight", "flowchart", "bezier", "curved", "state-machine"], "default": "flowchart" },
         "type": { "type": ["string", "null"], "description": "Optional reusable edgeType id." },
         "overlays": { "type": "array", "items": { "$ref": "#/$defs/overlay" } },
         "waypoints": { "type": "array", "items": { "$ref": "#/$defs/point" } },
@@ -237,7 +237,7 @@
       "required": ["id"],
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
-        "connector": { "enum": ["straight", "flowchart", "bezier", "state-machine"], "default": "flowchart" },
+        "connector": { "enum": ["straight", "flowchart", "bezier", "curved", "state-machine"], "default": "flowchart" },
         "style": { "oneOf": [{ "$ref": "#/$defs/edgeStyle" }, { "type": "null" }] },
         "overlays": { "type": "array", "items": { "$ref": "#/$defs/overlay" } },
         "animation": { "type": ["boolean", "object", "null"] },

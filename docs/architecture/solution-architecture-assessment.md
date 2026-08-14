@@ -232,7 +232,7 @@ This needs a written operation specification and a shared conformance fixture su
 
 The browser runtime is the authoritative visual geometry implementation. It supports:
 
-- straight, flowchart/square, Bezier, and state-machine paths;
+- straight, flowchart/square, tangent-preserving Bezier, arched Curved, and state-machine paths;
 - explicit waypoints and editable waypoint handles;
 - static, relative, continuous/automatic, and perimeter anchors;
 - rotated node endpoint geometry;

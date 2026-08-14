@@ -182,6 +182,16 @@ public sealed class SvgDiagramExporter : IDiagramExporter
             return $"M {N(source.X)} {N(source.Y)} C {N(source.X + control)} {N(source.Y)} {N(target.X - control)} {N(target.Y)} {N(target.X)} {N(target.Y)}";
         }
 
+        if (connector.Equals("curved", StringComparison.OrdinalIgnoreCase))
+        {
+            var deltaX = target.X - source.X;
+            var deltaY = target.Y - source.Y;
+            var arch = Math.Max(32, Math.Min(160, Math.Sqrt(deltaX * deltaX + deltaY * deltaY) * .32));
+            return Math.Abs(deltaX) >= Math.Abs(deltaY)
+                ? $"M {N(source.X)} {N(source.Y)} Q {N((source.X + target.X) / 2)} {N(Math.Min(source.Y, target.Y) - arch)} {N(target.X)} {N(target.Y)}"
+                : $"M {N(source.X)} {N(source.Y)} Q {N(Math.Min(source.X, target.X) - arch)} {N((source.Y + target.Y) / 2)} {N(target.X)} {N(target.Y)}";
+        }
+
         if (connector.Equals("flowchart", StringComparison.OrdinalIgnoreCase) ||
             connector.Equals("square", StringComparison.OrdinalIgnoreCase))
         {

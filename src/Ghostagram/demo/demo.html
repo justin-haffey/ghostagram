@@ -91,7 +91,7 @@
         { id: "handoff", sourcePortId: "start-out", targetPortId: "review-in", type: "workflow-flow", overlays: [{ type: "label", label: "handoff", location: .25, offsetY: -10 }, { type: "status-dot", location: .72, state: "ready" }, { type: "plain-arrow", location: 0 }, { type: "arrow" }] },
         { id: "review-next", sourcePortId: "review-out", targetPortId: "alternate-in", connector: "straight", overlays: [{ type: "label", label: "next", location: .5, offsetY: -10 }, { type: "arrow" }] },
         { id: "review-top-next", sourcePortId: "review-top-out", targetPortId: "alternate-in", connector: "bezier", overlays: [{ type: "label", label: "top", location: .5, offsetY: -10 }, { type: "arrow" }] },
-        { id: "review-bottom-next", sourcePortId: "review-bottom-out", targetPortId: "alternate-in", connector: "flowchart", connectorOptions: { cornerRadius: 10 }, overlays: [{ type: "label", label: "bottom", location: .5, offsetY: 12 }, { type: "arrow" }] }
+        { id: "review-bottom-next", sourcePortId: "review-bottom-out", targetPortId: "alternate-in", connector: "curved", overlays: [{ type: "label", label: "arch", location: .5, offsetY: 12 }, { type: "arrow" }] }
       ],
       groups: [
         { id: "review-stage", label: "Review stage", icon: "mdi:folder-outline", x: 400, y: 200, width: 240, height: 160, collapsed: false },

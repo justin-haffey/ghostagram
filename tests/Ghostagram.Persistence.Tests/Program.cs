@@ -22,6 +22,7 @@ var checks = new List<(string Name, Func<Task> Check)>
     ("selected node capture does not retain mutable source metadata", VerifyPaletteNodeCaptureSourceImmutabilityAsync),
     ("selected node capture rejects registered definitions", VerifyPaletteNodeCaptureRegisteredRejectionAsync),
     ("selected node capture falls back unsupported anchors", VerifyPaletteNodeCaptureAnchorFallbackAsync),
+    ("selected node capture stays enabled for an unregistered selection", VerifyHomeCaptureEligibilityAsync),
     ("node properties editor restores persisted connection point values", VerifyPortEditorProjectionAsync),
     ("laboratory palette apply and capture preserve complete definitions", VerifyLaboratoryPaletteProjectionAsync)
 };
@@ -443,6 +444,33 @@ static Task VerifyPaletteNodeCaptureAnchorFallbackAsync()
     Equal("left", captured.Ports.Single(port => port.Id == "target").Anchor, "target fallback anchor");
     Equal("right", captured.Ports.Single(port => port.Id == "source").Anchor, "source fallback anchor");
     Equal("right", captured.Ports.Single(port => port.Id == "both").Anchor, "both fallback anchor");
+    return Task.CompletedTask;
+}
+
+static Task VerifyHomeCaptureEligibilityAsync()
+{
+    const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+    var home = new Home();
+    var documentField = typeof(Home).GetField("_document", flags)
+        ?? throw new Exception("Home document field was not found");
+    var eligibility = typeof(Home).GetProperty("CanCaptureSelectedNode", flags)
+        ?? throw new Exception("Home capture eligibility property was not found");
+
+    documentField.SetValue(home, new DiagramDocument(
+        "capture-eligibility",
+        [new DiagramNode("capture-me", 0, 0, Label: "Capture me")],
+        [],
+        [],
+        Selection: ["capture-me"]));
+    True((bool)(eligibility.GetValue(home) ?? false), "an unregistered selected node should enable palette capture");
+
+    documentField.SetValue(home, new DiagramDocument(
+        "capture-eligibility",
+        [new DiagramNode("registered", 0, 0, Label: "Registered", TypeId: "maf.agent-component")],
+        [],
+        [],
+        Selection: ["registered"]));
+    True(!(bool)(eligibility.GetValue(home) ?? true), "a registered selected node should remain in its governed palette set");
     return Task.CompletedTask;
 }
 

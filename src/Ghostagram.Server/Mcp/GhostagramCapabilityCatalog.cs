@@ -38,7 +38,7 @@ public sealed class GhostagramCapabilityCatalog
         "group.assignNode", "group.assignGroup", "selection.replace", "viewport.set"
     ];
 
-    private static readonly string[] Connectors = ["straight", "flowchart", "bezier", "state-machine"];
+    private static readonly string[] Connectors = ["straight", "flowchart", "bezier", "curved", "state-machine"];
     private static readonly string[] Endpoints = ["blank", "dot", "rectangle"];
     private static readonly string[] Overlays =
     [

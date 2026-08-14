@@ -415,6 +415,10 @@ static void VerifyEnhancedSvgExport()
             new JsonObject
             {
                 ["id"] = "typed-edge", ["sourcePortId"] = "source-next", ["targetPortId"] = "target-in", ["type"] = "uml-aggregation"
+            },
+            new JsonObject
+            {
+                ["id"] = "arched-edge", ["sourcePortId"] = "source-next", ["targetPortId"] = "target-in", ["connector"] = "curved"
             }
         },
         ["groups"] = new JsonArray(),
@@ -442,6 +446,7 @@ static void VerifyEnhancedSvgExport()
 
     var directEdgePath = EdgePath(artifact.Content, "edge");
     var typedEdgePath = EdgePath(artifact.Content, "typed-edge");
+    var archedEdgePath = EdgePath(artifact.Content, "arched-edge");
     True(artifact.Content.Contains(">Prompt</text>", StringComparison.Ordinal), "property label must be exported");
     True(artifact.Content.Contains(">Hello</text>", StringComparison.Ordinal), "property value must be exported");
     True(artifact.Content.Contains(" C ", StringComparison.Ordinal), "Bezier connector must remain curved in SVG");
@@ -456,6 +461,7 @@ static void VerifyEnhancedSvgExport()
     True(directEdgePath.Contains("stroke=\"#dc2626\"", StringComparison.Ordinal),
         "server SVG must export a direct edge stroke color");
     True(typedEdgePath.Contains("d=\"M 180 61 L 300 40\"", StringComparison.Ordinal), "server SVG must inherit connector geometry from a reusable edge type");
+    True(archedEdgePath.Contains(" Q ", StringComparison.Ordinal), "Curved connector must export as an arched quadratic curve");
     True(typedEdgePath.Contains("stroke=\"#2563eb\"", StringComparison.Ordinal)
         && typedEdgePath.Contains("marker-start=\"url(#gp-diamond-open)\" marker-end=\"url(#gp-plain-arrow)\"", StringComparison.Ordinal),
         "server SVG must inherit its stroke color and endpoint markers from a reusable edge type");

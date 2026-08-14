@@ -18,7 +18,7 @@ The node designer offers curated presets for fast selection plus an advanced Ico
 
 ## Connectors
 
-The laboratory exposes straight, curved Bezier, and square/flowchart connectors. Arrow overlays are independent of connector geometry and remain visible for all three shapes.
+The laboratory exposes straight, tangent-preserving Bezier, arched Curved, and square/flowchart connectors. Arrow overlays are independent of connector geometry and remain visible for all four shapes.
 
 ## Reusable boundaries
 

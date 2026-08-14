@@ -9,7 +9,7 @@ const edges = Array.from({ length: 2000 }, (_, index) => ({
   id: `edge-${index}`,
   sourcePortId: `node-${index % 1000}-port`,
   targetPortId: `node-${(index * 17 + 23) % 1000}-port`,
-  connector: index % 4 === 0 ? "bezier" : index % 4 === 1 ? "state-machine" : index % 4 === 2 ? "straight" : "flowchart"
+  connector: index % 5 === 0 ? "bezier" : index % 5 === 1 ? "curved" : index % 5 === 2 ? "state-machine" : index % 5 === 3 ? "straight" : "flowchart"
 }));
 const state = __testing.buildState({ documentId: "benchmark", nodes, ports, edges });
 const dirty = { all: false, nodes: new Set(), edges: new Set(), groups: new Set(), viewport: false, selection: false };

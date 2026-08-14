@@ -256,6 +256,12 @@ test("property editors retain a neutral control palette instead of inheriting no
   assert.doesNotMatch(style, /color:inherit|currentColor/);
 });
 
+test("node labels fill the header so inherited text alignment is visible", () => {
+  const style = __testing.nodeLabelStyle();
+  assert.match(style, /flex:1 1 0/);
+  assert.match(style, /min-width:0/);
+});
+
 test("dynamic property validation permits extension types and rejects invalid references", () => {
   const custom = __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], properties: [{ id: "attachment", type: "sample/file", value: "a.txt" }] }, base.nodes[1]] });
   assert.equal(custom.nodes.get("a").properties[0].type, "sample/file");
@@ -574,9 +580,9 @@ test("a JavaScript overlay renderer extends a JSON descriptor without changing t
   assert.throws(() => __testing.buildState({ ...base, edges: [{ ...base.edges[0], overlays: [{ type: "unknown-overlay" }] }] }), /unsupported/i);
 });
 
-test("routing supports the four interop-safe connector profiles", () => {
+test("routing supports the five interop-safe connector profiles", () => {
   const a = { x: 0, y: 0 }, b = { x: 100, y: 80 };
-  for (const connector of ["straight", "flowchart", "bezier", "state-machine"]) {
+  for (const connector of ["straight", "flowchart", "bezier", "curved", "state-machine"]) {
     assert.match(__testing.route({ connector }, a, b), /^M /);
   }
 });
@@ -586,6 +592,12 @@ test("tall backward Bezier curves keep their horizontal port tangents longer", (
   assert.equal(__testing.bezierControlDistance(source, target), 102.2);
   assert.equal(__testing.bezierPath(source, target), "M 256 240 C 358.2 240, 9.8 605, 112 605");
   assert.equal(__testing.bezierControlDistance({ x: 0, y: 0 }, { x: 100, y: 80 }), 48);
+});
+
+test("Curved connectors render a deterministic arch rather than a Bezier tangent curve", () => {
+  assert.equal(__testing.curvedPath({ x: 0, y: 0 }, { x: 100, y: 0 }), "M 0 0 Q 50 -32 100 0");
+  assert.equal(__testing.curvedPath({ x: 0, y: 0 }, { x: 0, y: 100 }), "M 0 0 Q -32 50 0 100");
+  assert.match(__testing.route({ connector: "curved" }, { x: 0, y: 0 }, { x: 100, y: 0 }), / Q /);
 });
 
 test("flowchart connector options merge through edge types, preserve stubs, and round right-angle paths", () => {
@@ -613,6 +625,32 @@ test("flowchart routing honors the exit and entry direction of every static port
   }
 });
 
+test("Square routing chooses a direct orthogonal path through group containers instead of routing around them", () => {
+  const state = __testing.buildState({
+    documentId: "group-transparent-routing",
+    groups: [
+      { id: "surface", x: 0, y: 0, width: 360, height: 300, collapsed: false },
+      { id: "core", x: 392, y: 0, width: 160, height: 300, collapsed: false }
+    ],
+    nodes: [
+      { id: "source", groupId: "surface", x: 24, y: 180, width: 128, height: 48 },
+      { id: "blocker", groupId: "surface", x: 214, y: 70, width: 130, height: 70 },
+      { id: "target", groupId: "core", x: 408, y: 88, width: 128, height: 48 }
+    ],
+    ports: [
+      { id: "source-out", nodeId: "source", direction: "source", anchor: "right" },
+      { id: "target-in", nodeId: "target", direction: "target", anchor: "left" }
+    ],
+    edges: [{ id: "direct", sourcePortId: "source-out", targetPortId: "target-in", connector: "flowchart" }]
+  });
+  const edge = state.edges.get("direct"), geometry = __testing.edgeGeometry(state, edge);
+  const points = __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, __testing.buildRoutingContext(state));
+  assert.deepEqual(points, [
+    { x: 152, y: 204 }, { x: 376, y: 204 }, { x: 376, y: 112 }, { x: 408, y: 112 }
+  ]);
+  assert.ok(Math.max(...points.map(point => point.y)) < 300, "a group boundary must not push the route below the group");
+});
+
 test("obstacle-aware flowchart routing sends a backward loop through the clearest exterior corridor", () => {
   const outer = { id: "quality", x: 108, y: 245, width: 1064, height: 493, collapsed: false };
   const model = {
@@ -638,7 +676,7 @@ test("obstacle-aware flowchart routing sends a backward loop through the cleares
   const first = __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, context);
   const second = __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, __testing.buildRoutingContext(state));
   assert.deepEqual(first, second, "routing is independent of render order and prior calls");
-  assert.ok(Math.max(...first.map(point => point.y)) > outer.y + outer.height, "the return loop clears the bottom of its containing workflow region");
+  assert.ok(Math.max(...first.map(point => point.y)) < outer.y + outer.height, "group boundaries must not push the return loop outside its containing workflow region");
   assert.ok(first[1].x > first[0].x, "the source still exits its right port outward");
   assert.ok(first.at(-2).x < first.at(-1).x, "the target is still approached from its left side");
 });

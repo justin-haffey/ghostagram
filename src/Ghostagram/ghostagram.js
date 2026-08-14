@@ -31,7 +31,7 @@ const markerTypes = Object.freeze(["arrow", "plain-arrow", "triangle-open", "dia
 let iconifyScriptRequested = false;
 const supported = Object.freeze({
   protocolVersion: PROTOCOL_VERSION,
-  connectors: ["straight", "flowchart", "bezier", "state-machine"],
+  connectors: ["straight", "flowchart", "bezier", "curved", "state-machine"],
   endpoints: ["blank", "dot", "rectangle"],
   overlays: ["label", ...markerTypes],
   features: {
@@ -321,7 +321,7 @@ class GhostagramEngine {
     el.style.transform = node.rotation ? `rotate(${node.rotation}deg)` : "";
     const label = el.querySelector(".ghostagram-node-label"), icon = el.querySelector(".ghostagram-item-icon"), rotate = el.querySelector(".ghostagram-node-rotate"), handle = el.querySelector(".ghostagram-node-resize"), activeEditor = this.labelEditor?.kind === "node" && this.labelEditor.id === node.id ? this.suspendLabelEditor() : null;
     const header = document.createElement("header"); header.className = "ghostagram-node-header"; header.style.cssText = `position:absolute;left:6px;right:6px;top:0;height:${NODE_PROPERTY_TOP}px;display:flex;align-items:center;gap:5px;box-sizing:border-box;z-index:2;`;
-    label.style.cssText = "display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;";
+    label.style.cssText = nodeLabelStyle();
     icon.style.right = layout.progressive ? "28px" : "4px";
     header.append(label, icon);
     if (layout.progressive) {
@@ -1170,6 +1170,7 @@ function propertyInput(property) {
   return input;
 }
 function propertyEditorStyle(height = NODE_PROPERTY_HEIGHT) { return `min-width:0;width:100%;height:${height}px;border:1px solid ${NODE_PROPERTY_EDITOR_BORDER};border-radius:3px;background:rgba(255,255,255,.92);color:${NODE_PROPERTY_EDITOR_COLOR};font:inherit;padding:1px 4px;box-sizing:border-box;accent-color:#4f46e5;resize:none;`; }
+function nodeLabelStyle() { return "display:block;flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;"; }
 function propertyInputValue(input, property) {
   const kind = propertyEditorKind(property);
   if (kind === "toggle" || property.type === "boolean") return Boolean(input.checked);
@@ -1380,9 +1381,16 @@ function connectionPolicyAllows(port, peer) {
 function connectionPoliciesCompatible(source, target) { return connectionPolicyAllows(source, target) && connectionPolicyAllows(target, source); }
 function canConnect(state, source, target) { return source.enabled !== false && target.enabled !== false && scopesCompatible(source, target) && connectionPoliciesCompatible(source, target) && [source, target].every(port => port.maxConnections < 0 || (state.edgesByPort.get(port.id)?.size ?? 0) < port.maxConnections); }
 function canReconnect(state, edge, source, target) { return scopesCompatible(source, target) && connectionPoliciesCompatible(source, target) && [source, target].every(port => port.maxConnections < 0 || (state.edgesByPort.get(port.id)?.size ?? 0) - (port.id === edge.sourcePortId || port.id === edge.targetPortId ? 1 : 0) < port.maxConnections); }
-function route(edge, a, b, geometry, routePoints) { const custom = connectorRegistry.get(edge.connector); if (custom) return custom(a, b, edge); if (edge.waypoints?.length) return `M ${a.x} ${a.y}${edge.waypoints.map(point => ` L ${point.x} ${point.y}`).join("")} L ${b.x} ${b.y}`; if (edge.connector === "straight") return `M ${a.x} ${a.y} L ${b.x} ${b.y}`; if (edge.connector === "bezier" || edge.connector === "state-machine") return bezierPath(a, b); return flowchartPath(routePoints ?? edgeRoutePoints(edge, a, b, geometry), flowchartOptions(edge.connectorOptions).cornerRadius); }
+function route(edge, a, b, geometry, routePoints) { const custom = connectorRegistry.get(edge.connector); if (custom) return custom(a, b, edge); if (edge.waypoints?.length) return `M ${a.x} ${a.y}${edge.waypoints.map(point => ` L ${point.x} ${point.y}`).join("")} L ${b.x} ${b.y}`; if (edge.connector === "straight") return `M ${a.x} ${a.y} L ${b.x} ${b.y}`; if (edge.connector === "bezier" || edge.connector === "state-machine") return bezierPath(a, b); if (edge.connector === "curved") return curvedPath(a, b); return flowchartPath(routePoints ?? edgeRoutePoints(edge, a, b, geometry), flowchartOptions(edge.connectorOptions).cornerRadius); }
 function bezierControlDistance(a, b) { return Math.max(48, Math.abs(b.x - a.x) * .45, Math.abs(b.y - a.y) * .28); }
 function bezierPath(a, b) { const distance = bezierControlDistance(a, b), sourceControlX = svgCoordinate(a.x + distance), targetControlX = svgCoordinate(b.x - distance); return `M ${a.x} ${a.y} C ${sourceControlX} ${a.y}, ${targetControlX} ${b.y}, ${b.x} ${b.y}`; }
+function curvedPath(a, b) { const control = curvedControlPoint(a, b); return `M ${a.x} ${a.y} Q ${control.x} ${control.y} ${b.x} ${b.y}`; }
+function curvedControlPoint(a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, arch = Math.max(32, Math.min(160, Math.hypot(dx, dy) * .32));
+  return Math.abs(dx) >= Math.abs(dy)
+    ? { x: svgCoordinate((a.x + b.x) / 2), y: svgCoordinate(Math.min(a.y, b.y) - arch) }
+    : { x: svgCoordinate(Math.min(a.x, b.x) - arch), y: svgCoordinate((a.y + b.y) / 2) };
+}
 function svgCoordinate(value) { return Number(value.toFixed(3)); }
 function anchorPoint(node, anchor, peerNode) {
   let point;
@@ -1603,6 +1611,8 @@ function flowchartRoutePoints(source, target, sourceSide, targetSide, options = 
   const right = envelope.x + envelope.width + ROUTE_CORRIDOR_CLEARANCE + laneOffset;
   const candidates = uniqueRoutes([
     baseline,
+    simplifyRoutePoints([source, sourceEscape, { x: targetEscape.x, y: sourceEscape.y }, targetEscape, target]),
+    simplifyRoutePoints([source, sourceEscape, { x: sourceEscape.x, y: targetEscape.y }, targetEscape, target]),
     simplifyRoutePoints([source, sourceEscape, { x: sourceEscape.x, y: top }, { x: targetEscape.x, y: top }, targetEscape, target]),
     simplifyRoutePoints([source, sourceEscape, { x: sourceEscape.x, y: bottom }, { x: targetEscape.x, y: bottom }, targetEscape, target]),
     simplifyRoutePoints([source, sourceEscape, { x: left, y: sourceEscape.y }, { x: left, y: targetEscape.y }, targetEscape, target]),
@@ -1635,15 +1645,13 @@ function basicFlowchartRoutePoints(source, target, sourceSide, targetSide, optio
 }
 function buildRoutingContext(state, previewNodes = new Map(), previewGroups = new Map()) {
   const nodeById = new Map([...state.nodes].map(([id, node]) => [id, previewNodes.get(id) ?? node]));
-  const groupById = new Map([...state.groups].map(([id, group]) => [id, previewGroups.get(id) ?? group]));
-  const groups = [...groupById.values()].filter(group => !isGroupHiddenByCollapsedAncestor(state, group));
   const obstacles = [...nodeById.values()]
     .filter(node => !isNodeHiddenByCollapsedGroup(state, node))
     .map(node => ({ id: node.id, ...expandRectangle(rotatedRectangle(node), ROUTE_OBSTACLE_PADDING) }));
   const occupiedSegments = [];
   for (const rawEdge of [...state.edges.values()].sort((left, right) => left.id.localeCompare(right.id))) {
     const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge, previewNodes);
-    if (geometry.hidden || edge.connector === "bezier" || edge.connector === "state-machine") continue;
+    if (geometry.hidden || edge.connector === "bezier" || edge.connector === "curved" || edge.connector === "state-machine") continue;
     const points = edge.waypoints?.length
       ? [geometry.sourcePoint, ...edge.waypoints, geometry.targetPoint]
       : edge.connector === "straight"
@@ -1652,23 +1660,12 @@ function buildRoutingContext(state, previewNodes = new Map(), previewGroups = ne
     for (let index = 1; index < points.length; index++) if (!samePoint(points[index - 1], points[index])) occupiedSegments.push({ edgeId: edge.id, a: points[index - 1], b: points[index] });
   }
   return {
-    groupById,
-    groupIndex: buildSpatialIndex(groups, item => item),
     obstacleIndex: buildSpatialIndex(obstacles, item => item),
     segmentIndex: buildSpatialIndex(occupiedSegments, item => segmentBounds(item.a, item.b, 2))
   };
 }
 function routingEnvelope(context, geometry, source, target) {
   const rectangles = [rectangleForItem(geometry.sourceItem), rectangleForItem(geometry.targetItem)].filter(Boolean);
-  for (const node of [geometry.sourceNode, geometry.targetNode]) {
-    let groupId = node?.groupId;
-    while (groupId) {
-      const group = context.groupById.get(groupId);
-      if (!group) break;
-      rectangles.push(rectangleForItem(group));
-      groupId = group.parentGroupId;
-    }
-  }
   const direct = expandRectangle(rectangleForPoints(source, target), ROUTE_CORRIDOR_CLEARANCE);
   for (const obstacle of querySpatialIndex(context.obstacleIndex, direct)) if (rectanglesIntersect(direct, obstacle)) rectangles.push(obstacle);
   if (!rectangles.length) return direct;
@@ -1679,7 +1676,7 @@ function routingEnvelope(context, geometry, source, target) {
 function flowchartRouteScore(points, edge, geometry, context) {
   const segments = points.slice(1).map((point, index) => ({ a: points[index], b: point }));
   const endpointIds = new Set([geometry.sourceNode?.id, geometry.targetNode?.id].filter(Boolean));
-  const obstacleHits = new Set(), relevantGroups = new Set();
+  const obstacleHits = new Set();
   let overlap = 0, crossings = 0;
   for (const [index, segment] of segments.entries()) {
     const bounds = segmentBounds(segment.a, segment.b, 2);
@@ -1687,7 +1684,6 @@ function flowchartRouteScore(points, edge, geometry, context) {
       const endpointEscape = endpointIds.has(obstacle.id) && (index === 0 || index === segments.length - 1);
       if (!endpointEscape && segmentIntersectsRectangle(segment.a, segment.b, obstacle)) obstacleHits.add(obstacle.id);
     }
-    for (const group of querySpatialIndex(context.groupIndex, bounds)) relevantGroups.add(group);
     if (index === 0 || index === segments.length - 1) continue;
     for (const occupied of querySpatialIndex(context.segmentIndex, bounds)) {
       if (occupied.edgeId === edge.id) continue;
@@ -1696,13 +1692,7 @@ function flowchartRouteScore(points, edge, geometry, context) {
       else if (!sharesEndpoint(segment.a, segment.b, occupied.a, occupied.b) && segmentsIntersect(segment.a, segment.b, occupied.a, occupied.b)) crossings += 1;
     }
   }
-  let groupPenalty = 0;
-  for (const group of relevantGroups) {
-    const required = pointInRectangle(points[0], group) === pointInRectangle(points.at(-1), group) ? 0 : 1;
-    const crossingsForGroup = segments.reduce((total, segment) => total + segmentRectangleBoundaryCrossings(segment.a, segment.b, group), 0);
-    groupPenalty += Math.max(0, crossingsForGroup - required) * 600;
-  }
-  return obstacleHits.size * 1_000_000 + overlap * 8 + crossings * 300 + groupPenalty + polylineLength(points) + Math.max(0, points.length - 2) * 24;
+  return obstacleHits.size * 1_000_000 + overlap * 8 + crossings * 300 + polylineLength(points) + Math.max(0, points.length - 2) * 24;
 }
 function uniqueRoutes(routes) { const seen = new Set(); return routes.filter(points => { const key = points.map(point => `${point.x},${point.y}`).join(";"); if (seen.has(key)) return false; seen.add(key); return true; }); }
 function stableRouteLane(value = "") { let hash = 0; for (let index = 0; index < value.length; index++) hash = (hash * 31 + value.charCodeAt(index)) >>> 0; return hash % 4; }
@@ -1818,6 +1808,11 @@ function edgesInRectangle(state, rectangle, routingContext = buildRoutingContext
   }).map(edge => edge.id);
 }
 function edgeSelectionPoints(edge, source, target, geometry, routingContext) {
+  if (edge.connector === "curved") {
+    const control = curvedControlPoint(source, target), points = [];
+    for (let index = 0; index <= 12; index++) { const t = index / 12, inverse = 1 - t; points.push({ x: inverse ** 2 * source.x + 2 * inverse * t * control.x + t ** 2 * target.x, y: inverse ** 2 * source.y + 2 * inverse * t * control.y + t ** 2 * target.y }); }
+    return points;
+  }
   if (edge.connector !== "bezier" && edge.connector !== "state-machine") return edgeRoutePoints(edge, source, target, geometry, routingContext);
   const dx = Math.max(48, Math.abs(target.x - source.x) * .45), points = [];
   for (let index = 0; index <= 12; index++) { const t = index / 12, inverse = 1 - t; points.push({ x: inverse ** 3 * source.x + 3 * inverse ** 2 * t * (source.x + dx) + 3 * inverse * t ** 2 * (target.x - dx) + t ** 3 * target.x, y: inverse ** 3 * source.y + 3 * inverse ** 2 * t * source.y + 3 * inverse * t ** 2 * target.y + t ** 3 * target.y }); }
@@ -1999,4 +1994,4 @@ function asProblem(error) {
 function ok(requestId, renderedRevision, stats) { return { ok: true, requestId, renderedRevision, stats }; }
 function failed(request, code, message, renderedRevision, details) { return { ok: false, requestId: request?.requestId ?? null, renderedRevision, stats: {}, problem: { code, message, details } }; }
 
-export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgBounds, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteScore, gridCssProjection, groupDragMode, groupDuplicatePayload, groupForGroupPosition, groupForNodePosition, groupInteractionTarget, groupMovePayload, groupVisibilityDescriptor, groupsAtPosition, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLayoutProjection, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, selectionRequiresMultiGroupDrag, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportExportBounds, viewportPoint };
+export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, curvedPath, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgBounds, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteScore, gridCssProjection, groupDragMode, groupDuplicatePayload, groupForGroupPosition, groupForNodePosition, groupInteractionTarget, groupMovePayload, groupVisibilityDescriptor, groupsAtPosition, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLabelStyle, nodeLayoutProjection, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, selectionRequiresMultiGroupDrag, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportExportBounds, viewportPoint };
