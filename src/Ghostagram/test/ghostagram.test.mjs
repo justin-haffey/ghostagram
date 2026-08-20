@@ -256,10 +256,41 @@ test("property editors retain a neutral control palette instead of inheriting no
   assert.doesNotMatch(style, /color:inherit|currentColor/);
 });
 
-test("node labels fill the header so inherited text alignment is visible", () => {
-  const style = __testing.nodeLabelStyle();
-  assert.match(style, /flex:1 1 0/);
-  assert.match(style, /min-width:0/);
+test("simple node labels wrap across their card while property headers remain compact", () => {
+  const compact = __testing.nodeLabelStyle();
+  assert.match(compact, /flex:1 1 0/);
+  assert.match(compact, /min-width:0/);
+  assert.match(compact, /white-space:nowrap/);
+
+  const wrapped = __testing.nodeLabelStyle(true);
+  assert.match(wrapped, /height:100%/);
+  assert.match(wrapped, /overflow-wrap:anywhere/);
+  assert.match(wrapped, /white-space:normal/);
+  assert.doesNotMatch(wrapped, /text-overflow:ellipsis/);
+});
+
+test("full label layout excludes non-progressive property-bearing nodes", () => {
+  const simple = __testing.nodeLayoutProjection({ id: "note", width: 176, height: 80 });
+  const propertyNode = __testing.nodeLayoutProjection({
+    id: "property-node",
+    width: 176,
+    height: 80,
+    properties: [{ id: "summary", type: "string", mode: "display", value: "Visible" }]
+  });
+  const hiddenPropertyNode = __testing.nodeLayoutProjection({
+    id: "hidden-property-node",
+    width: 176,
+    height: 80,
+    properties: [{ id: "internal", type: "string", mode: "hidden", value: "Hidden" }]
+  });
+
+  assert.equal(simple.progressive, false);
+  assert.equal(__testing.nodeUsesFullLabelLayout({ properties: [] }, simple), true);
+  assert.equal(propertyNode.progressive, false);
+  assert.equal(propertyNode.rows.length, 1);
+  assert.equal(__testing.nodeUsesFullLabelLayout({ properties: [{ id: "summary" }] }, propertyNode), false);
+  assert.equal(hiddenPropertyNode.rows.length, 0);
+  assert.equal(__testing.nodeUsesFullLabelLayout({ properties: [{ id: "internal" }] }, hiddenPropertyNode), false);
 });
 
 test("dynamic property validation permits extension types and rejects invalid references", () => {

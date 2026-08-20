@@ -22,6 +22,7 @@ var checks = new List<(string Name, Func<Task> Check)>
     ("selected node capture does not retain mutable source metadata", VerifyPaletteNodeCaptureSourceImmutabilityAsync),
     ("selected node capture rejects registered definitions", VerifyPaletteNodeCaptureRegisteredRejectionAsync),
     ("selected node capture falls back unsupported anchors", VerifyPaletteNodeCaptureAnchorFallbackAsync),
+    ("selected node capture preserves JSON anchor sides", VerifyPaletteNodeCaptureJsonAnchorSidesAsync),
     ("selected node capture stays enabled for an unregistered selection", VerifyHomeCaptureEligibilityAsync),
     ("node properties editor restores persisted connection point values", VerifyPortEditorProjectionAsync),
     ("laboratory palette apply and capture preserve complete definitions", VerifyLaboratoryPaletteProjectionAsync)
@@ -444,6 +445,38 @@ static Task VerifyPaletteNodeCaptureAnchorFallbackAsync()
     Equal("left", captured.Ports.Single(port => port.Id == "target").Anchor, "target fallback anchor");
     Equal("right", captured.Ports.Single(port => port.Id == "source").Anchor, "source fallback anchor");
     Equal("right", captured.Ports.Single(port => port.Id == "both").Anchor, "both fallback anchor");
+    return Task.CompletedTask;
+}
+
+static Task VerifyPaletteNodeCaptureJsonAnchorSidesAsync()
+{
+    using var anchors = JsonDocument.Parse("""
+        {
+          "left": "left",
+          "right": "right",
+          "top": "top",
+          "bottom": "bottom",
+          "relativeTop": [0.5, 0],
+          "relativeLeft": { "x": 0, "y": 0.5 }
+        }
+        """);
+    var node = new DiagramNode("json-anchors", 0, 0, Label: "JSON anchors");
+    var captured = PaletteNodeDefinitionCapture.Capture(node,
+    [
+        new DiagramPort("left", node.Id, "both", Anchor: anchors.RootElement.GetProperty("left").Clone()),
+        new DiagramPort("right", node.Id, "both", Anchor: anchors.RootElement.GetProperty("right").Clone()),
+        new DiagramPort("top", node.Id, "both", Anchor: anchors.RootElement.GetProperty("top").Clone()),
+        new DiagramPort("bottom", node.Id, "both", Anchor: anchors.RootElement.GetProperty("bottom").Clone()),
+        new DiagramPort("relative-top", node.Id, "both", Anchor: anchors.RootElement.GetProperty("relativeTop").Clone()),
+        new DiagramPort("relative-left", node.Id, "both", Anchor: anchors.RootElement.GetProperty("relativeLeft").Clone())
+    ]);
+
+    Equal("left", captured.Ports.Single(port => port.Id == "left").Anchor, "captured JSON left anchor");
+    Equal("right", captured.Ports.Single(port => port.Id == "right").Anchor, "captured JSON right anchor");
+    Equal("top", captured.Ports.Single(port => port.Id == "top").Anchor, "captured JSON top anchor");
+    Equal("bottom", captured.Ports.Single(port => port.Id == "bottom").Anchor, "captured JSON bottom anchor");
+    Equal("top", captured.Ports.Single(port => port.Id == "relative-top").Anchor, "captured JSON relative top anchor");
+    Equal("left", captured.Ports.Single(port => port.Id == "relative-left").Anchor, "captured JSON relative left anchor");
     return Task.CompletedTask;
 }
 

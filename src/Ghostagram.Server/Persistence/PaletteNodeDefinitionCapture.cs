@@ -119,9 +119,84 @@ public static class PaletteNodeDefinitionCapture
 
     private static string NormalizeAnchor(object? anchor, string direction)
     {
-        if (anchor is string value && value is "left" or "right" or "top" or "bottom") return value;
+        if (TryNormalizeAnchor(anchor, out var side)) return side;
         return direction.Equals("target", StringComparison.OrdinalIgnoreCase) ? "left" : "right";
     }
+
+    private static bool TryNormalizeAnchor(object? anchor, out string side)
+    {
+        if (anchor is string value && IsCardinalSide(value))
+        {
+            side = value;
+            return true;
+        }
+
+        if (anchor is IReadOnlyList<double> values && values.Count >= 2)
+        {
+            side = RelativeAnchorSide(values[0], values[1]);
+            return true;
+        }
+
+        if (anchor is JsonElement element)
+            return TryNormalizeJsonAnchor(element, out side);
+
+        side = string.Empty;
+        return false;
+    }
+
+    private static bool TryNormalizeJsonAnchor(JsonElement anchor, out string side)
+    {
+        if (anchor.ValueKind == JsonValueKind.String && IsCardinalSide(anchor.GetString()))
+        {
+            side = anchor.GetString()!;
+            return true;
+        }
+
+        if (anchor.ValueKind == JsonValueKind.Array)
+        {
+            var values = anchor.EnumerateArray().Take(2).ToArray();
+            if (values.Length == 2 && values.All(value => value.ValueKind == JsonValueKind.Number && value.TryGetDouble(out _)))
+            {
+                side = RelativeAnchorSide(values[0].GetDouble(), values[1].GetDouble());
+                return true;
+            }
+        }
+
+        if (anchor.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var propertyName in new[] { "side", "type" })
+            {
+                if (anchor.TryGetProperty(propertyName, out var value)
+                    && value.ValueKind == JsonValueKind.String
+                    && IsCardinalSide(value.GetString()))
+                {
+                    side = value.GetString()!;
+                    return true;
+                }
+            }
+
+            if (anchor.TryGetProperty("x", out var x) && x.TryGetDouble(out var relativeX)
+                && anchor.TryGetProperty("y", out var y) && y.TryGetDouble(out var relativeY))
+            {
+                side = RelativeAnchorSide(relativeX, relativeY);
+                return true;
+            }
+        }
+
+        side = string.Empty;
+        return false;
+    }
+
+    private static bool IsCardinalSide(string? value) => value is "left" or "right" or "top" or "bottom";
+
+    private static string RelativeAnchorSide(double x, double y) => y switch
+    {
+        0 => "top",
+        1 => "bottom",
+        _ when x == 0 => "left",
+        _ when x == 1 => "right",
+        _ => "right"
+    };
 
     private static string ResolvePropertyDirection(IEnumerable<string> directions)
     {
