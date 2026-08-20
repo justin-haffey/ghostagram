@@ -7,4 +7,7 @@
     <ProjectReference Include="..\..\src\Ghostagram.Contracts\Ghostagram.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Ghostagram.Server\Ghostagram.Server.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\fixtures\custom-renderer-svg-parity.v1.json" Link="fixtures\custom-renderer-svg-parity.v1.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

@@ -44,14 +44,17 @@ var legacy = JsonSerializer.Deserialize<DiagramDocument>(legacyJson, webJson) ??
 Assert(legacy.Nodes.Single().Properties.Count == 0, "Legacy nodes default to no dynamic properties.");
 Assert(legacy.Nodes.Single().TypeId is null && legacy.Nodes.Single().TypeVersion == 1, "Legacy nodes retain neutral type defaults.");
 Assert(legacy.Nodes.Single().Sections is null && legacy.Nodes.Single().Presentation is null, "Legacy nodes remain simple when advanced presentation fields are absent.");
+Assert(legacy.Nodes.Single().RendererKey is null && legacy.Nodes.Single().RendererVersion is null, "Legacy nodes default to the standard renderer.");
 var legacyRoundTrip = JsonSerializer.Serialize(legacy, webJson);
 using var legacyRoundTripJson = JsonDocument.Parse(legacyRoundTrip);
 Assert(legacyRoundTripJson.RootElement.GetProperty("futureDocumentVersion").GetString() == "vNext", "Unknown document fields survive a typed round trip.");
 Assert(legacyRoundTripJson.RootElement.GetProperty("nodes")[0].GetProperty("futureNodeFlag").GetProperty("enabled").GetBoolean(), "Unknown node fields survive a typed round trip.");
 Assert(legacyRoundTripJson.RootElement.GetProperty("ports")[0].GetProperty("futurePortMode").GetString() == "stream", "Unknown port fields survive a typed round trip.");
 Assert(!legacyRoundTripJson.RootElement.GetProperty("nodes")[0].TryGetProperty("sections", out _) &&
-       !legacyRoundTripJson.RootElement.GetProperty("nodes")[0].TryGetProperty("presentation", out _),
-    "Legacy simple-node JSON does not acquire advanced presentation fields on round trip.");
+       !legacyRoundTripJson.RootElement.GetProperty("nodes")[0].TryGetProperty("presentation", out _) &&
+       !legacyRoundTripJson.RootElement.GetProperty("nodes")[0].TryGetProperty("rendererKey", out _) &&
+       !legacyRoundTripJson.RootElement.GetProperty("nodes")[0].TryGetProperty("rendererVersion", out _),
+    "Legacy simple-node JSON does not acquire advanced presentation or renderer fields on round trip.");
 
 var values = new[]
 {
@@ -70,6 +73,16 @@ var typedRoundTrip = JsonSerializer.Deserialize<DiagramNode>(JsonSerializer.Seri
 Assert(typedRoundTrip.Properties.Count == values.Length, "All property values survive serialization.");
 Assert(typedRoundTrip.Properties.Single(property => property.Id == "nothing").Value is null, "A JSON null remains a null property value after serialization.");
 Assert(typedRoundTrip.Properties.Single(property => property.Id == "custom").Value?.GetProperty("customerId").GetInt32() == 17, "Custom JSON datatypes remain lossless.");
+
+var customRenderedNode = new DiagramNode("custom-rendered", 0, 0, RendererKey: "test.card", RendererVersion: 2);
+var customRenderedJson = JsonSerializer.Serialize(customRenderedNode, webJson);
+using (var customRenderedShape = JsonDocument.Parse(customRenderedJson))
+{
+    Assert(customRenderedShape.RootElement.GetProperty("rendererKey").GetString() == "test.card", "Renderer keys use the stable web JSON field name.");
+    Assert(customRenderedShape.RootElement.GetProperty("rendererVersion").GetInt32() == 2, "Renderer versions survive serialization.");
+}
+var customRenderedRoundTrip = JsonSerializer.Deserialize<DiagramNode>(customRenderedJson, webJson)!;
+Assert(customRenderedRoundTrip.RendererKey == "test.card" && customRenderedRoundTrip.RendererVersion == 2, "Custom renderer identity survives a typed round trip.");
 
 var advancedNode = new DiagramNode(
     "advanced", 10, 20, 280, 196, "Advanced",

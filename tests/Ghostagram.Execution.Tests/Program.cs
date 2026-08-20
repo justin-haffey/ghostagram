@@ -1,8 +1,14 @@
 using System.Text.Json;
+using System.Reflection;
 using Ghostagram.Core;
 using Ghostagram.Execution;
 using Ghostagram.NodeSets.Maf;
 using Ghostagram.NodeSets.UML;
+using Ghostworx.System.Graph.Features;
+using Ghostworx.System.Graph.Validation;
+using SystemGraph = Ghostworx.System.Graph;
+
+#pragma warning disable CS0618 // This suite intentionally proves compatibility-adapter parity and obsolescence.
 
 var simpleType = new NodeTypeDescriptor(
     "test.node", 1, "Test node", "Tests", "Science", 200, 120,
@@ -39,6 +45,9 @@ Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests",
 Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", properties: [new("choice", "Choice", DiagramPropertyTypes.Enum)]), "Enum property 'choice' requires at least one option.");
 Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", ports: [new("bad", "sideways")]), "Port 'bad' has invalid direction 'sideways'.");
 Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", ports: [new("bad", Anchor: "diagonal")]), "Port 'bad' has invalid fixed anchor 'diagonal'.");
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", rendererKey: " ", rendererVersion: 1), "A renderer key cannot be blank.");
+Expect<ArgumentException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", rendererKey: "test.card"), "Renderer key and version must be specified together.");
+Expect<ArgumentOutOfRangeException>(() => new NodeTypeDescriptor("bad", 1, "Bad", "Tests", rendererKey: "test.card", rendererVersion: 0), "A renderer version must be positive.");
 
 var mutableSections = new List<NodeSectionDefinition>
 {
@@ -56,7 +65,9 @@ var advancedType = new NodeTypeDescriptor(
         new("color", "Color", SectionId: "preferences", Editor: new(DiagramPropertyEditorKinds.Color))
     ],
     sections: mutableSections,
-    presentation: new(CollapsedSectionIds: ["advanced"]));
+    presentation: new(CollapsedSectionIds: ["advanced"]),
+    rendererKey: "test.card",
+    rendererVersion: 2);
 mutableSections[0] = new("mutated", "Mutated");
 Assert(advancedType.Sections[0].Id == "identity", "Catalog construction defensively clones section definitions.");
 Assert(advancedType.Presentation!.CollapsedSectionIds!.SequenceEqual(["advanced"]), "Catalog construction owns an immutable collapse-state snapshot.");
@@ -96,10 +107,27 @@ Assert(advancedCreated.Node.Sections!.Select(section => section.Id).SequenceEqua
 Assert(advancedCreated.Node.Properties.Single(property => property.Id == "confidence").Editor?.Kind == DiagramPropertyEditorKinds.Range, "Factory materializes typed property editor hints.");
 Assert(advancedCreated.Node.Presentation!.DisplayMode == DiagramNodeDisplayModes.Expanded && advancedCreated.Node.Presentation.ExpandedHeight == 220, "Factory materializes authoritative expanded geometry.");
 Assert(advancedCreated.Node.Presentation.CollapsedSectionIds!.SequenceEqual(["advanced"]), "Factory preserves authoritative section-collapse state.");
+Assert(advancedCreated.Node.RendererKey == "test.card" && advancedCreated.Node.RendererVersion == 2, "Factory stamps the typed renderer identity from its descriptor.");
 var advancedNodeRoundTrip = JsonSerializer.Deserialize<DiagramNode>(JsonSerializer.Serialize(advancedCreated.Node, new JsonSerializerOptions(JsonSerializerDefaults.Web)), new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
 Assert(advancedNodeRoundTrip.Sections![2].ParentSectionId == "preferences" && advancedNodeRoundTrip.Properties[1].SectionId == "advanced", "Factory-created nested nodes survive a web JSON round trip.");
 
 var compiler = new GraphCompiler(registry);
+IGraphSnapshotCompiler snapshotCompiler = compiler;
+var snapshotCompileMethod = typeof(IGraphSnapshotCompiler).GetMethod(nameof(IGraphSnapshotCompiler.Compile), [typeof(SystemGraph.GraphSnapshot), typeof(GraphCompileOptions)]);
+var legacyCompileMethod = typeof(IGraphCompiler).GetMethod(nameof(IGraphCompiler.Compile), [typeof(DiagramDocument), typeof(GraphCompileOptions)]);
+var engineSnapshotCompileMethod = typeof(IGraphExecutionEngine).GetMethod(nameof(IGraphExecutionEngine.Compile), [typeof(SystemGraph.GraphSnapshot), typeof(GraphCompileOptions)]);
+var engineLegacyCompileMethod = typeof(IGraphExecutionEngine).GetMethod(nameof(IGraphExecutionEngine.Compile), [typeof(DiagramDocument), typeof(GraphCompileOptions)]);
+Assert(snapshotCompileMethod is not null && engineSnapshotCompileMethod is not null, "Execution contracts expose GraphSnapshot compilation as the graph-native call surface.");
+Assert(legacyCompileMethod?.GetCustomAttribute<ObsoleteAttribute>() is not null && engineLegacyCompileMethod?.GetCustomAttribute<ObsoleteAttribute>() is not null,
+    "Every DiagramDocument compilation contract is explicitly marked as a compatibility adapter.");
+Assert(typeof(GraphExecutionEngine).GetConstructors().Single().GetParameters()[0].ParameterType == typeof(IGraphSnapshotCompiler),
+    "The production execution engine depends on the graph-native compiler contract.");
+var compilerAlgorithms = typeof(GraphCompiler).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Select(method => method.Name).ToHashSet(StringComparer.Ordinal);
+Assert(!compilerAlgorithms.Contains("StronglyConnectedComponents") && !compilerAlgorithms.Contains("TopologicalSort") && !compilerAlgorithms.Contains("FindCyclePath"),
+    "Ghostagram retains no private SCC, topological-sort, or cycle-member traversal implementation.");
+var dagProfile = (GraphProfile?)typeof(GraphCompiler).GetField("DagProfile", BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null);
+Assert(dagProfile?.Features is [DagFeature],
+    "DAG rejection delegates to the System graph profile.");
 var dag = Document(
     ["a", "b", "c"],
     [("ab", "a", "b"), ("ac", "a", "c")]);
@@ -109,12 +137,66 @@ Assert(dagResult.Graph!.PlanFingerprint.Length == 64, "Compiled plans have a sta
 Assert(dagResult.Graph!.Stages.Select(stage => stage.Order).Distinct().Count() == 2, "DAG compiler emits concurrent topological stage orders.");
 Assert(dagResult.Graph.Stages.Count == 2, "Ready components are grouped into deterministic concurrent stage buckets.");
 Assert(dagResult.Graph.Stages.Where(stage => stage.Order == 1).SelectMany(stage => stage.NodeIds).SequenceEqual(["b", "c"]), "Independent successors share the same concurrent stage order.");
+var dagProjection = compiler.ProjectSnapshot(dag);
+Assert(dagProjection.Succeeded, "A valid diagram projects to an immutable graph snapshot.");
+var graphNativeDag = snapshotCompiler.Compile(dagProjection.Snapshot!, new(GraphCompileProfile.DagOnly));
+Assert(graphNativeDag.Succeeded, "The graph-native compiler accepts the projected DAG.");
+Assert(StageSignature(graphNativeDag) == StageSignature(dagResult), "Diagram and graph-native DAG compilation produce identical stages.");
+Assert(graphNativeDag.Graph!.PlanFingerprint == dagResult.Graph.PlanFingerprint, "Diagram and graph-native DAG compilation produce identical fingerprints.");
+
+var nativeA = new SystemGraph.NodeId(Guid.Parse("10000000-0000-0000-0000-000000000001"));
+var nativeB = new SystemGraph.NodeId(Guid.Parse("10000000-0000-0000-0000-000000000002"));
+var nativeKind = SystemGraph.NodeKind.Define("Ghostagram.Execution.Tests", "Native");
+var nativeRelationshipKind = SystemGraph.RelationshipKind.Define("Ghostagram.Execution.Tests", "Dependency");
+var nativeNodes = new[]
+{
+    new SystemGraph.GraphNodeSnapshot(nativeA, nativeKind, "A", new Dictionary<string, object?> { [GraphExecutionMetadata.LoopController] = true }),
+    new SystemGraph.GraphNodeSnapshot(nativeB, nativeKind, "B", new Dictionary<string, object?>())
+};
+var nativeForward = new SystemGraph.GraphRelationshipSnapshot(
+    new(new SystemGraph.EdgeId(Guid.Parse("20000000-0000-0000-0000-000000000001")), nativeA, nativeB, nativeRelationshipKind),
+    new Dictionary<string, object?>());
+var nativeSnapshot = new SystemGraph.GraphSnapshot(
+    new(Guid.Parse("30000000-0000-0000-0000-000000000001")), 1, nativeNodes, [nativeForward]);
+var directNativeDag = snapshotCompiler.Compile(nativeSnapshot, new(GraphCompileProfile.DagOnly));
+Assert(directNativeDag.Succeeded && directNativeDag.Graph!.Stages.Count == 2, "The graph-native compiler accepts snapshots without diagram adapter metadata.");
+var nativeReverse = new SystemGraph.GraphRelationshipSnapshot(
+    new(new SystemGraph.EdgeId(Guid.Parse("20000000-0000-0000-0000-000000000002")), nativeB, nativeA, nativeRelationshipKind),
+    new Dictionary<string, object?>());
+var directNativeCycle = snapshotCompiler.Compile(
+    new SystemGraph.GraphSnapshot(nativeSnapshot.GraphId, 2, nativeNodes, [nativeForward, nativeReverse]),
+    new(GraphCompileProfile.BoundedCycles, [new(nativeA.ToString(), 4)]));
+Assert(directNativeCycle.Succeeded && directNativeCycle.Graph!.Stages.Single().LoopGuards!.Single() == new LoopGuard(nativeA.ToString(), 4), "A native snapshot expresses its explicit bounded-cycle guard with the stable node ID.");
+var unmarkedNativeNodes = nativeNodes.Select(node => node.Id == nativeA
+    ? new SystemGraph.GraphNodeSnapshot(node.Id, node.Kind, node.NodeName, new Dictionary<string, object?>()) : node).ToArray();
+var unmarkedNativeCycle = snapshotCompiler.Compile(
+    new SystemGraph.GraphSnapshot(nativeSnapshot.GraphId, 2, unmarkedNativeNodes, [nativeForward, nativeReverse]),
+    new(GraphCompileProfile.BoundedCycles, [new(nativeA.ToString(), 4)]));
+Assert(unmarkedNativeCycle.Diagnostics.Any(diagnostic => diagnostic.Code == GraphDiagnosticCodes.CycleGuardInvalid),
+    "Native bounded-cycle guards require the explicit semantic loop-controller marker.");
+var unsupportedNativeMetadata = nativeNodes.Select(node => node.Id == nativeB
+    ? new SystemGraph.GraphNodeSnapshot(node.Id, node.Kind, node.NodeName, new Dictionary<string, object?> { ["unsafe"] = new UnsupportedFingerprintMetadata() }) : node).ToArray();
+var unsupportedNative = snapshotCompiler.Compile(
+    new SystemGraph.GraphSnapshot(nativeSnapshot.GraphId, 1, unsupportedNativeMetadata, [nativeForward]),
+    new(GraphCompileProfile.DagOnly));
+Assert(unsupportedNative.Diagnostics.Single().Code == GraphDiagnosticCodes.UnsupportedMetadata,
+    "Graph-native compilation rejects metadata without an explicit canonical fingerprint representation.");
+var weightedNative = snapshotCompiler.Compile(
+    new SystemGraph.GraphSnapshot(nativeSnapshot.GraphId, 1, nativeNodes,
+        [new SystemGraph.GraphRelationshipSnapshot(nativeForward.Relationship, new Dictionary<string, object?> { ["weight"] = 2m })]),
+    new(GraphCompileProfile.DagOnly));
+Assert(weightedNative.Succeeded && weightedNative.Graph!.PlanFingerprint != directNativeDag.Graph!.PlanFingerprint,
+    "Durable relationship metadata participates in graph-native plan fingerprints.");
 
 var cycle = Document(["a", "b"], [("ab", "a", "b"), ("ba", "b", "a")]);
 var rejectedCycle = compiler.Compile(cycle, new(GraphCompileProfile.DagOnly));
 Assert(!rejectedCycle.Succeeded, "DAG compilation rejects cycles.");
 Assert(rejectedCycle.Diagnostics.Single().Code == GraphDiagnosticCodes.CycleNotAllowed, "Cycle rejection has a stable diagnostic code.");
-Assert(rejectedCycle.Diagnostics.Single().Message == "DAG compilation does not allow cycle: a -> b -> a.", "Cycle diagnostics contain an exact deterministic path.");
+Assert(rejectedCycle.Diagnostics.Single().Message == "DAG compilation does not allow a cycle involving: a, b.", "Cycle diagnostics contain deterministic System SCC members.");
+var cycleProjection = compiler.ProjectSnapshot(cycle);
+Assert(cycleProjection.Succeeded, "A structurally valid cyclic diagram projects before policy validation.");
+var graphNativeRejectedCycle = snapshotCompiler.Compile(cycleProjection.Snapshot!, new(GraphCompileProfile.DagOnly));
+Assert(DiagnosticSignature(graphNativeRejectedCycle) == DiagnosticSignature(rejectedCycle), "Diagram and graph-native cycle rejection produce identical diagnostics.");
 
 var unguarded = compiler.Compile(cycle, new(GraphCompileProfile.BoundedCycles));
 Assert(unguarded.Diagnostics.Single().Code == GraphDiagnosticCodes.CycleGuardRequired, "Bounded cycles require an explicit guard.");
@@ -129,50 +211,60 @@ var controlledCycle = cycle with
 };
 var guarded = compiler.Compile(controlledCycle, new(GraphCompileProfile.BoundedCycles, [new("a", 5)]));
 Assert(guarded.Succeeded && guarded.Graph!.Stages.Single().LoopGuards!.Single() == new LoopGuard("a", 5), "A registered positive loop guard compiles with its SCC.");
+var controlledProjection = compiler.ProjectSnapshot(controlledCycle);
+var graphNativeGuarded = snapshotCompiler.Compile(controlledProjection.Snapshot!, new(GraphCompileProfile.BoundedCycles, [new("a", 5)]));
+Assert(graphNativeGuarded.Succeeded, "The graph-native compiler accepts an explicitly guarded cycle.");
+Assert(StageSignature(graphNativeGuarded) == StageSignature(guarded), "Diagram and graph-native bounded-cycle compilation produce identical stages and guards.");
+Assert(graphNativeGuarded.Graph!.PlanFingerprint == guarded.Graph!.PlanFingerprint, "Diagram and graph-native bounded-cycle compilation produce identical fingerprints.");
 var invalidExplicitGuard = compiler.Compile(cycle, new(GraphCompileProfile.BoundedCycles, [new("a", 5)]));
 Assert(invalidExplicitGuard.Diagnostics.Any(diagnostic => diagnostic.Code == GraphDiagnosticCodes.CycleGuardInvalid), "Explicit guards must identify registered loop-controller nodes.");
 var inferredGuard = compiler.Compile(controlledCycle, new(GraphCompileProfile.BoundedCycles));
 Assert(inferredGuard.Succeeded && inferredGuard.Graph!.Stages.Single().LoopGuards!.Single() == new LoopGuard("a", 3), "Persisted loop-guard nodes compile without a duplicate hidden option.");
 var native = compiler.Compile(cycle, new(GraphCompileProfile.AdapterNative));
 Assert(native.Succeeded, "Adapter-native compilation permits agentic loops.");
+var graphNativeAdapter = snapshotCompiler.Compile(cycleProjection.Snapshot!, new(GraphCompileProfile.AdapterNative));
+Assert(graphNativeAdapter.Succeeded && StageSignature(graphNativeAdapter) == StageSignature(native), "Diagram and graph-native adapter compilation produce identical cyclic stages.");
+Assert(graphNativeAdapter.Graph!.PlanFingerprint == native.Graph!.PlanFingerprint, "Diagram and graph-native adapter compilation produce identical fingerprints.");
 
 var propertyChanged = dag with { Nodes = dag.Nodes.Select(node => node.Id == "a" ? node with { Properties = [new("value", "Value", DiagramPropertyTypes.Integer, Json("1"))] } : node).ToArray() };
 var changedFingerprint = compiler.Compile(propertyChanged, new(GraphCompileProfile.DagOnly)).Graph!.PlanFingerprint;
 Assert(changedFingerprint != dagResult.Graph.PlanFingerprint, "Execution property changes invalidate plan fingerprints and stale checkpoints.");
+var changedProjection = compiler.ProjectSnapshot(propertyChanged);
+Assert(snapshotCompiler.Compile(changedProjection.Snapshot!, new(GraphCompileProfile.DagOnly)).Graph!.PlanFingerprint == changedFingerprint, "Graph-native compilation preserves property-sensitive fingerprint parity.");
 
 var duplicatePropertyNode = new DiagramNode("bad", 0, 0, Properties: [new("x", "X"), new("x", "X again")]);
-var duplicateProperty = compiler.Compile(new("bad", [duplicatePropertyNode], [], []), new(GraphCompileProfile.DagOnly));
+var duplicateProperty = compiler.Compile(new DiagramDocument("bad", [duplicatePropertyNode], [], []), new(GraphCompileProfile.DagOnly));
 Assert(duplicateProperty.Diagnostics.Single().Code == GraphDiagnosticCodes.DuplicateProperty, "Compiler rejects imported duplicate property IDs.");
-var missingProperty = compiler.Compile(new("bad-port", [new DiagramNode("bad", 0, 0)], [new DiagramPort("p", "bad", PropertyId: "missing")], []), new(GraphCompileProfile.DagOnly));
+var missingProperty = compiler.Compile(new DiagramDocument("bad-port", [new DiagramNode("bad", 0, 0)], [new DiagramPort("p", "bad", PropertyId: "missing")], []), new(GraphCompileProfile.DagOnly));
 Assert(missingProperty.Diagnostics.Single().Code == GraphDiagnosticCodes.PortPropertyMissing, "Compiler rejects ports attached to missing properties.");
-var invalidPortDirection = compiler.Compile(new("bad-direction", [new DiagramNode("n", 0, 0)], [new DiagramPort("p", "n", "sideways")], []), new(GraphCompileProfile.DagOnly));
+var invalidPortDirection = compiler.Compile(new DiagramDocument("bad-direction", [new DiagramNode("n", 0, 0)], [new DiagramPort("p", "n", "sideways")], []), new(GraphCompileProfile.DagOnly));
 Assert(invalidPortDirection.Diagnostics.Single().Code == GraphDiagnosticCodes.PortDirectionInvalid, "Compiler rejects invalid imported port directions.");
-var reversedEdge = compiler.Compile(new("reversed", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0)], [new DiagramPort("a-in", "a", "target"), new DiagramPort("b-out", "b", "source")], [new DiagramEdge("e", "a-in", "b-out")]), new(GraphCompileProfile.DagOnly));
+var reversedEdge = compiler.Compile(new DiagramDocument("reversed", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0)], [new DiagramPort("a-in", "a", "target"), new DiagramPort("b-out", "b", "source")], [new DiagramEdge("e", "a-in", "b-out")]), new(GraphCompileProfile.DagOnly));
 Assert(reversedEdge.Diagnostics.Single().Code == GraphDiagnosticCodes.EdgeDirectionInvalid, "Compiler rejects reversed edge topology.");
-var duplicateEdges = compiler.Compile(new("duplicate-edge", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0)], [new DiagramPort("a-out", "a", "source"), new DiagramPort("b-in", "b", "target")], [new DiagramEdge("e", "a-out", "b-in"), new DiagramEdge("e", "a-out", "b-in")]), new(GraphCompileProfile.DagOnly));
+var duplicateEdges = compiler.Compile(new DiagramDocument("duplicate-edge", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0)], [new DiagramPort("a-out", "a", "source"), new DiagramPort("b-in", "b", "target")], [new DiagramEdge("e", "a-out", "b-in"), new DiagramEdge("e", "a-out", "b-in")]), new(GraphCompileProfile.DagOnly));
 Assert(duplicateEdges.Diagnostics.Single().Code == GraphDiagnosticCodes.DuplicateEdge, "Compiler rejects duplicate edge IDs.");
-var scopeMismatch = compiler.Compile(new("scope", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0)], [new DiagramPort("a-out", "a", "source", "alpha"), new DiagramPort("b-in", "b", "target", "beta")], [new DiagramEdge("e", "a-out", "b-in")]), new(GraphCompileProfile.DagOnly));
+var scopeMismatch = compiler.Compile(new DiagramDocument("scope", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0)], [new DiagramPort("a-out", "a", "source", "alpha"), new DiagramPort("b-in", "b", "target", "beta")], [new DiagramEdge("e", "a-out", "b-in")]), new(GraphCompileProfile.DagOnly));
 Assert(scopeMismatch.Diagnostics.Single().Code == GraphDiagnosticCodes.EdgeScopeMismatch, "Compiler rejects incompatible port scopes.");
-var overCapacity = compiler.Compile(new("capacity", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0), new DiagramNode("c", 200, 0)], [new DiagramPort("a-out", "a", "source", MaxConnections: 1), new DiagramPort("b-in", "b", "target"), new DiagramPort("c-in", "c", "target")], [new DiagramEdge("ab", "a-out", "b-in"), new DiagramEdge("ac", "a-out", "c-in")]), new(GraphCompileProfile.DagOnly));
+var overCapacity = compiler.Compile(new DiagramDocument("capacity", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0), new DiagramNode("c", 200, 0)], [new DiagramPort("a-out", "a", "source", MaxConnections: 1), new DiagramPort("b-in", "b", "target"), new DiagramPort("c-in", "c", "target")], [new DiagramEdge("ab", "a-out", "b-in"), new DiagramEdge("ac", "a-out", "c-in")]), new(GraphCompileProfile.DagOnly));
 Assert(overCapacity.Diagnostics.Single().Code == GraphDiagnosticCodes.PortCapacityExceeded, "Compiler enforces MaxConnections capacity.");
 var denyPolicy = new DiagramConnectionPolicy(DenyNodeIds: ["b"]);
-var policyViolation = compiler.Compile(new("policy", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0)], [new DiagramPort("a-out", "a", "source", ConnectionPolicy: denyPolicy), new DiagramPort("b-in", "b", "target")], [new DiagramEdge("e", "a-out", "b-in")]), new(GraphCompileProfile.DagOnly));
+var policyViolation = compiler.Compile(new DiagramDocument("policy", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0)], [new DiagramPort("a-out", "a", "source", ConnectionPolicy: denyPolicy), new DiagramPort("b-in", "b", "target")], [new DiagramEdge("e", "a-out", "b-in")]), new(GraphCompileProfile.DagOnly));
 Assert(policyViolation.Diagnostics.Single().Code == GraphDiagnosticCodes.ConnectionPolicyViolation, "Compiler enforces allow and deny connection policies.");
 var emptyAllowPolicy = new DiagramConnectionPolicy(AllowPortIds: []);
-var emptyAllowViolation = compiler.Compile(new("empty-allow", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0)], [new DiagramPort("a-out", "a", "source", ConnectionPolicy: emptyAllowPolicy), new DiagramPort("b-in", "b", "target")], [new DiagramEdge("e", "a-out", "b-in")]), new(GraphCompileProfile.DagOnly));
+var emptyAllowViolation = compiler.Compile(new DiagramDocument("empty-allow", [new DiagramNode("a", 0, 0), new DiagramNode("b", 100, 0)], [new DiagramPort("a-out", "a", "source", ConnectionPolicy: emptyAllowPolicy), new DiagramPort("b-in", "b", "target")], [new DiagramEdge("e", "a-out", "b-in")]), new(GraphCompileProfile.DagOnly));
 Assert(emptyAllowViolation.Diagnostics.Single().Code == GraphDiagnosticCodes.ConnectionPolicyViolation, "A defined empty allow-list denies every connection, matching the browser runtime.");
-var samePortSelfLoop = compiler.Compile(new("same-port-loop", [new DiagramNode("a", 0, 0)], [new DiagramPort("a-both", "a", "both", MaxConnections: 1)], [new DiagramEdge("loop", "a-both", "a-both")]), new(GraphCompileProfile.AdapterNative));
+var samePortSelfLoop = compiler.Compile(new DiagramDocument("same-port-loop", [new DiagramNode("a", 0, 0)], [new DiagramPort("a-both", "a", "both", MaxConnections: 1)], [new DiagramEdge("loop", "a-both", "a-both")]), new(GraphCompileProfile.AdapterNative));
 Assert(samePortSelfLoop.Succeeded, "A same-port self-loop consumes one MaxConnections slot, matching the browser runtime.");
 var registeredDocument = new DiagramDocument("registered", [created1.Node], created1.Ports, []);
 Assert(compiler.Compile(registeredDocument, new(GraphCompileProfile.DagOnly)).Succeeded, "Factory-created registered ports satisfy descriptor schema.");
 var tamperedRegisteredPorts = created1.Ports.Select((port, index) => index == 0 ? port with { Label = "Tampered" } : port).ToArray();
 var portSchemaMismatch = compiler.Compile(registeredDocument with { Ports = tamperedRegisteredPorts }, new(GraphCompileProfile.DagOnly));
 Assert(portSchemaMismatch.Diagnostics.Single().Code == GraphDiagnosticCodes.NodePortSchemaMismatch, "Compiler rejects registered node ports that drift from their descriptor.");
-var missingRequired = compiler.Compile(new("required", [new DiagramNode("n", 0, 0, Properties: [new("name", "Name", Required: true)])], [], []), new(GraphCompileProfile.DagOnly));
+var missingRequired = compiler.Compile(new DiagramDocument("required", [new DiagramNode("n", 0, 0, Properties: [new("name", "Name", Required: true)])], [], []), new(GraphCompileProfile.DagOnly));
 Assert(missingRequired.Diagnostics.Single().Code == GraphDiagnosticCodes.RequiredPropertyMissing, "Compiler rejects missing required execution properties.");
-var invalidPrimitive = compiler.Compile(new("invalid", [new DiagramNode("n", 0, 0, Properties: [new("count", "Count", DiagramPropertyTypes.Integer, Json("\"many\""))])], [], []), new(GraphCompileProfile.DagOnly));
+var invalidPrimitive = compiler.Compile(new DiagramDocument("invalid", [new DiagramNode("n", 0, 0, Properties: [new("count", "Count", DiagramPropertyTypes.Integer, Json("\"many\""))])], [], []), new(GraphCompileProfile.DagOnly));
 Assert(invalidPrimitive.Diagnostics.Single().Code == GraphDiagnosticCodes.PropertyValueInvalid, "Compiler rejects incompatible built-in primitive values.");
-var invalidEnum = compiler.Compile(new("invalid-enum", [new DiagramNode("n", 0, 0, Properties: [new("choice", "Choice", DiagramPropertyTypes.Enum, Json("\"other\""), Options: ["one", "two"])])], [], []), new(GraphCompileProfile.DagOnly));
+var invalidEnum = compiler.Compile(new DiagramDocument("invalid-enum", [new DiagramNode("n", 0, 0, Properties: [new("choice", "Choice", DiagramPropertyTypes.Enum, Json("\"other\""), Options: ["one", "two"])])], [], []), new(GraphCompileProfile.DagOnly));
 Assert(invalidEnum.Diagnostics.Single().Code == GraphDiagnosticCodes.PropertyValueInvalid, "Compiler rejects enum values outside declared options.");
 var mutableCompiledProperties = new List<DiagramNodeProperty> { new("value", "Value", Value: Json("\"before\"")) };
 var mutableCompiledDocument = new DiagramDocument("snapshot", [new DiagramNode("n", 0, 0, Properties: mutableCompiledProperties)], [], []);
@@ -197,6 +289,12 @@ Assert(data.TryGet<int>(scopedKey, out var counter, out var counterVersion) && c
 
 var adapter = new FakeAdapter();
 var engine = new GraphExecutionEngine(compiler, [adapter]);
+var engineNativeCompilation = engine.Compile(dagProjection.Snapshot!, new(GraphCompileProfile.DagOnly));
+Assert(engineNativeCompilation.Succeeded && engineNativeCompilation.Graph!.PlanFingerprint == graphNativeDag.Graph!.PlanFingerprint,
+    "The production execution engine compiles GraphSnapshot through its primary path.");
+var engineCompatibilityCompilation = engine.Compile(dag, new(GraphCompileProfile.DagOnly));
+Assert(engineCompatibilityCompilation.Succeeded && engineCompatibilityCompilation.Graph!.PlanFingerprint == engineNativeCompilation.Graph!.PlanFingerprint,
+    "The obsolete DiagramDocument execution adapter remains parity-compatible.");
 var activator = new FakeActivator();
 var identity = new ExecutionRunIdentity("run-1", "activation-1", 1, "call-7");
 var policy = new ExecutionRunPolicy(TimeSpan.FromMinutes(5), 100, 8, 1_000);
@@ -377,6 +475,12 @@ static DiagramDocument Document(string[] nodeIds, (string Id, string Source, str
     var diagramEdges = edges.Select(edge => new DiagramEdge(edge.Id, $"{edge.Source}-out", $"{edge.Target}-in")).ToArray();
     return new("test", nodes, ports, diagramEdges);
 }
+
+static string StageSignature(GraphCompilationResult result) =>
+    JsonSerializer.Serialize(result.Graph!.Stages);
+
+static string DiagnosticSignature(GraphCompilationResult result) =>
+    JsonSerializer.Serialize(result.Diagnostics);
 
 static JsonElement Json(string json) => JsonDocument.Parse(json).RootElement.Clone();
 
@@ -644,6 +748,8 @@ sealed class FakeLease(string componentKey) : IExecutionComponentLease
 }
 
 sealed record TestState(string Name);
+
+sealed class UnsupportedFingerprintMetadata;
 
 sealed class TestHandler : NodeHandler<TestState>
 {

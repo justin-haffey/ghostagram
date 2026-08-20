@@ -74,7 +74,9 @@ public sealed class DeterministicNodeFactory(INodeTypeRegistry registry) : INode
                     section.ParentSectionId,
                     section.Order,
                     section.Collapsible)).ToArray(),
-            Presentation: ClonePresentation(descriptor.Presentation));
+            Presentation: ClonePresentation(descriptor.Presentation),
+            RendererKey: descriptor.RendererKey,
+            RendererVersion: descriptor.RendererVersion);
         var ports = descriptor.Ports.OrderBy(port => port.Order).ThenBy(port => port.Id, StringComparer.Ordinal)
             .Select(port => new DiagramPort(
                 $"{request.NodeId}:{port.Id}",

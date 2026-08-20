@@ -4,11 +4,13 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ghostagram.Blazor\Ghostagram.Blazor.csproj" />
+    <ProjectReference Include="..\Ghostagram.Bridge\Ghostagram.Bridge.csproj" />
     <ProjectReference Include="..\Ghostagram.Contracts\Ghostagram.Contracts.csproj" />
     <ProjectReference Include="..\Ghostagram.Core\Ghostagram.Core.csproj" />
     <ProjectReference Include="..\Ghostagram.Execution\Ghostagram.Execution.csproj" />
     <ProjectReference Include="..\Ghostagram.NodeSets.Maf\Ghostagram.NodeSets.Maf.csproj" />
     <ProjectReference Include="..\Ghostagram.NodeSets.UML\Ghostagram.NodeSets.UML.csproj" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Graph.Serialization\Ghostworx.System.Graph.Serialization.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.4.1" />
     <PackageReference Include="MudBlazor" Version="9.8.0" />
   </ItemGroup>

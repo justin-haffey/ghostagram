@@ -58,18 +58,28 @@ public sealed class NodeTypeDescriptor
         DiagramNodeStyle? style = null,
         bool isLoopController = false,
         IEnumerable<NodeSectionDefinition>? sections = null,
-        DiagramNodePresentation? presentation = null)
+        DiagramNodePresentation? presentation = null,
+        string? rendererKey = null,
+        int? rendererVersion = null)
     {
         if (string.IsNullOrWhiteSpace(typeId)) throw new ArgumentException("A node type identifier is required.", nameof(typeId));
         if (version < 1) throw new ArgumentOutOfRangeException(nameof(version), "A node type version must be positive.");
         if (string.IsNullOrWhiteSpace(displayName)) throw new ArgumentException("A display name is required.", nameof(displayName));
         if (string.IsNullOrWhiteSpace(paletteGroup)) throw new ArgumentException("A palette group is required.", nameof(paletteGroup));
+        if (rendererKey is not null && string.IsNullOrWhiteSpace(rendererKey))
+            throw new ArgumentException("A renderer key cannot be blank.", nameof(rendererKey));
+        if (rendererVersion is < 1)
+            throw new ArgumentOutOfRangeException(nameof(rendererVersion), "A renderer version must be positive.");
+        if ((rendererKey is null) != (rendererVersion is null))
+            throw new ArgumentException("Renderer key and version must be specified together.", nameof(rendererKey));
 
         TypeId = typeId;
         Version = version;
         DisplayName = displayName;
         PaletteGroup = paletteGroup;
         Icon = icon;
+        RendererKey = rendererKey;
+        RendererVersion = rendererVersion;
         if (!double.IsFinite(width) || width <= 0 || !double.IsFinite(height) || height <= 0)
             throw new ArgumentOutOfRangeException(nameof(width), "Node dimensions must be finite and positive.");
         Width = width;
@@ -136,6 +146,8 @@ public sealed class NodeTypeDescriptor
     public string DisplayName { get; }
     public string PaletteGroup { get; }
     public string? Icon { get; }
+    public string? RendererKey { get; }
+    public int? RendererVersion { get; }
     public double Width { get; }
     public double Height { get; }
     public DiagramNodeStyle? Style { get; }

@@ -40,7 +40,9 @@ public sealed record DiagramNode(
     int TypeVersion = 1,
     IReadOnlyList<DiagramNodeProperty>? Properties = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<DiagramNodeSection>? Sections = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DiagramNodePresentation? Presentation = null)
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DiagramNodePresentation? Presentation = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? RendererKey = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? RendererVersion = null)
 {
     public IReadOnlyList<DiagramNodeProperty> Properties { get; init; } = Properties ?? [];
     [JsonExtensionData]

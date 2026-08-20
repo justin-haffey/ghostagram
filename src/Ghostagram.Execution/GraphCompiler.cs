@@ -1,5 +1,11 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Ghostagram.Core;
+using Ghostworx.System.Graph.Algorithms;
+using Ghostworx.System.Graph.Features;
+using Ghostworx.System.Graph.Validation;
+using SystemGraph = Ghostworx.System.Graph;
 
 namespace Ghostagram.Execution;
 
@@ -29,7 +35,25 @@ public sealed record GraphCompilationResult(CompiledGraph? Graph, IReadOnlyList<
 
 public interface IGraphCompiler
 {
+    /// <summary>
+    /// Temporary DiagramDocument compatibility adapter. Remove only after persisted documents,
+    /// execution callers, and graph-to-diagram round trips use <see cref="IGraphSnapshotCompiler"/>
+    /// with parity coverage.
+    /// </summary>
+    [Obsolete("DiagramDocument compilation is a compatibility adapter. Compile a Ghostworx.System.Graph.GraphSnapshot through IGraphSnapshotCompiler instead.")]
     GraphCompilationResult Compile(DiagramDocument document, GraphCompileOptions options);
+}
+
+public interface IGraphSnapshotCompiler
+{
+    GraphCompilationResult Compile(SystemGraph.GraphSnapshot snapshot, GraphCompileOptions options);
+}
+
+public sealed record GraphSnapshotProjectionResult(
+    SystemGraph.GraphSnapshot? Snapshot,
+    IReadOnlyList<GraphDiagnostic> Diagnostics)
+{
+    public bool Succeeded => Snapshot is not null && Diagnostics.Count == 0;
 }
 
 public static class GraphDiagnosticCodes
@@ -55,28 +79,95 @@ public static class GraphDiagnosticCodes
     public const string CycleNotAllowed = "GRAPH_CYCLE_NOT_ALLOWED";
     public const string CycleGuardRequired = "GRAPH_CYCLE_GUARD_REQUIRED";
     public const string CycleGuardInvalid = "GRAPH_CYCLE_GUARD_INVALID";
+    public const string UnsupportedMetadata = "GRAPH_UNSUPPORTED_METADATA";
 }
 
-/// <summary>Projects visual ports to node dependencies, validates cycles, and emits deterministic concurrent stages.</summary>
-public sealed class GraphCompiler(INodeTypeRegistry registry) : IGraphCompiler
+public static class GraphExecutionMetadata
 {
+    public const string LoopController = "ghostagram.loopController";
+}
+
+/// <summary>Validates diagram-specific contracts, then delegates graph semantics to snapshot algorithms.</summary>
+public sealed class GraphCompiler(INodeTypeRegistry registry) : IGraphCompiler, IGraphSnapshotCompiler
+{
+    private const string LogicalNodeIdMetadata = "ghostagram.logicalNodeId";
+    private const string DiagramNodeMetadata = "ghostagram.diagramNode";
+    private const string DiagramPortsMetadata = "ghostagram.diagramPorts";
+    private const string LoopControllerMetadata = GraphExecutionMetadata.LoopController;
+    private const string ProjectedEdgeMetadata = "ghostagram.projectedEdge";
+    private const string DiagramEdgeTypeMetadata = "ghostagram.edgeType";
+    private static readonly SystemGraph.NodeKind DiagramNodeKind = SystemGraph.NodeKind.Define("Ghostagram.Execution", "DiagramNode");
+    private static readonly SystemGraph.RelationshipKind DependencyKind = SystemGraph.RelationshipKind.Define("Ghostagram.Execution", "Dependency");
+    private static readonly GraphProfile DagProfile = new([new DagFeature()]);
+
+    [Obsolete("DiagramDocument compilation is a compatibility adapter. Compile a Ghostworx.System.Graph.GraphSnapshot through IGraphSnapshotCompiler instead.")]
     public GraphCompilationResult Compile(DiagramDocument document, GraphCompileOptions options)
     {
+        ArgumentNullException.ThrowIfNull(document);
+        var projection = ProjectSnapshot(document);
+        return !projection.Succeeded
+            ? new(null, projection.Diagnostics)
+            : CompileSnapshot(projection.Snapshot!, options, document.DocumentId);
+    }
+
+    public GraphCompilationResult Compile(SystemGraph.GraphSnapshot snapshot, GraphCompileOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return CompileSnapshot(snapshot, options, snapshot.GraphId.ToString());
+    }
+
+    /// <summary>
+    /// Exposes the temporary diagram-to-snapshot adapter so migration callers can prove parity.
+    /// Its removal criteria are the same as the DiagramDocument compile overload.
+    /// </summary>
+    [Obsolete("DiagramDocument projection exists only for persisted-document migration and compatibility parity.")]
+    public GraphSnapshotProjectionResult ProjectSnapshot(DiagramDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
         var diagnostics = ValidateAndProject(document, out var nodes, out var projectedEdges);
         if (diagnostics.Count > 0) return new(null, diagnostics);
-
-        var adjacency = nodes.Keys.ToDictionary(id => id, _ => new SortedSet<string>(StringComparer.Ordinal), StringComparer.Ordinal);
-        foreach (var edge in projectedEdges) adjacency[edge.SourceNodeId].Add(edge.TargetNodeId);
-        var components = StronglyConnectedComponents(adjacency);
-        var cyclic = components.Where(component => IsCyclic(component, adjacency)).ToArray();
-
-        if (options.Profile == GraphCompileProfile.DagOnly && cyclic.Length > 0)
+        var nodeIds = nodes.Keys.ToDictionary(id => id, id => StableNodeId(id), StringComparer.Ordinal);
+        var portsByNode = document.Ports.GroupBy(port => port.NodeId, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<DiagramPort>)Array.AsReadOnly(group.OrderBy(port => port.Id, StringComparer.Ordinal).ToArray()), StringComparer.Ordinal);
+        var snapshotNodes = nodes.Values.Select(node =>
         {
-            diagnostics.AddRange(cyclic.Select(component => CycleDiagnostic(
+            var isLoopController = node.TypeId is not null && registry.TryGet(node.TypeId, node.TypeVersion, out var registration) && registration.Descriptor.IsLoopController;
+            var metadata = new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                [LogicalNodeIdMetadata] = node.Id,
+                [DiagramNodeMetadata] = CloneNode(node),
+                [DiagramPortsMetadata] = portsByNode.GetValueOrDefault(node.Id) ?? Array.Empty<DiagramPort>(),
+                [LoopControllerMetadata] = isLoopController
+            };
+            return new SystemGraph.GraphNodeSnapshot(nodeIds[node.Id], DiagramNodeKind, node.Label, metadata);
+        }).ToArray();
+        var edgeTypes = document.Edges.ToDictionary(edge => edge.Id, edge => edge.Type, StringComparer.Ordinal);
+        var snapshotRelationships = projectedEdges.Select(edge => new SystemGraph.GraphRelationshipSnapshot(
+            new SystemGraph.GraphEdge(StableEdgeId(edge.EdgeId), nodeIds[edge.SourceNodeId], nodeIds[edge.TargetNodeId], DependencyKind),
+            new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                [ProjectedEdgeMetadata] = edge,
+                [DiagramEdgeTypeMetadata] = edgeTypes.GetValueOrDefault(edge.EdgeId)
+            })).ToArray();
+        return new(new SystemGraph.GraphSnapshot(StableNodeId($"document:{document.DocumentId}"), 0, snapshotNodes, snapshotRelationships), []);
+    }
+
+    private GraphCompilationResult CompileSnapshot(SystemGraph.GraphSnapshot snapshot, GraphCompileOptions options, string documentId)
+    {
+        var diagnostics = ValidateSnapshot(snapshot, out var nodes, out var logicalIds, out var projectedEdges);
+        if (diagnostics.Count > 0) return new(null, diagnostics);
+
+        // System Graph owns SCC discovery and DAG validity. Execution only consumes those
+        // results to assign bounded-loop guards and deterministic execution stages.
+        var components = GraphAlgorithms.StronglyConnectedComponents(snapshot);
+        var cyclic = components.Where(component => IsCyclic(component, snapshot)).ToArray();
+        if (options.Profile == GraphCompileProfile.DagOnly && !DagProfile.Validate(snapshot).IsValid)
+        {
+            diagnostics.AddRange(cyclic.Select(component => CycleComponentDiagnostic(
                 GraphDiagnosticCodes.CycleNotAllowed,
-                "DAG compilation does not allow cycle",
+                "DAG compilation does not allow a cycle involving",
                 component,
-                adjacency,
+                logicalIds,
                 projectedEdges)));
             return new(null, diagnostics);
         }
@@ -84,34 +175,35 @@ public sealed class GraphCompiler(INodeTypeRegistry registry) : IGraphCompiler
         var guardByComponent = new Dictionary<string, LoopGuard>(StringComparer.Ordinal);
         if (options.Profile == GraphCompileProfile.BoundedCycles)
         {
-            var requestedGuards = options.LoopGuards ?? InferPersistedLoopGuards(document);
+            var requestedGuards = options.LoopGuards ?? InferPersistedLoopGuards(snapshot, logicalIds);
             var guards = requestedGuards.GroupBy(guard => guard.NodeId, StringComparer.Ordinal).ToArray();
             foreach (var group in guards.Where(group => group.Count() > 1 || group.Any(guard => guard.MaxIterations < 1)))
-            {
-                diagnostics.Add(new(
-                    GraphDiagnosticCodes.CycleGuardInvalid,
-                    $"Loop guard for node '{group.Key}' must be unique and have MaxIterations greater than zero.",
-                    [group.Key]));
-            }
-            var registeredControllers = document.Nodes
-                .Where(node => node.TypeId is not null && registry.TryGet(node.TypeId, node.TypeVersion, out var registration) && registration.Descriptor.IsLoopController)
-                .Select(node => node.Id)
+                diagnostics.Add(new(GraphDiagnosticCodes.CycleGuardInvalid,
+                    $"Loop guard for node '{group.Key}' must be unique and have MaxIterations greater than zero.", [group.Key]));
+
+            var registeredControllers = snapshot.Nodes
+                .Where(node => node.Metadata.TryGetValue(LoopControllerMetadata, out var value) && value is true)
+                .Select(node => logicalIds[node.Id])
                 .ToHashSet(StringComparer.Ordinal);
             foreach (var group in guards.Where(group => !registeredControllers.Contains(group.Key)))
-                diagnostics.Add(new(GraphDiagnosticCodes.CycleGuardInvalid, $"Loop guard node '{group.Key}' is not a registered loop-controller node.", [group.Key]));
+                diagnostics.Add(new(GraphDiagnosticCodes.CycleGuardInvalid,
+                    $"Loop guard node '{group.Key}' is not a registered loop-controller node.", [group.Key]));
 
             foreach (var component in cyclic)
             {
-                var matches = guards.Where(group => registeredControllers.Contains(group.Key) && component.Contains(group.Key, StringComparer.Ordinal) && group.Count() == 1 && group.Single().MaxIterations > 0)
-                    .Select(group => group.Single()).ToArray();
+                var logicalComponent = component.Select(nodeId => logicalIds[nodeId]).ToHashSet(StringComparer.Ordinal);
+                var matches = guards
+                    .Where(group => registeredControllers.Contains(group.Key) && logicalComponent.Contains(group.Key) && group.Count() == 1 && group.Single().MaxIterations > 0)
+                    .Select(group => group.Single())
+                    .ToArray();
                 if (matches.Length != 1)
                 {
-                    var path = FindCyclePath(component, adjacency);
-                    diagnostics.Add(new(
+                    diagnostics.Add(CycleComponentDiagnostic(
                         GraphDiagnosticCodes.CycleGuardRequired,
-                        $"Bounded-cycle compilation requires exactly one positive loop guard for cycle '{string.Join(" -> ", path)}'.",
-                        path.Distinct(StringComparer.Ordinal).ToArray(),
-                        CycleEdges(path, projectedEdges)));
+                        "Bounded-cycle compilation requires exactly one positive loop guard for the cycle involving",
+                        component,
+                        logicalIds,
+                        projectedEdges));
                 }
                 else
                 {
@@ -121,16 +213,91 @@ public sealed class GraphCompiler(INodeTypeRegistry registry) : IGraphCompiler
             if (diagnostics.Count > 0) return new(null, diagnostics);
         }
 
-        var stages = BuildStages(components, projectedEdges, guardByComponent);
+        var stages = BuildStages(snapshot, components, logicalIds, guardByComponent);
         var graph = new CompiledGraph(
-            document.DocumentId,
+            documentId,
             options.Profile,
-            Fingerprint(document, options.Profile, stages),
-            Array.AsReadOnly(nodes.Values.OrderBy(node => node.Id, StringComparer.Ordinal).Select(CloneNode).ToArray()),
+            Fingerprint(snapshot, options.Profile, stages, logicalIds),
+            Array.AsReadOnly(nodes.Values.OrderBy(node => logicalIds[node.Id], StringComparer.Ordinal).Select(node => SnapshotDiagramNode(node, logicalIds[node.Id])).ToArray()),
             Array.AsReadOnly(projectedEdges.ToArray()),
-            Array.AsReadOnly(stages.Select(stage => new ExecutionStage(stage.Order, Array.AsReadOnly(stage.NodeIds.ToArray()), Array.AsReadOnly((stage.LoopGuards ?? []).ToArray()))).ToArray()));
+            Array.AsReadOnly(stages.Select(stage => new ExecutionStage(
+                stage.Order,
+                Array.AsReadOnly(stage.NodeIds.ToArray()),
+                Array.AsReadOnly((stage.LoopGuards ?? []).ToArray()))).ToArray()));
         return new(graph, []);
     }
+
+    private static List<GraphDiagnostic> ValidateSnapshot(
+        SystemGraph.GraphSnapshot snapshot,
+        out IReadOnlyDictionary<SystemGraph.NodeId, SystemGraph.GraphNodeSnapshot> nodes,
+        out IReadOnlyDictionary<SystemGraph.NodeId, string> logicalIds,
+        out IReadOnlyList<ProjectedEdge> projectedEdges)
+    {
+        var diagnostics = new List<GraphDiagnostic>();
+        var nodeGroups = snapshot.Nodes.GroupBy(node => node.Id).ToArray();
+        foreach (var duplicate in nodeGroups.Where(group => group.Count() > 1))
+            diagnostics.Add(new(GraphDiagnosticCodes.DuplicateNode, $"Node id '{duplicate.Key}' is duplicated.", [duplicate.Key.ToString()]));
+        var nodeMap = nodeGroups.ToDictionary(group => group.Key, group => group.First());
+        nodes = nodeMap;
+        var logical = nodeMap.Values.ToDictionary(node => node.Id, LogicalNodeId);
+        logicalIds = logical;
+        foreach (var duplicate in logical.GroupBy(pair => pair.Value, StringComparer.Ordinal).Where(group => group.Count() > 1))
+            diagnostics.Add(new(GraphDiagnosticCodes.DuplicateNode, $"Node id '{duplicate.Key}' is duplicated.", [duplicate.Key]));
+        foreach (var node in nodeMap.Values)
+            foreach (var metadata in node.Metadata.Where(pair => pair.Key is not (LogicalNodeIdMetadata or DiagramNodeMetadata or DiagramPortsMetadata or LoopControllerMetadata)))
+                if (!IsFingerprintMetadataSupported(metadata.Value))
+                    diagnostics.Add(new(GraphDiagnosticCodes.UnsupportedMetadata,
+                        $"Node '{logical[node.Id]}' metadata '{metadata.Key}' uses unsupported CLR type '{metadata.Value?.GetType().FullName ?? "unknown"}'.",
+                        [logical[node.Id]]));
+
+        var relationshipGroups = snapshot.Relationships.GroupBy(item => item.Relationship.Id).ToArray();
+        foreach (var duplicate in relationshipGroups.Where(group => group.Count() > 1))
+            diagnostics.Add(new(GraphDiagnosticCodes.DuplicateEdge, $"Edge id '{duplicate.Key}' is duplicated.", [], [duplicate.Key.ToString()]));
+        var projection = new List<ProjectedEdge>();
+        foreach (var relationship in relationshipGroups.Select(group => group.First()).OrderBy(item => LogicalEdgeId(item), StringComparer.Ordinal))
+        {
+            foreach (var metadata in relationship.Metadata.Where(pair => pair.Key is not (ProjectedEdgeMetadata or DiagramEdgeTypeMetadata)))
+                if (!IsFingerprintMetadataSupported(metadata.Value))
+                    diagnostics.Add(new(GraphDiagnosticCodes.UnsupportedMetadata,
+                        $"Relationship '{LogicalEdgeId(relationship)}' metadata '{metadata.Key}' uses unsupported CLR type '{metadata.Value?.GetType().FullName ?? "unknown"}'.",
+                        [], [LogicalEdgeId(relationship)]));
+            if (!nodeMap.ContainsKey(relationship.Relationship.Source) || !nodeMap.ContainsKey(relationship.Relationship.Target))
+            {
+                diagnostics.Add(new(GraphDiagnosticCodes.EdgePortMissing,
+                    $"Graph relationship '{LogicalEdgeId(relationship)}' references a missing node.", [], [LogicalEdgeId(relationship)]));
+                continue;
+            }
+            projection.Add(relationship.Metadata.TryGetValue(ProjectedEdgeMetadata, out var value) && value is ProjectedEdge projected
+                ? projected
+                : new(
+                    LogicalEdgeId(relationship),
+                    logical[relationship.Relationship.Source],
+                    logical[relationship.Relationship.Target],
+                    $"{logical[relationship.Relationship.Source]}:out",
+                    $"{logical[relationship.Relationship.Target]}:in"));
+        }
+        projectedEdges = projection;
+        return diagnostics;
+    }
+
+    private static string LogicalNodeId(SystemGraph.GraphNodeSnapshot node) =>
+        node.Metadata.TryGetValue(LogicalNodeIdMetadata, out var value) && value is string logicalId && !string.IsNullOrWhiteSpace(logicalId)
+            ? logicalId
+            : node.Id.ToString();
+
+    private static string LogicalEdgeId(SystemGraph.GraphRelationshipSnapshot relationship) =>
+        relationship.Metadata.TryGetValue(ProjectedEdgeMetadata, out var value) && value is ProjectedEdge projected
+            ? projected.EdgeId
+            : relationship.Relationship.Id.ToString();
+
+    private static DiagramNode SnapshotDiagramNode(SystemGraph.GraphNodeSnapshot node, string logicalId) =>
+        node.Metadata.TryGetValue(DiagramNodeMetadata, out var value) && value is DiagramNode diagramNode
+            ? CloneNode(diagramNode)
+            : new DiagramNode(logicalId, 0, 0, Label: node.NodeName);
+
+    private static SystemGraph.NodeId StableNodeId(string value) => new(StableGuid($"node:{value}"));
+    private static SystemGraph.EdgeId StableEdgeId(string value) => new(StableGuid($"edge:{value}"));
+    private static Guid StableGuid(string value) => new(SHA256.HashData(Encoding.UTF8.GetBytes(value)).AsSpan(0, 16));
 
     private List<GraphDiagnostic> ValidateAndProject(
         DiagramDocument document,
@@ -290,199 +457,181 @@ public sealed class GraphCompiler(INodeTypeRegistry registry) : IGraphCompiler
         return true;
     }
 
-    private static IReadOnlyList<string[]> StronglyConnectedComponents(IReadOnlyDictionary<string, SortedSet<string>> adjacency)
-    {
-        var index = 0;
-        var indices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var lowLinks = new Dictionary<string, int>(StringComparer.Ordinal);
-        var stack = new Stack<string>();
-        var onStack = new HashSet<string>(StringComparer.Ordinal);
-        var components = new List<string[]>();
+    // Execution-specific classification of a System-produced SCC: only a multi-node
+    // component or a singleton with a self-loop requires a bounded execution guard.
+    private static bool IsCyclic(IReadOnlyList<SystemGraph.NodeId> component, SystemGraph.GraphSnapshot snapshot) =>
+        component.Count > 1 || snapshot.Relationships.Any(relationship =>
+            relationship.Relationship.Source == component[0] && relationship.Relationship.Target == component[0]);
 
-        void Visit(string node)
-        {
-            indices[node] = index;
-            lowLinks[node] = index++;
-            stack.Push(node);
-            onStack.Add(node);
-            foreach (var target in adjacency[node])
-            {
-                if (!indices.ContainsKey(target))
-                {
-                    Visit(target);
-                    lowLinks[node] = Math.Min(lowLinks[node], lowLinks[target]);
-                }
-                else if (onStack.Contains(target))
-                {
-                    lowLinks[node] = Math.Min(lowLinks[node], indices[target]);
-                }
-            }
-            if (lowLinks[node] != indices[node]) return;
-            var component = new List<string>();
-            string current;
-            do
-            {
-                current = stack.Pop();
-                onStack.Remove(current);
-                component.Add(current);
-            } while (!string.Equals(current, node, StringComparison.Ordinal));
-            components.Add(component.Order(StringComparer.Ordinal).ToArray());
-        }
-
-        foreach (var node in adjacency.Keys.Order(StringComparer.Ordinal))
-            if (!indices.ContainsKey(node)) Visit(node);
-        return components;
-    }
-
-    private static bool IsCyclic(IReadOnlyList<string> component, IReadOnlyDictionary<string, SortedSet<string>> adjacency) =>
-        component.Count > 1 || adjacency[component[0]].Contains(component[0]);
-
-    private static GraphDiagnostic CycleDiagnostic(
+    private static GraphDiagnostic CycleComponentDiagnostic(
         string code,
         string prefix,
-        IReadOnlyList<string> component,
-        IReadOnlyDictionary<string, SortedSet<string>> adjacency,
+        IReadOnlyList<SystemGraph.NodeId> component,
+        IReadOnlyDictionary<SystemGraph.NodeId, string> logicalIds,
         IReadOnlyList<ProjectedEdge> edges)
     {
-        var path = FindCyclePath(component, adjacency);
-        return new(code, $"{prefix}: {string.Join(" -> ", path)}.", path.Distinct(StringComparer.Ordinal).ToArray(), CycleEdges(path, edges));
+        var nodeIds = component.Select(nodeId => logicalIds[nodeId]).Order(StringComparer.Ordinal).ToArray();
+        var members = nodeIds.ToHashSet(StringComparer.Ordinal);
+        var edgeIds = edges
+            .Where(edge => members.Contains(edge.SourceNodeId) && members.Contains(edge.TargetNodeId))
+            .Select(edge => edge.EdgeId)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        return new(code, $"{prefix}: {string.Join(", ", nodeIds)}.", nodeIds, edgeIds);
     }
-
-    private static string[] FindCyclePath(IReadOnlyList<string> component, IReadOnlyDictionary<string, SortedSet<string>> adjacency)
-    {
-        var allowed = component.ToHashSet(StringComparer.Ordinal);
-        foreach (var start in component.Order(StringComparer.Ordinal))
-        {
-            var path = new List<string>();
-            var active = new HashSet<string>(StringComparer.Ordinal);
-            if (Find(start, start, path, active, allowed, adjacency, out var cycle)) return cycle;
-        }
-        throw new InvalidOperationException("A cyclic component did not contain a discoverable cycle.");
-
-        static bool Find(string current, string start, List<string> path, HashSet<string> active, HashSet<string> allowed,
-            IReadOnlyDictionary<string, SortedSet<string>> graph, out string[] cycle)
-        {
-            path.Add(current);
-            active.Add(current);
-            foreach (var target in graph[current].Where(allowed.Contains))
-            {
-                if (target == start)
-                {
-                    cycle = [.. path, start];
-                    return true;
-                }
-                if (!active.Contains(target) && Find(target, start, path, active, allowed, graph, out cycle)) return true;
-            }
-            active.Remove(current);
-            path.RemoveAt(path.Count - 1);
-            cycle = [];
-            return false;
-        }
-    }
-
-    private static string[] CycleEdges(IReadOnlyList<string> path, IReadOnlyList<ProjectedEdge> edges) =>
-        path.Zip(path.Skip(1), (source, target) => edges.First(edge => edge.SourceNodeId == source && edge.TargetNodeId == target).EdgeId).ToArray();
 
     private static IReadOnlyList<ExecutionStage> BuildStages(
-        IReadOnlyList<string[]> components,
-        IReadOnlyList<ProjectedEdge> edges,
+        SystemGraph.GraphSnapshot snapshot,
+        IReadOnlyList<IReadOnlyList<SystemGraph.NodeId>> components,
+        IReadOnlyDictionary<SystemGraph.NodeId, string> logicalIds,
         IReadOnlyDictionary<string, LoopGuard> guards)
     {
-        var componentByNode = components.SelectMany(component => component.Select(node => (node, component)))
-            .ToDictionary(item => item.node, item => item.component, StringComparer.Ordinal);
-        var outgoing = components.ToDictionary(ComponentKey, _ => new HashSet<string>(StringComparer.Ordinal), StringComparer.Ordinal);
-        var indegree = components.ToDictionary(ComponentKey, _ => 0, StringComparer.Ordinal);
-        foreach (var edge in edges)
-        {
-            var source = ComponentKey(componentByNode[edge.SourceNodeId]);
-            var target = ComponentKey(componentByNode[edge.TargetNodeId]);
-            if (source != target && outgoing[source].Add(target)) indegree[target]++;
-        }
+        var componentByNode = components.SelectMany(component => component.Select(nodeId => (nodeId, component)))
+            .ToDictionary(item => item.nodeId, item => item.component);
+        var representativeByKey = components.ToDictionary(ComponentKey, component => component[0], StringComparer.Ordinal);
+        var keyByRepresentative = representativeByKey.ToDictionary(pair => pair.Value, pair => pair.Key);
+        var condensationNodes = representativeByKey.Values.Select(nodeId => new SystemGraph.GraphNodeSnapshot(
+            nodeId, SystemGraph.NodeKind.Graph, null, new Dictionary<string, object?>())).ToArray();
+        var condensationRelationships = snapshot.Relationships
+            .Select(relationship => (
+                Relationship: relationship,
+                Source: componentByNode[relationship.Relationship.Source][0],
+                Target: componentByNode[relationship.Relationship.Target][0]))
+            .Where(item => item.Source != item.Target)
+            .GroupBy(item => (item.Source, item.Target))
+            .Select(group => new SystemGraph.GraphRelationshipSnapshot(
+                new SystemGraph.GraphEdge(group.First().Relationship.Relationship.Id, group.Key.Source, group.Key.Target, DependencyKind),
+                new Dictionary<string, object?>()))
+            .ToArray();
+        var condensation = new SystemGraph.GraphSnapshot(snapshot.GraphId, snapshot.Version, condensationNodes, condensationRelationships);
+        var topological = GraphAlgorithms.TopologicalSort(condensation);
+        if (!topological.Succeeded) throw new InvalidOperationException("The component projection must be acyclic.");
+        var levels = condensationNodes.ToDictionary(node => node.Id, _ => 0);
+        var incoming = condensationRelationships.GroupBy(item => item.Relationship.Target)
+            .ToDictionary(group => group.Key, group => group.ToArray());
+        foreach (var representative in topological.Order)
+            if (incoming.TryGetValue(representative, out var dependencies))
+                levels[representative] = dependencies.Max(item => levels[item.Relationship.Source] + 1);
 
-        var remaining = components.ToDictionary(ComponentKey, component => component, StringComparer.Ordinal);
-        var stages = new List<ExecutionStage>();
-        var order = 0;
-        while (remaining.Count > 0)
-        {
-            var ready = remaining.Keys.Where(key => indegree[key] == 0).Order(StringComparer.Ordinal).ToArray();
-            if (ready.Length == 0) throw new InvalidOperationException("The component projection must be acyclic.");
-            var stageNodes = ready.SelectMany(key => remaining[key]).Order(StringComparer.Ordinal).ToArray();
-            var stageGuards = ready.Where(guards.ContainsKey).Select(key => guards[key]).OrderBy(guard => guard.NodeId, StringComparer.Ordinal).ToArray();
-            stages.Add(new(order, stageNodes, stageGuards));
-            foreach (var key in ready)
+        return levels.GroupBy(pair => pair.Value)
+            .OrderBy(group => group.Key)
+            .Select(group =>
             {
-                remaining.Remove(key);
-                foreach (var target in outgoing[key]) indegree[target]--;
-            }
-            order++;
-        }
-        return stages;
+                var keys = group.Select(pair => keyByRepresentative[pair.Key]).Order(StringComparer.Ordinal).ToArray();
+                var stageNodes = keys.SelectMany(key => components.Single(component => ComponentKey(component) == key))
+                    .Select(nodeId => logicalIds[nodeId]).Order(StringComparer.Ordinal).ToArray();
+                var stageGuards = keys.Where(guards.ContainsKey).Select(key => guards[key]).OrderBy(guard => guard.NodeId, StringComparer.Ordinal).ToArray();
+                return new ExecutionStage(group.Key, stageNodes, stageGuards);
+            })
+            .ToArray();
     }
 
-    private static string ComponentKey(IEnumerable<string> component) => string.Join("\u001f", component.Order(StringComparer.Ordinal));
+    private static string ComponentKey(IEnumerable<SystemGraph.NodeId> component) =>
+        string.Join("\u001f", component.Select(nodeId => nodeId.ToString()).Order(StringComparer.Ordinal));
 
-    private IReadOnlyList<LoopGuard> InferPersistedLoopGuards(DiagramDocument document) =>
-        document.Nodes.Where(node => node.TypeId is not null && registry.TryGet(node.TypeId, node.TypeVersion, out var registration) && registration.Descriptor.IsLoopController)
-            .Select(node => (node, property: node.Properties.FirstOrDefault(property => property.Id == "maxIterations")))
+    private static IReadOnlyList<LoopGuard> InferPersistedLoopGuards(
+        SystemGraph.GraphSnapshot snapshot,
+        IReadOnlyDictionary<SystemGraph.NodeId, string> logicalIds) =>
+        snapshot.Nodes
+            .Where(node => node.Metadata.TryGetValue(LoopControllerMetadata, out var controller) && controller is true)
+            .Select(node => (node, diagramNode: node.Metadata.GetValueOrDefault(DiagramNodeMetadata) as DiagramNode))
+            .Where(item => item.diagramNode is not null)
+            .Select(item => (item.node, property: item.diagramNode!.Properties.FirstOrDefault(property => property.Id == "maxIterations")))
             .Where(item => item.property?.Value is { ValueKind: System.Text.Json.JsonValueKind.Number } value && value.TryGetInt32(out var maximum) && maximum > 0)
-            .Select(item => new LoopGuard(item.node.Id, item.property!.Value!.Value.GetInt32()))
+            .Select(item => new LoopGuard(logicalIds[item.node.Id], item.property!.Value!.Value.GetInt32()))
             .ToArray();
 
-    private static string Fingerprint(DiagramDocument document, GraphCompileProfile profile, IEnumerable<ExecutionStage> stages)
+    private static string Fingerprint(
+        SystemGraph.GraphSnapshot snapshot,
+        GraphCompileProfile profile,
+        IEnumerable<ExecutionStage> stages,
+        IReadOnlyDictionary<SystemGraph.NodeId, string> logicalIds)
     {
         var buffer = new System.Buffers.ArrayBufferWriter<byte>();
         using (var writer = new System.Text.Json.Utf8JsonWriter(buffer))
         {
             writer.WriteStartObject();
-            writer.WriteString("documentId", document.DocumentId);
+            writer.WriteString("graphId", snapshot.GraphId.ToString());
             writer.WriteString("profile", profile.ToString());
             writer.WriteStartArray("nodes");
-            foreach (var node in document.Nodes.OrderBy(node => node.Id, StringComparer.Ordinal))
+            foreach (var snapshotNode in snapshot.Nodes.OrderBy(node => logicalIds[node.Id], StringComparer.Ordinal))
             {
                 writer.WriteStartObject();
-                writer.WriteString("id", node.Id);
-                writer.WriteString("typeId", node.TypeId);
-                writer.WriteNumber("typeVersion", node.TypeVersion);
-                writer.WriteStartArray("properties");
-                foreach (var property in node.Properties.OrderBy(property => property.Id, StringComparer.Ordinal))
+                writer.WriteString("id", logicalIds[snapshotNode.Id]);
+                writer.WriteString("kind", snapshotNode.Kind.QualifiedName);
+                writer.WriteString("name", snapshotNode.NodeName);
+                if (snapshotNode.Metadata.TryGetValue(DiagramNodeMetadata, out var diagramValue) && diagramValue is DiagramNode node)
                 {
-                    writer.WriteStartObject();
-                    writer.WriteString("id", property.Id);
-                    writer.WriteString("name", property.Name);
-                    writer.WriteString("type", property.Type);
-                    writer.WriteString("mode", property.Mode);
-                    writer.WriteBoolean("required", property.Required);
-                    writer.WritePropertyName("value");
-                    if (property.Value is { } value) WriteCanonical(writer, value); else writer.WriteNullValue();
-                    writer.WriteEndObject();
+                    writer.WriteString("typeId", node.TypeId);
+                    writer.WriteNumber("typeVersion", node.TypeVersion);
+                    writer.WriteStartArray("properties");
+                    foreach (var property in node.Properties.OrderBy(property => property.Id, StringComparer.Ordinal))
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("id", property.Id);
+                        writer.WriteString("name", property.Name);
+                        writer.WriteString("type", property.Type);
+                        writer.WriteString("mode", property.Mode);
+                        writer.WriteBoolean("required", property.Required);
+                        writer.WritePropertyName("value");
+                        if (property.Value is { } value) WriteCanonical(writer, value); else writer.WriteNullValue();
+                        writer.WriteEndObject();
+                    }
+                    writer.WriteEndArray();
                 }
-                writer.WriteEndArray();
+                if (snapshotNode.Metadata.TryGetValue(DiagramPortsMetadata, out var portsValue) && portsValue is IEnumerable<DiagramPort> ports)
+                {
+                    writer.WriteStartArray("ports");
+                    foreach (var port in ports.OrderBy(port => port.Id, StringComparer.Ordinal))
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("id", port.Id);
+                        writer.WriteString("direction", port.Direction);
+                        writer.WriteString("scope", port.Scope);
+                        writer.WriteNumber("maxConnections", port.MaxConnections);
+                        writer.WriteBoolean("enabled", port.Enabled);
+                        writer.WriteString("propertyId", port.PropertyId);
+                        writer.WriteNumber("order", port.Order);
+                        writer.WriteEndObject();
+                    }
+                    writer.WriteEndArray();
+                }
+                writer.WriteStartObject("metadata");
+                foreach (var metadata in snapshotNode.Metadata
+                             .Where(pair => pair.Key is not (LogicalNodeIdMetadata or DiagramNodeMetadata or DiagramPortsMetadata or LoopControllerMetadata))
+                             .OrderBy(pair => pair.Key, StringComparer.Ordinal))
+                {
+                    writer.WritePropertyName(metadata.Key);
+                    WriteMetadataValue(writer, metadata.Value);
+                }
+                writer.WriteEndObject();
                 writer.WriteEndObject();
             }
             writer.WriteEndArray();
-            writer.WriteStartArray("ports");
-            foreach (var port in document.Ports.OrderBy(port => port.Id, StringComparer.Ordinal))
+            writer.WriteStartArray("relationships");
+            foreach (var relationship in snapshot.Relationships.OrderBy(LogicalEdgeId, StringComparer.Ordinal))
             {
                 writer.WriteStartObject();
-                writer.WriteString("id", port.Id);
-                writer.WriteString("nodeId", port.NodeId);
-                writer.WriteString("direction", port.Direction);
-                writer.WriteString("scope", port.Scope);
-                writer.WriteNumber("maxConnections", port.MaxConnections);
-                writer.WriteBoolean("enabled", port.Enabled);
-                writer.WriteString("propertyId", port.PropertyId);
-                writer.WriteNumber("order", port.Order);
+                writer.WriteString("id", LogicalEdgeId(relationship));
+                writer.WriteString("sourceNode", logicalIds[relationship.Relationship.Source]);
+                writer.WriteString("targetNode", logicalIds[relationship.Relationship.Target]);
+                writer.WriteString("kind", relationship.Relationship.Kind.QualifiedName);
+                if (relationship.Metadata.TryGetValue(ProjectedEdgeMetadata, out var projectedValue) && projectedValue is ProjectedEdge edge)
+                {
+                    writer.WriteString("sourcePort", edge.SourcePortId);
+                    writer.WriteString("targetPort", edge.TargetPortId);
+                }
+                if (relationship.Metadata.TryGetValue(DiagramEdgeTypeMetadata, out var typeValue) && typeValue is string type)
+                    writer.WriteString("type", type);
+                writer.WriteStartObject("metadata");
+                foreach (var metadata in relationship.Metadata
+                             .Where(pair => pair.Key is not (ProjectedEdgeMetadata or DiagramEdgeTypeMetadata))
+                             .OrderBy(pair => pair.Key, StringComparer.Ordinal))
+                {
+                    writer.WritePropertyName(metadata.Key);
+                    WriteMetadataValue(writer, metadata.Value);
+                }
                 writer.WriteEndObject();
-            }
-            writer.WriteEndArray();
-            writer.WriteStartArray("edges");
-            foreach (var edge in document.Edges.OrderBy(edge => edge.Id, StringComparer.Ordinal))
-            {
-                writer.WriteStartObject();
-                writer.WriteString("id", edge.Id);
-                writer.WriteString("source", edge.SourcePortId);
-                writer.WriteString("target", edge.TargetPortId);
-                writer.WriteString("type", edge.Type);
                 writer.WriteEndObject();
             }
             writer.WriteEndArray();
@@ -510,6 +659,53 @@ public sealed class GraphCompiler(INodeTypeRegistry registry) : IGraphCompiler
         }
         return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(buffer.WrittenSpan)).ToLowerInvariant();
     }
+
+    private static void WriteMetadataValue(System.Text.Json.Utf8JsonWriter writer, object? value)
+    {
+        switch (value)
+        {
+            case null:
+                writer.WriteNullValue();
+                break;
+            case JsonElement json:
+                WriteCanonical(writer, json);
+                break;
+            case string text:
+                writer.WriteStringValue(text);
+                break;
+            case bool boolean:
+                writer.WriteBooleanValue(boolean);
+                break;
+            case int number:
+                writer.WriteNumberValue(number);
+                break;
+            case long number:
+                writer.WriteNumberValue(number);
+                break;
+            case double number when double.IsFinite(number):
+                writer.WriteNumberValue(number);
+                break;
+            case decimal number:
+                writer.WriteNumberValue(number);
+                break;
+            case Guid guid:
+                writer.WriteStringValue(guid);
+                break;
+            case DateTimeOffset date:
+                writer.WriteStringValue(date);
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported fingerprint metadata type '{value.GetType().FullName}'.");
+        }
+    }
+
+    private static bool IsFingerprintMetadataSupported(object? value) => value switch
+    {
+        null or string or bool or int or long or decimal or Guid or DateTimeOffset => true,
+        double number => double.IsFinite(number),
+        JsonElement json => json.ValueKind != JsonValueKind.Undefined,
+        _ => false
+    };
 
     private static void WriteCanonical(System.Text.Json.Utf8JsonWriter writer, System.Text.Json.JsonElement value)
     {

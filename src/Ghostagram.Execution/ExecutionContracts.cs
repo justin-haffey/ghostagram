@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Ghostagram.Core;
+using SystemGraph = Ghostworx.System.Graph;
 
 namespace Ghostagram.Execution;
 
@@ -234,16 +235,28 @@ public interface IOrchestrationAdapter
 
 public interface IGraphExecutionEngine
 {
+    GraphCompilationResult Compile(SystemGraph.GraphSnapshot snapshot, GraphCompileOptions options);
+    [Obsolete("DiagramDocument compilation is a compatibility adapter. Compile a Ghostworx.System.Graph.GraphSnapshot instead.")]
     GraphCompilationResult Compile(DiagramDocument document, GraphCompileOptions options);
     ValueTask<IGraphExecutionSession> StartSessionAsync(GraphExecutionRequest request, CancellationToken cancellationToken = default);
     ValueTask<GraphExecutionResult> ExecuteAsync(GraphExecutionRequest request, CancellationToken cancellationToken = default);
 }
 
-public sealed class GraphExecutionEngine(IGraphCompiler compiler, IEnumerable<IOrchestrationAdapter> adapters) : IGraphExecutionEngine
+public sealed class GraphExecutionEngine(IGraphSnapshotCompiler compiler, IEnumerable<IOrchestrationAdapter> adapters) : IGraphExecutionEngine
 {
     private readonly IReadOnlyDictionary<string, IOrchestrationAdapter> _adapters = adapters.ToDictionary(adapter => adapter.Id, StringComparer.Ordinal);
 
-    public GraphCompilationResult Compile(DiagramDocument document, GraphCompileOptions options) => compiler.Compile(document, options);
+    public GraphCompilationResult Compile(SystemGraph.GraphSnapshot snapshot, GraphCompileOptions options) => compiler.Compile(snapshot, options);
+
+    [Obsolete("DiagramDocument compilation is a compatibility adapter. Compile a Ghostworx.System.Graph.GraphSnapshot instead.")]
+    public GraphCompilationResult Compile(DiagramDocument document, GraphCompileOptions options)
+    {
+        if (compiler is not IGraphCompiler compatibility)
+            throw new InvalidOperationException("The configured graph-native compiler does not expose the DiagramDocument compatibility adapter.");
+#pragma warning disable CS0618
+        return compatibility.Compile(document, options);
+#pragma warning restore CS0618
+    }
 
     public async ValueTask<IGraphExecutionSession> StartSessionAsync(GraphExecutionRequest request, CancellationToken cancellationToken = default)
     {

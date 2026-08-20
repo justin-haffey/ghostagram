@@ -5,7 +5,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Ghostagram.Contracts\Ghostagram.Contracts.csproj" />
     <ProjectReference Include="..\Ghostagram.Core\Ghostagram.Core.csproj" />
+    <ProjectReference Include="..\Ghostagram.Execution\Ghostagram.Execution.csproj" />
     <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Core\Ghostworx.System.Core.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
   </ItemGroup>
 </Project>

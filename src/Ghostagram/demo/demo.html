@@ -43,6 +43,21 @@
     import * as ghostagram from "../ghostagram.js";
     const events = document.querySelector("#events");
     const flowStatus = document.querySelector("#flow-status");
+    ghostagram.registerNodeRenderer("demo.review-status", 1, {
+      mount({ element, node, emit }) {
+        element.style.cssText += "display:grid;place-items:center;padding:6px;box-sizing:border-box;background:linear-gradient(135deg,rgba(14,116,144,.12),rgba(124,58,237,.12));";
+        const button = document.createElement("button");
+        button.type = "button"; button.dataset.ghostagramInteractive = "true"; button.style.cssText = "width:100%;height:100%;border:1px solid #0f766e;border-radius:4px;background:#fff;color:#0f172a;cursor:pointer;font:600 11px system-ui;";
+        button.addEventListener("click", () => emit("review.statusRequested", { status: "approved" }));
+        button.textContent = `${node.label ?? node.id}: custom body`;
+        element.replaceChildren(button);
+        return { button };
+      },
+      update({ node, state }) { state.button.textContent = `${node.label ?? node.id}: custom body`; },
+      measure({ element }) { const bounds = element.getBoundingClientRect(); return bounds.width > 0 && bounds.height > 0 ? { width: bounds.width, height: bounds.height } : null; },
+      dispose({ state }) { state?.button?.replaceChildren(); },
+      exportSvg({ node, bounds, escape }) { return `<text x="${bounds.x + bounds.width / 2}" y="${bounds.y + bounds.height / 2}" fill="#0f766e" font-size="11" font-weight="600" text-anchor="middle">${escape(`${node.label ?? node.id}: custom body`)}</text>`; }
+    });
     ghostagram.registerEndpoint("ring", element => {
       element.style.borderRadius = "50%";
       element.style.borderWidth = "3px";
@@ -74,7 +89,7 @@
       }],
       nodes: [
         { id: "start", label: "Start", x: 120, y: 120, width: 120, height: 58 },
-        { id: "review", label: "Review", icon: "mdi:clipboard-check-outline", x: 460, y: 260, width: 120, height: 58, groupId: "review-task" },
+        { id: "review", label: "Review", icon: "mdi:clipboard-check-outline", x: 460, y: 260, width: 160, height: 82, groupId: "review-task", rendererKey: "demo.review-status", rendererVersion: 1 },
         { id: "archive", label: "Archive", x: 760, y: 120, width: 120, height: 58 },
         { id: "alternate", label: "Alternate", x: 760, y: 300, width: 120, height: 58 }
       ],

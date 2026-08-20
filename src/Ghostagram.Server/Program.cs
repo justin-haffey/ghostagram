@@ -5,6 +5,7 @@ using Ghostagram.Server.Export;
 using Ghostagram.Server.Layout;
 using Ghostagram.Server.Sessions;
 using Ghostagram.Server.Persistence;
+using Ghostagram.Server.GraphWorkspaces;
 using Ghostagram.Execution;
 using Ghostagram.NodeSets.Maf;
 using Ghostagram.NodeSets.UML;
@@ -44,13 +45,17 @@ builder.Services.AddSingleton<DiagramCommandService>();
 builder.Services.AddSingleton<IDiagramLayoutStrategy, GhostLayeredLayoutStrategy>();
 builder.Services.AddSingleton<IDiagramLayoutStrategyResolver, DiagramLayoutStrategyResolver>();
 builder.Services.AddSingleton<DiagramLayoutService>();
+builder.Services.AddSingleton<INodeSvgRendererRegistry, NodeSvgRendererRegistry>();
 builder.Services.AddSingleton<IDiagramExporter, SvgDiagramExporter>();
 builder.Services.AddSingleton<DiagramSessionService>();
 builder.Services.AddSingleton<Ghostagram.Server.Mcp.GhostagramCapabilityCatalog>();
 builder.Services.AddSingleton<INodeTypeRegistry>(_ => new NodeTypeRegistry([MafOrchestrationNodeSet.Descriptor, UmlNodeSet.Descriptor]));
 builder.Services.AddSingleton<INodeFactory, DeterministicNodeFactory>();
-builder.Services.AddSingleton<IGraphCompiler, GraphCompiler>();
+builder.Services.AddSingleton<GraphCompiler>();
+builder.Services.AddSingleton<IGraphSnapshotCompiler>(provider => provider.GetRequiredService<GraphCompiler>());
+builder.Services.AddSingleton<IGraphCompiler>(provider => provider.GetRequiredService<GraphCompiler>());
 builder.Services.AddSingleton<IGraphExecutionEngine, GraphExecutionEngine>();
+builder.Services.AddGraphWorkspaceBridge();
 builder.Services.AddMcpServer()
     .WithHttpTransport()
     .WithToolsFromAssembly();
@@ -77,6 +82,7 @@ app.Use(async (context, next) =>
 });
 
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+app.MapGraphWorkspaceApi();
 app.MapGet("/api/documents", async (IDocumentCatalog catalog, CancellationToken cancellationToken)
     => Results.Ok(await catalog.ListAsync(cancellationToken)));
 app.MapGet("/api/documents/{documentId}", async (string documentId, DiagramCommandService commands, CancellationToken cancellationToken)

@@ -69,6 +69,17 @@
       "type": "object",
       "required": ["id"],
       "x-ghostagram-createRequired": ["x", "y"],
+      "oneOf": [
+        { "required": ["rendererKey", "rendererVersion"] },
+        {
+          "not": {
+            "anyOf": [
+              { "required": ["rendererKey"] },
+              { "required": ["rendererVersion"] }
+            ]
+          }
+        }
+      ],
       "properties": {
         "id": { "$ref": "#/$defs/identifier" },
         "x": { "type": "number" },
@@ -85,6 +96,16 @@
         "style": { "oneOf": [{ "$ref": "#/$defs/nodeStyle" }, { "type": "null" }] },
         "typeId": { "type": ["string", "null"] },
         "typeVersion": { "type": "integer", "minimum": 1, "default": 1 },
+        "rendererKey": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Trusted-host renderer registration key. The standard renderer is used when the key is absent or incompatible."
+        },
+        "rendererVersion": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Exact renderer contract version. The standard renderer is used when no exact registration is available."
+        },
         "properties": {
           "type": "array",
           "items": { "$ref": "#/$defs/nodeProperty" }

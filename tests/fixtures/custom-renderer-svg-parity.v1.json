@@ -1,0 +1,32 @@
+{
+  "contractVersion": 1,
+  "renderer": {
+    "key": "parity.card",
+    "version": 7,
+    "mismatchVersion": 8
+  },
+  "node": {
+    "id": "custom-parity",
+    "label": "Custom & Ready",
+    "x": 10,
+    "y": 20,
+    "width": 180,
+    "height": 100,
+    "property": {
+      "id": "value",
+      "label": "Value",
+      "value": "A&B <ready> \"quoted\""
+    }
+  },
+  "expected": {
+    "bodyBounds": {
+      "x": 10,
+      "y": 50,
+      "width": 180,
+      "height": 70
+    },
+    "customBodySvg": "<rect x=\"18\" y=\"58\" width=\"164\" height=\"54\" rx=\"4\" fill=\"#f0fdfa\" stroke=\"#0f766e\"/><text x=\"26\" y=\"80\" font-family=\"system-ui,sans-serif\" font-size=\"12\" fill=\"#134e4a\" text-anchor=\"start\">A&amp;B &lt;ready&gt; &quot;quoted&quot;</text>",
+    "escapedValue": "A&amp;B &lt;ready&gt; &quot;quoted&quot;",
+    "fallbackMode": "standard"
+  }
+}

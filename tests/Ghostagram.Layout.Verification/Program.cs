@@ -27,6 +27,7 @@ var checks = new List<(string Name, Action Check)>
     ("large sparse graph performance", VerifyPerformance),
     ("SVG preserves properties, property ports, and connector geometry", VerifyEnhancedSvgExport),
     ("server SVG mirrors progressive node presentation", VerifyProgressiveSvgExport),
+    ("server SVG satisfies the shared browser custom-renderer parity contract", VerifyCustomNodeSvgExport),
     ("authoring capabilities expose the versioned operation schema", VerifyAuthoringCapabilities),
     ("browser presence tracks successful rendered revisions", () => VerifyDocumentChangeNotifier().GetAwaiter().GetResult()),
     ("layout, collaborative session, export, and replay", () => VerifyCommandPipeline().GetAwaiter().GetResult())
@@ -565,14 +566,97 @@ static void VerifyProgressiveSvgExport()
 
 static void VerifyAuthoringCapabilities()
 {
-    var capabilities = new GhostagramCapabilityCatalog().Describe();
+    var capabilities = new GhostagramCapabilityCatalog(new NodeSvgRendererRegistry([new CapabilityNodeSvgRenderer()])).Describe();
     Equal("1.0.0", capabilities.AuthoringSchemaVersion, "capability result must expose the embedded schema version");
     True(capabilities.Operations.Contains("edgeType.upsert"), "capabilities must advertise reusable edge type authoring");
     True(capabilities.Overlays.Contains("triangle-open") && capabilities.Overlays.Contains("erd-zero-many"), "capabilities must advertise UML and ERD markers");
     var definitions = capabilities.AuthoringSchema.GetProperty("$defs");
     True(definitions.TryGetProperty("diagramDocument", out _), "schema must define complete documents");
     True(definitions.GetProperty("operation").GetProperty("oneOf").GetArrayLength() >= 10, "schema must define the supported operation union");
+    var nodeDefinition = definitions.GetProperty("node");
+    var nodeProperties = nodeDefinition.GetProperty("properties");
+    True(nodeProperties.GetProperty("rendererKey").GetProperty("type").GetString() == "string"
+        && nodeProperties.GetProperty("rendererVersion").GetProperty("type").GetString() == "integer"
+        && nodeProperties.GetProperty("rendererVersion").GetProperty("minimum").GetInt32() == 1
+        && nodeDefinition.GetProperty("oneOf").GetArrayLength() == 2,
+        "schema must require renderer key and positive exact version together or omit both");
+    Equal("exact-key-and-version", capabilities.NodeRenderers.MatchPolicy, "capabilities must advertise exact renderer matching");
+    True(capabilities.NodeRenderers.BrowserLifecycleHooks.SequenceEqual(["mount", "update", "measure", "dispose", "exportSvg"]),
+        "capabilities must expose the browser lifecycle contract without runtime registrations");
+    True(capabilities.NodeRenderers.BrowserRegistrationScope.Contains("runtime-only", StringComparison.Ordinal),
+        "server capabilities must not claim awareness of browser-local registrations");
+    True(capabilities.NodeRenderers.ServerSvgRenderers.Single() == new NodeSvgRendererRegistration("test.card", 2),
+        "capabilities must enumerate only authoritative server SVG registrations");
 }
+
+static void VerifyCustomNodeSvgExport()
+{
+    var fixturePath = Path.Combine(AppContext.BaseDirectory, "fixtures", "custom-renderer-svg-parity.v1.json");
+    var fixture = JsonSerializer.Deserialize<RendererParityFixture>(
+        File.ReadAllText(fixturePath),
+        new JsonSerializerOptions(JsonSerializerDefaults.Web))
+        ?? throw new InvalidOperationException("The custom-renderer SVG parity fixture is invalid.");
+    Equal(1, fixture.ContractVersion, "custom-renderer SVG parity contract version must be supported");
+
+    JsonElement Model(int rendererVersion) => JsonSerializer.SerializeToElement(new
+    {
+        nodes = new[]
+        {
+            new
+            {
+                id = fixture.Node.Id,
+                label = fixture.Node.Label,
+                x = fixture.Node.X,
+                y = fixture.Node.Y,
+                width = fixture.Node.Width,
+                height = fixture.Node.Height,
+                rendererKey = fixture.Renderer.Key,
+                rendererVersion,
+                properties = new[]
+                {
+                    new
+                    {
+                        id = fixture.Node.Property.Id,
+                        name = fixture.Node.Property.Label,
+                        label = fixture.Node.Property.Label,
+                        value = fixture.Node.Property.Value
+                    }
+                }
+            }
+        },
+        ports = Array.Empty<object>(), edges = Array.Empty<object>(), groups = Array.Empty<object>(), edgeTypes = Array.Empty<object>()
+    });
+
+    var renderer = new TestNodeSvgRenderer(fixture);
+    var registry = new NodeSvgRendererRegistry([renderer]);
+    Equal(new NodeSvgRendererRegistration(fixture.Renderer.Key, fixture.Renderer.Version), registry.Registrations.Single(),
+        "server registry must use the fixture's exact renderer key and version");
+    var exporter = new SvgDiagramExporter(registry);
+    var registered = exporter.Export(new("renderer-parity", 1, Model(fixture.Renderer.Version))).Content;
+    Equal(registered, exporter.Export(new("renderer-parity", 1, Model(fixture.Renderer.Version))).Content,
+        "registered custom SVG output must be deterministic");
+    True(registered.Contains($"data-node-id=\"{fixture.Node.Id}\"><rect", StringComparison.Ordinal)
+        && registered.Contains($"data-node-renderer-key=\"{fixture.Renderer.Key}\" data-node-renderer-version=\"{fixture.Renderer.Version}\"", StringComparison.Ordinal),
+        "host chrome must wrap the exact registered custom node body");
+    Equal(fixture.Expected.BodyBounds, renderer.LastBounds!, "server custom renderer body geometry must match the shared browser contract");
+    Equal(1, Count(registered, fixture.Expected.CustomBodySvg), "server custom body SVG must match the shared browser golden fragment exactly once");
+    True(registered.Contains(fixture.Expected.EscapedValue, StringComparison.Ordinal)
+        && !registered.Contains(fixture.Node.Property.Value, StringComparison.Ordinal),
+        "server custom renderer text escaping must match the shared browser contract");
+
+    var fallback = exporter.Export(new("renderer-parity", 1, Model(fixture.Renderer.MismatchVersion))).Content;
+    Equal(fallback, exporter.Export(new("renderer-parity", 1, Model(fixture.Renderer.MismatchVersion))).Content,
+        "incompatible renderer fallback must be deterministic");
+    Equal("standard", fixture.Expected.FallbackMode, "shared parity contract must require standard fallback");
+    True(fallback.Contains("data-node-renderer-fallback=\"standard\" data-node-renderer-fallback-reason=\"incompatible\"", StringComparison.Ordinal)
+        && fallback.Contains($">{fixture.Node.Property.Label}</text>", StringComparison.Ordinal)
+        && fallback.Contains(fixture.Expected.EscapedValue, StringComparison.Ordinal)
+        && !fallback.Contains(fixture.Expected.CustomBodySvg, StringComparison.Ordinal)
+        && !fallback.Contains("data-node-renderer-key=", StringComparison.Ordinal),
+        "an unavailable exact renderer version must use the shared standard fallback behavior");
+}
+
+static int Count(string value, string fragment) => value.Split(fragment, StringSplitOptions.None).Length - 1;
 
 static async Task VerifyDocumentChangeNotifier()
 {
@@ -763,6 +847,34 @@ static void Equal<T>(T expected, T actual, string message) where T : notnull
 }
 
 sealed record Box(string Id, double X, double Y, double Width, double Height);
+
+sealed record RendererParityFixture(int ContractVersion, RendererParityIdentity Renderer, RendererParityNode Node, RendererParityExpected Expected);
+sealed record RendererParityIdentity(string Key, int Version, int MismatchVersion);
+sealed record RendererParityNode(string Id, string Label, double X, double Y, double Width, double Height, RendererParityProperty Property);
+sealed record RendererParityProperty(string Id, string Label, string Value);
+sealed record RendererParityExpected(RendererParityBounds BodyBounds, string CustomBodySvg, string EscapedValue, string FallbackMode);
+sealed record RendererParityBounds(double X, double Y, double Width, double Height);
+
+sealed class TestNodeSvgRenderer(RendererParityFixture fixture) : INodeSvgBodyRenderer
+{
+    public string Key => fixture.Renderer.Key;
+    public int Version => fixture.Renderer.Version;
+    public RendererParityBounds? LastBounds { get; private set; }
+
+    public void Render(NodeSvgRenderContext context, NodeSvgWriter writer)
+    {
+        LastBounds = new(context.BodyX, context.BodyY, context.BodyWidth, context.BodyHeight);
+        writer.Rectangle(context.BodyX + 8, context.BodyY + 8, context.BodyWidth - 16, context.BodyHeight - 16, "#f0fdfa", "#0f766e", 4);
+        writer.Text(context.BodyX + 16, context.BodyY + 30, context.Properties.Single(property => property.Id == fixture.Node.Property.Id).Value, 12, "#134e4a");
+    }
+}
+
+sealed class CapabilityNodeSvgRenderer : INodeSvgBodyRenderer
+{
+    public string Key => "test.card";
+    public int Version => 2;
+    public void Render(NodeSvgRenderContext context, NodeSvgWriter writer) => writer.Text(context.BodyX, context.BodyY, context.Label);
+}
 
 sealed class MemoryStore(StoredDocument document) : IDocumentStore
 {

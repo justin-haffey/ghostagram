@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Ghostagram.Contracts;
+using Ghostagram.Server.Export;
 
 namespace Ghostagram.Server.Mcp;
 
@@ -11,10 +12,24 @@ public sealed record GhostagramCapabilitiesResult(
     IReadOnlyList<string> Connectors,
     IReadOnlyList<string> Endpoints,
     IReadOnlyList<string> Overlays,
+    NodeRendererCapabilities NodeRenderers,
     IReadOnlyList<string> PropertyTypes,
     IReadOnlyList<string> PropertyModes,
     IReadOnlyList<string> LayoutAlgorithms,
     IReadOnlyList<string> RecommendedWorkflow);
+
+/// <summary>
+/// Serializable renderer contract metadata. Browser registrations are runtime-local and are
+/// intentionally not reported as if the server could observe them.
+/// </summary>
+public sealed record NodeRendererCapabilities(
+    string KeyField,
+    string VersionField,
+    string MatchPolicy,
+    string Fallback,
+    string BrowserRegistrationScope,
+    IReadOnlyList<string> BrowserLifecycleHooks,
+    IReadOnlyList<NodeSvgRendererRegistration> ServerSvgRenderers);
 
 public sealed record DiagramCollaborationSummary(
     string DocumentId,
@@ -29,8 +44,9 @@ public sealed record DiagramCollaborationSummary(
 public sealed record DiagramCatalogResult(IReadOnlyList<DiagramCollaborationSummary> Diagrams);
 
 /// <summary>Single machine-readable inventory for agent authoring and collaboration workflows.</summary>
-public sealed class GhostagramCapabilityCatalog
+public sealed class GhostagramCapabilityCatalog(INodeSvgRendererRegistry? nodeRenderers = null)
 {
+    private readonly INodeSvgRendererRegistry nodeRenderers = nodeRenderers ?? new NodeSvgRendererRegistry();
     private static readonly string[] Operations =
     [
         "node.upsert", "port.upsert", "edge.upsert", "group.upsert", "edgeType.upsert",
@@ -66,6 +82,14 @@ public sealed class GhostagramCapabilityCatalog
         Connectors: Connectors,
         Endpoints: Endpoints,
         Overlays: Overlays,
+        NodeRenderers: new(
+            KeyField: "rendererKey",
+            VersionField: "rendererVersion",
+            MatchPolicy: "exact-key-and-version",
+            Fallback: "standard-node-body",
+            BrowserRegistrationScope: "browser-runtime-only; server registrations are not browser registrations",
+            BrowserLifecycleHooks: ["mount", "update", "measure", "dispose", "exportSvg"],
+            ServerSvgRenderers: nodeRenderers.Registrations),
         PropertyTypes: PropertyTypes,
         PropertyModes: PropertyModes,
         LayoutAlgorithms: ["ghost-layered"],

@@ -15,6 +15,11 @@ public sealed class SvgDiagramExporter : IDiagramExporter
     private const double PropertyGap = 1;
     private const double SectionHeaderHeight = 22;
     private static readonly string[] MarkerTypes = ["arrow", "plain-arrow", "triangle-open", "diamond", "diamond-open", "erd-one", "erd-zero-one", "erd-one-many", "erd-zero-many"];
+    private readonly INodeSvgRendererRegistry nodeRenderers;
+
+    public SvgDiagramExporter(INodeSvgRendererRegistry? nodeRenderers = null) =>
+        this.nodeRenderers = nodeRenderers ?? new NodeSvgRendererRegistry();
+
     public string Format => "svg";
 
     public DiagramExportArtifact Export(DiagramSnapshot snapshot)
@@ -70,32 +75,13 @@ public sealed class SvgDiagramExporter : IDiagramExporter
 
         foreach (var node in nodes.Values.OrderBy(item => item.Id, StringComparer.Ordinal))
         {
-            var layout = node.Layout;
             svg.Append("<g data-node-id=\"").Append(Escape(node.Id)).Append("\"><rect x=\"").Append(N(node.Box.X))
                 .Append("\" y=\"").Append(N(node.Box.Y)).Append("\" width=\"").Append(N(node.Box.Width)).Append("\" height=\"")
                 .Append(N(node.Box.Height)).Append("\" rx=\"8\" fill=\"#ffffff\" stroke=\"#334155\" stroke-width=\"1.5\"/>")
                 .Append(Text(node.Box.X + 12, node.Box.Y + 20, node.Box.Label, 15, "#0f172a"));
             if (!string.IsNullOrWhiteSpace(node.Icon))
                 svg.Append(Text(node.Box.X + node.Box.Width - 10, node.Box.Y + 20, IconGlyph(node.Icon), 13, "#475569", "end"));
-            if (layout.Progressive)
-                svg.Append("<path d=\"M ").Append(N(node.Box.X)).Append(' ').Append(N(node.Box.Y + NodeHeaderHeight))
-                    .Append(" L ").Append(N(node.Box.X + node.Box.Width)).Append(' ').Append(N(node.Box.Y + NodeHeaderHeight))
-                    .Append("\" stroke=\"#334155\" stroke-opacity=\"0.28\"/>");
-            foreach (var section in layout.Sections)
-            {
-                var heading = $"{(section.Collapsed ? "▸ " : "▾ ")}{section.Section.Title}";
-                svg.Append("<text data-section-id=\"").Append(Escape(section.Section.Id)).Append("\" x=\"")
-                    .Append(N(node.Box.X + 8 + Math.Min(section.Depth, 4) * 8)).Append("\" y=\"")
-                    .Append(N(node.Box.Y + section.Y + 15))
-                    .Append("\" font-family=\"system-ui,sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">")
-                    .Append(Escape(heading)).Append("</text>");
-            }
-            foreach (var row in layout.Rows)
-            {
-                var y = node.Box.Y + row.Y + row.Height / 2 + 4;
-                svg.Append(Text(node.Box.X + 8, y, row.Property.Label, 11, "#64748b"))
-                    .Append(Text(node.Box.X + node.Box.Width - 8, y, row.Property.Value, 11, "#334155", "end"));
-            }
+            AppendNodeBody(svg, node);
             svg.Append("</g>");
         }
 
@@ -121,6 +107,77 @@ public sealed class SvgDiagramExporter : IDiagramExporter
 
         svg.Append("</svg>");
         return new("image/svg+xml", svg.ToString());
+    }
+
+    private void AppendNodeBody(StringBuilder svg, Node node)
+    {
+        if (!string.IsNullOrWhiteSpace(node.RendererKey) && node.RendererVersion is { } rendererVersion &&
+            nodeRenderers.TryGet(node.RendererKey, rendererVersion, out var renderer))
+        {
+            try
+            {
+                var writer = new NodeSvgWriter();
+                renderer.Render(
+                    new NodeSvgRenderContext(
+                        node.Id,
+                        node.Box.Label,
+                        node.Box.X,
+                        node.Box.Y + NodeHeaderHeight,
+                        node.Box.Width,
+                        Math.Max(0, node.Box.Height - NodeHeaderHeight),
+                        node.Properties.Select(property => new NodeSvgProperty(property.Id, property.Label, property.Value)).ToArray()),
+                    writer);
+                svg.Append("<g data-node-renderer-key=\"").Append(Escape(node.RendererKey))
+                    .Append("\" data-node-renderer-version=\"").Append(rendererVersion).Append("\">")
+                    .Append(writer.ToSvg()).Append("</g>");
+                return;
+            }
+            catch
+            {
+                AppendRendererFallback(svg, node, "renderer-error");
+                return;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(node.RendererKey) || node.RendererVersion is not null)
+        {
+            AppendRendererFallback(svg, node, "incompatible");
+            return;
+        }
+
+        AppendStandardNodeBody(svg, node);
+    }
+
+    private static void AppendRendererFallback(StringBuilder svg, Node node, string reason)
+    {
+        svg.Append("<g data-node-renderer-fallback=\"standard\" data-node-renderer-fallback-reason=\"")
+            .Append(Escape(reason)).Append("\">");
+        AppendStandardNodeBody(svg, node);
+        svg.Append("</g>");
+    }
+
+    private static void AppendStandardNodeBody(StringBuilder svg, Node node)
+    {
+        var layout = node.Layout;
+        if (layout.Progressive)
+            svg.Append("<path d=\"M ").Append(N(node.Box.X)).Append(' ').Append(N(node.Box.Y + NodeHeaderHeight))
+                .Append(" L ").Append(N(node.Box.X + node.Box.Width)).Append(' ').Append(N(node.Box.Y + NodeHeaderHeight))
+                .Append("\" stroke=\"#334155\" stroke-opacity=\"0.28\"/>");
+        foreach (var section in layout.Sections)
+        {
+            var heading = $"{(section.Collapsed ? "▸ " : "▾ ")}{section.Section.Title}";
+            svg.Append("<text data-section-id=\"").Append(Escape(section.Section.Id)).Append("\" x=\"")
+                .Append(N(node.Box.X + 8 + Math.Min(section.Depth, 4) * 8)).Append("\" y=\"")
+                .Append(N(node.Box.Y + section.Y + 15))
+                .Append("\" font-family=\"system-ui,sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">")
+                .Append(Escape(heading)).Append("</text>");
+        }
+        foreach (var row in layout.Rows)
+        {
+            var y = node.Box.Y + row.Y + row.Height / 2 + 4;
+            svg.Append(Text(node.Box.X + 8, y, row.Property.Label, 11, "#64748b"))
+                .Append(Text(node.Box.X + node.Box.Width - 8, y, row.Property.Value, 11, "#334155", "end"));
+        }
     }
 
     private static IEnumerable<JsonElement> Items(JsonElement root, string name)
@@ -216,6 +273,8 @@ public sealed class SvgDiagramExporter : IDiagramExporter
         => item.TryGetProperty(name, out var value) && value.TryGetDouble(out var number) ? number : fallback;
     private static int I(JsonElement item, string name, int fallback)
         => item.TryGetProperty(name, out var value) && value.TryGetInt32(out var number) ? number : fallback;
+    private static int? NullableInt(JsonElement item, string name)
+        => item.TryGetProperty(name, out var value) && value.TryGetInt32(out var number) ? number : null;
 
     private static string MarkerSvg(string type)
     {
@@ -258,7 +317,15 @@ public sealed class SvgDiagramExporter : IDiagramExporter
     }
     private sealed class Node
     {
-        private Node(string id, Box box, string icon, List<Property> properties, List<Section> sections, Presentation? presentation)
+        private Node(
+            string id,
+            Box box,
+            string icon,
+            List<Property> properties,
+            List<Section> sections,
+            Presentation? presentation,
+            string rendererKey,
+            int? rendererVersion)
         {
             Id = id;
             Box = box;
@@ -266,6 +333,8 @@ public sealed class SvgDiagramExporter : IDiagramExporter
             Properties = properties;
             Sections = sections;
             Presentation = presentation;
+            RendererKey = rendererKey;
+            RendererVersion = rendererVersion;
             Layout = Project(this);
         }
 
@@ -275,6 +344,8 @@ public sealed class SvgDiagramExporter : IDiagramExporter
         public List<Property> Properties { get; }
         public List<Section> Sections { get; }
         public Presentation? Presentation { get; }
+        public string RendererKey { get; }
+        public int? RendererVersion { get; }
         public NodeLayout Layout { get; }
 
         public static Node Parse(JsonElement item)
@@ -289,7 +360,15 @@ public sealed class SvgDiagramExporter : IDiagramExporter
             var presentation = item.TryGetProperty("presentation", out var rawPresentation) && rawPresentation.ValueKind == JsonValueKind.Object
                 ? Presentation.Parse(rawPresentation)
                 : null;
-            return new(box.Id, box, S(item, "icon"), properties, sections, presentation);
+            return new(
+                box.Id,
+                box,
+                S(item, "icon"),
+                properties,
+                sections,
+                presentation,
+                S(item, "rendererKey"),
+                NullableInt(item, "rendererVersion"));
         }
     }
     private sealed record Property(string Id, string Label, string Value, bool Hidden, string SectionId, string Type, string EditorKind)

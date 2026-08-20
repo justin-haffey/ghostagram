@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { __testing, registerEndpoint, registerOverlay } from "../ghostagram.js";
+import { __nodeRendererTesting, __testing, capabilities, registerEndpoint, registerNodeRenderer, registerOverlay } from "../ghostagram.js";
 
 const base = {
   documentId: "doc-1",
@@ -710,6 +710,20 @@ test("obstacle-aware flowchart routing sends a backward loop through the cleares
   assert.ok(Math.max(...first.map(point => point.y)) < outer.y + outer.height, "group boundaries must not push the return loop outside its containing workflow region");
   assert.ok(first[1].x > first[0].x, "the source still exits its right port outward");
   assert.ok(first.at(-2).x < first.at(-1).x, "the target is still approached from its left side");
+
+  const selectionContext = __testing.buildRoutingContext(state);
+  const options = __testing.flowchartOptions(edge.connectorOptions);
+  const candidates = __testing.flowchartRouteCandidates(geometry.sourcePoint, geometry.targetPoint, geometry.sourceSide, geometry.targetSide, options, selectionContext, edge, geometry);
+  const probes = candidates.flatMap(points => points.flatMap((point, index) => index === 0 ? [point] : [point, { x: (points[index - 1].x + point.x) / 2, y: (points[index - 1].y + point.y) / 2 }]));
+  const mixedRectangle = probes.map(point => ({ x: point.x - 3, y: point.y - 3, width: 6, height: 6 })).find(rectangle => {
+    const hits = candidates.filter(candidate => __testing.polylineIntersectsRectangle(candidate, rectangle)).length;
+    return hits > 0 && hits < candidates.length;
+  });
+  assert.ok(mixedRectangle, "the regression model must exercise mixed candidate lasso resolution");
+  const expected = __testing.polylineIntersectsRectangle(first, mixedRectangle);
+  assert.equal(__testing.edgesInRectangle(state, mixedRectangle, selectionContext).includes(edge.id), expected);
+  assert.deepEqual(selectionContext.routeCache.get(edge.id), first, "resolved lasso routes are cached for subsequent pointer frames");
+  assert.equal(__testing.edgesInRectangle(state, mixedRectangle, selectionContext).includes(edge.id), expected);
 });
 
 test("a self-loop clears its own node instead of crossing through it", () => {
@@ -1140,4 +1154,108 @@ test("SVG export includes visible group labels and omits labels hidden by ancest
   const collapsed = __testing.exportSvgDocument(__testing.buildState(model));
   assert.match(collapsed, /Visible group/);
   assert.doesNotMatch(collapsed, /Hidden child/);
+});
+
+test("custom node renderer registration advertises sorted exact versions and unregisters safely", () => {
+  const removeV2 = registerNodeRenderer("test.card", 2, { mount() {} });
+  const removeV1 = registerNodeRenderer("test.card", 1, { exportSvg() { return ""; } });
+  try {
+    assert.deepEqual(capabilities().nodeRenderers.find(renderer => renderer.key === "test.card"), { key: "test.card", versions: [1, 2] });
+    assert.equal(__nodeRendererTesting.resolveNodeRenderer({ rendererKey: "test.card", rendererVersion: 1 })?.version, 1);
+    assert.equal(__nodeRendererTesting.resolveNodeRenderer({ rendererKey: "test.card", rendererVersion: 3 }), null);
+    assert.equal(__nodeRendererTesting.resolveNodeRenderer({ rendererKey: "test.card" }), null);
+  } finally {
+    assert.equal(removeV1(), true);
+    assert.equal(removeV1(), false);
+    assert.equal(removeV2(), true);
+  }
+  assert.equal(capabilities().nodeRenderers.some(renderer => renderer.key === "test.card"), false);
+});
+
+test("custom node renderer registration validates keys versions and synchronous lifecycle hooks", () => {
+  assert.throws(() => registerNodeRenderer("", 1, { mount() {} }), /non-empty string key/);
+  assert.throws(() => registerNodeRenderer("test.invalid", 0, { mount() {} }), /positive integer version/);
+  assert.throws(() => registerNodeRenderer("test.invalid", 1, {}), /at least one lifecycle hook/);
+  assert.throws(() => registerNodeRenderer("test.invalid", 1, { update: true }), /must be a function/);
+});
+
+test("custom node renderer lifecycle preserves its body across updates, measures once, and disposes with context", () => {
+  const calls = [], events = [];
+  const element = { children: [], replaceChildren(...children) { this.children = children; } };
+  const lifecycle = {
+    mount(context) { calls.push(["mount", context.node.label, context.element]); context.element.replaceChildren("owned-body"); return { token: 7 }; },
+    update(context) { calls.push(["update", context.node.label, context.state.token]); },
+    measure(context) { calls.push(["measure", context.state.token]); return { width: 180, height: 96 }; },
+    dispose(context) { calls.push(["dispose", context.reason, context.state.token]); }
+  };
+  const registration = { key: "test.lifecycle", version: 1, lifecycle };
+  const instance = new __nodeRendererTesting.NodeRendererInstance(registration, "node-a", element, "instance-a", (type, payload) => events.push({ type, payload }));
+  assert.equal(instance.render({ id: "node-a", label: "First" }), true);
+  assert.equal(instance.render({ id: "node-a", label: "Second" }), true);
+  assert.deepEqual(element.children, ["owned-body"]);
+  assert.deepEqual(calls.map(call => call[0]), ["mount", "measure", "update", "measure"]);
+  assert.equal(events.filter(event => event.type === "node.rendererMeasured").length, 1);
+  instance.dispose("node-removed");
+  instance.dispose("again");
+  assert.deepEqual(calls.at(-1), ["dispose", "node-removed", 7]);
+  assert.deepEqual(element.children, []);
+});
+
+test("custom node renderer failures are contained, disposed, and eligible for standard fallback", () => {
+  const events = [], element = { replaceChildren() { this.cleared = true; } };
+  let disposed = 0;
+  const registration = { key: "test.failure", version: 1, lifecycle: { mount() { throw new Error("broken renderer"); }, dispose() { disposed++; } } };
+  const instance = new __nodeRendererTesting.NodeRendererInstance(registration, "node-a", element, "instance-a", (type, payload) => events.push({ type, payload }));
+  assert.equal(instance.render({ id: "node-a" }), false);
+  assert.equal(disposed, 1);
+  assert.equal(element.cleared, true);
+  assert.equal(events[0].type, "node.rendererFailed");
+  assert.equal(events[0].payload.phase, "mount");
+  assert.equal(instance.render({ id: "node-a" }), false);
+});
+
+test("custom node renderer reports the failing lifecycle phase and requires a body hook for browser rendering", () => {
+  const events = [], element = { replaceChildren() {} };
+  const registration = { key: "test.measure-failure", version: 1, lifecycle: { mount() {}, measure() { throw new Error("cannot measure"); } } };
+  const instance = new __nodeRendererTesting.NodeRendererInstance(registration, "node-a", element, "instance-a", (type, payload) => events.push({ type, payload }));
+  assert.equal(instance.render({ id: "node-a" }), false);
+  assert.equal(events.find(event => event.type === "node.rendererFailed").payload.phase, "measure");
+  assert.equal(__nodeRendererTesting.supportsNodeRendererBody(registration), true);
+  assert.equal(__nodeRendererTesting.supportsNodeRendererBody({ key: "test.export-only", version: 1, lifecycle: { exportSvg() { return ""; } } }), false);
+});
+
+test("custom renderer SVG is deterministic and version mismatch or hook failure uses the standard body", () => {
+  const unregister = registerNodeRenderer("test.svg", 1, {
+    exportSvg({ node, bounds, escape }) {
+      return `<text class="custom-body" x="${bounds.x + 8}" y="${bounds.y + 18}">${escape(node.properties[0].value)}</text>`;
+    }
+  });
+  const failing = registerNodeRenderer("test.svg-failing", 1, { exportSvg() { throw new Error("no export"); } });
+  try {
+    const customModel = { ...base, nodes: [{ ...base.nodes[0], label: "Custom", rendererKey: "test.svg", rendererVersion: 1, properties: [{ id: "value", name: "Value", value: "A&B" }] }, base.nodes[1]] };
+    const first = __testing.exportSvgDocument(__testing.buildState(customModel));
+    const second = __testing.exportSvgDocument(__testing.buildState(customModel));
+    assert.equal(first, second);
+    assert.match(first, /data-renderer-key="test.svg" data-renderer-version="1"/);
+    assert.match(first, /class="custom-body"/);
+    assert.match(first, /A&amp;B/);
+
+    const mismatched = __testing.exportSvgDocument(__testing.buildState({ ...customModel, nodes: [{ ...customModel.nodes[0], rendererVersion: 2 }, customModel.nodes[1]] }));
+    assert.doesNotMatch(mismatched, /custom-body/);
+    assert.match(mismatched, />Value<.*>A&amp;B</);
+
+    const failed = __testing.exportSvgDocument(__testing.buildState({ ...customModel, nodes: [{ ...customModel.nodes[0], rendererKey: "test.svg-failing" }, customModel.nodes[1]] }));
+    assert.doesNotMatch(failed, /data-renderer-key/);
+    assert.match(failed, />Value<.*>A&amp;B</);
+  } finally { unregister(); failing(); }
+});
+
+test("renderer fields round-trip through indexed state and reject invalid descriptors", () => {
+  const state = __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], rendererKey: "test.roundtrip", rendererVersion: 3 }, base.nodes[1]] });
+  assert.equal(__testing.serialiseState(state).nodes[0].rendererKey, "test.roundtrip");
+  assert.equal(__testing.serialiseState(state).nodes[0].rendererVersion, 3);
+  assert.throws(() => __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], rendererKey: " " }, base.nodes[1]] }), /rendererKey/);
+  assert.throws(() => __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], rendererVersion: 0 }, base.nodes[1]] }), /rendererVersion/);
+  assert.throws(() => __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], rendererKey: "test.incomplete" }, base.nodes[1]] }), /supplied together/);
+  assert.throws(() => __testing.buildState({ ...base, nodes: [{ ...base.nodes[0], rendererVersion: 1 }, base.nodes[1]] }), /supplied together/);
 });

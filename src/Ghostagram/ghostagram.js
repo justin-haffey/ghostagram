@@ -12,6 +12,7 @@ export const PROTOCOL_VERSION = 1;
 const connectorRegistry = new Map();
 const endpointRegistry = new Map();
 const overlayRegistry = new Map();
+const nodeRendererRegistry = new Map();
 const SVG_NS = "http://www.w3.org/2000/svg";
 const ICONIFY_ICON_SCRIPT = "https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js";
 const NODE_PROPERTY_TOP = 30;
@@ -27,6 +28,8 @@ const ROUTE_OBSTACLE_PADDING = 12;
 const ROUTE_CORRIDOR_CLEARANCE = 24;
 const ROUTE_LANE_SPACING = 8;
 const ROUTE_SPATIAL_CELL = 128;
+const SPATIAL_QUERY_STAMP = Symbol("ghostagramSpatialQueryStamp");
+let spatialQueryStamp = 0;
 const markerTypes = Object.freeze(["arrow", "plain-arrow", "triangle-open", "diamond", "diamond-open", "erd-one", "erd-zero-one", "erd-one-many", "erd-zero-many"]);
 let iconifyScriptRequested = false;
 const supported = Object.freeze({
@@ -41,7 +44,7 @@ const supported = Object.freeze({
     customFactories: true, dynamicAnchors: true, editableWaypoints: true, labelOverlayPlacement: true,
     nestedGroups: true, perimeterAnchors: true, rotation: true, flowAnimation: true, selectionLasso: true, edgeTypes: true, iconifyIcons: true,
     progressiveNodes: true, nestedNodeSections: true, richPropertyEditors: true, selectorSources: false,
-    imageExport: true, clipboardImage: true
+    imageExport: true, clipboardImage: true, customNodeRenderers: true, customNodeRendererSvgExport: true
   }
 });
 
@@ -68,7 +71,14 @@ export function exportPng(instanceId, options = {}) { return protocolFacade.expo
 /** Copies the currently visible canvas region as a PNG image. */
 export function copyViewportPng(instanceId) { return protocolFacade.copyViewportPng(instanceId); }
 export function dispose(instanceId) { return protocolFacade.dispose(instanceId); }
-export function capabilities() { return structuredClone(supported); }
+export function capabilities() {
+  return {
+    ...structuredClone(supported),
+    nodeRenderers: [...nodeRendererRegistry.entries()]
+      .map(([key, versions]) => ({ key, versions: [...versions.keys()].sort((left, right) => left - right) }))
+      .sort((left, right) => left.key.localeCompare(right.key))
+  };
+}
 /** Register a JavaScript-only connector router. C#/Razor stays descriptor-only. */
 export function registerConnector(type, router) {
   if (!type || typeof type !== "string" || typeof router !== "function") throw new GhostagramError("INVALID_MODEL", "registerConnector requires a string type and router function.");
@@ -83,6 +93,25 @@ export function registerEndpoint(type, renderer) {
 export function registerOverlay(type, renderer) {
   if (!type || typeof type !== "string" || supported.overlays.includes(type) || typeof renderer !== "function") throw new GhostagramError("INVALID_MODEL", "registerOverlay requires a new string type and renderer function.");
   overlayRegistry.set(type, renderer);
+}
+/** Register a trusted node-body renderer. Ghostagram retains the outer node, chrome, ports, and interactions. */
+export function registerNodeRenderer(key, version, lifecycle) {
+  if (version && typeof version === "object" && lifecycle === undefined) { lifecycle = version; version = lifecycle.version ?? 1; }
+  if (!key || typeof key !== "string" || !key.trim()) throw new GhostagramError("INVALID_MODEL", "registerNodeRenderer requires a non-empty string key.");
+  if (!Number.isSafeInteger(version) || version < 1) throw new GhostagramError("INVALID_MODEL", "registerNodeRenderer requires a positive integer version.");
+  requireObject(lifecycle, "INVALID_MODEL", "registerNodeRenderer requires a lifecycle object.");
+  const hooks = ["mount", "update", "measure", "dispose", "exportSvg"];
+  for (const hook of hooks) if (lifecycle[hook] !== undefined && typeof lifecycle[hook] !== "function") throw new GhostagramError("INVALID_MODEL", `Node renderer hook '${hook}' must be a function.`);
+  if (!hooks.some(hook => typeof lifecycle[hook] === "function")) throw new GhostagramError("INVALID_MODEL", "A node renderer requires at least one lifecycle hook.");
+  const normalizedKey = key.trim(), registration = Object.freeze({ key: normalizedKey, version, lifecycle });
+  const versions = nodeRendererRegistry.get(normalizedKey) ?? new Map();
+  versions.set(version, registration); nodeRendererRegistry.set(normalizedKey, versions);
+  return () => {
+    const current = nodeRendererRegistry.get(normalizedKey);
+    if (current?.get(version) !== registration) return false;
+    current.delete(version); if (current.size === 0) nodeRendererRegistry.delete(normalizedKey);
+    return true;
+  };
 }
 /** Register a reusable, JSON-only edge type before sending documents that reference it. */
 
@@ -118,6 +147,7 @@ class GhostagramEngine {
     this.previewSelection = null;
     this.labelEditor = null;
     this.routingContext = null;
+    this.nodeRendererInstances = new Map();
     this.dom = buildRoot(host);
     this.interactions = new InteractionController(this);
     this.interactions.bind();
@@ -239,6 +269,7 @@ class GhostagramEngine {
     // A host-driven replace can arrive while an input has focus. Temporarily
     // detach it without treating that DOM removal as a user blur/commit.
     const editor = this.suspendLabelEditor();
+    this.disposeAllNodeRenderers("replace");
     this.dom.nodes.replaceChildren(); this.dom.groups.replaceChildren(); this.dom.edges.replaceChildren(); this.dom.overlay.replaceChildren();
     this.dom.nodeById.clear(); this.dom.groupById.clear(); this.dom.pathById.clear(); this.dom.labelById.clear(); this.dom.customOverlayByKey.clear(); this.dom.edgeHandlesById.clear(); this.dom.waypointHandlesById.clear(); this.dom.previewPath = null; this.previewLabelOffsets.clear();
     for (const group of groupsForRender(this.state)) this.renderGroup(group);
@@ -249,7 +280,11 @@ class GhostagramEngine {
   }
   renderDirty() {
     for (const id of this.pending.groups) { const group = this.state.groups.get(id); if (group) this.renderGroup(group); else this.dom.groupById.get(id)?.remove(); }
-    for (const id of this.pending.nodes) { const node = this.state.nodes.get(id); if (node) this.renderNode(node); else this.dom.nodeById.get(id)?.remove(); }
+    for (const id of this.pending.nodes) {
+      const node = this.state.nodes.get(id);
+      if (node) this.renderNode(node);
+      else { this.disposeNodeRenderer(id, "remove"); this.dom.nodeById.get(id)?.remove(); this.dom.nodeById.delete(id); }
+    }
     for (const id of this.pending.edges) {
       const edge = this.state.edges.get(id);
       if (edge) this.renderEdge(edge);
@@ -314,6 +349,7 @@ class GhostagramEngine {
     }
     setBox(el, node);
     el.style.display = isNodeHiddenByCollapsedGroup(this.state, node) ? "none" : "block";
+    el.setAttribute("role", "group"); el.setAttribute("aria-label", node.label ?? node.id);
     const layout = nodeLayoutProjection(node);
     el.dataset.displayMode = layout.displayMode;
     el.title = ""; el.querySelector(".ghostagram-node-label").textContent = node.label ?? node.id; renderIconifyIcon(el.querySelector(".ghostagram-item-icon"), node.icon);
@@ -334,12 +370,37 @@ class GhostagramEngine {
       toggle.style.cssText = "position:absolute;right:0;top:5px;width:20px;height:20px;padding:0;border:1px solid currentColor;border-radius:4px;background:rgba(255,255,255,.88);color:inherit;font:600 14px/18px system-ui;cursor:pointer;";
       toggle.addEventListener("pointerdown", event => event.stopPropagation()); toggle.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); this.emit("node.presentationRequested", next.payload, "browser"); }); header.append(toggle);
     }
-    const body = document.createElement("div"); body.className = "ghostagram-node-body"; body.hidden = layout.displayMode === "collapsed"; body.style.cssText = "position:absolute;inset:0;z-index:1;";
-    this.renderNodeProperties(body, node, layout);
+    const rendererDescriptor = nodeRendererDescriptor(node), registration = resolveNodeRenderer(node), bodyRegistration = supportsNodeRendererBody(registration) ? registration : null, currentRenderer = this.nodeRendererInstances.get(node.id);
+    if (currentRenderer && (!bodyRegistration || !currentRenderer.matches(bodyRegistration))) this.disposeNodeRenderer(node.id, "renderer-changed");
+    const retainedRenderer = this.nodeRendererInstances.get(node.id);
+    const body = retainedRenderer?.element ?? document.createElement("div"); body.className = "ghostagram-node-body"; body.hidden = layout.displayMode === "collapsed";
+    body.style.cssText = bodyRegistration ? `position:absolute;left:0;right:0;top:${NODE_PROPERTY_TOP}px;bottom:0;z-index:1;overflow:hidden;` : "position:absolute;inset:0;z-index:1;";
     rotate.hidden = true; handle.hidden = true; el.replaceChildren(header, body, rotate, handle);
     this.restoreLabelEditor(activeEditor);
+    let renderedCustom = false;
+    if (bodyRegistration) {
+      const renderer = retainedRenderer ?? new NodeRendererInstance(bodyRegistration, node.id, body, this.instanceId, (type, payload) => this.emit(type, payload, "renderer"));
+      if (!retainedRenderer) this.nodeRendererInstances.set(node.id, renderer);
+      renderedCustom = renderer.render(node);
+      if (!renderedCustom) this.nodeRendererInstances.delete(node.id);
+    }
+    if (!renderedCustom) {
+      body.replaceChildren(); body.style.cssText = "position:absolute;inset:0;z-index:1;";
+      this.renderNodeProperties(body, node, layout);
+    }
+    if (rendererDescriptor) {
+      el.dataset.rendererKey = rendererDescriptor.key ?? ""; el.dataset.rendererVersion = rendererDescriptor.version == null ? "" : String(rendererDescriptor.version); el.dataset.rendererStatus = renderedCustom ? "active" : "fallback";
+    } else {
+      delete el.dataset.rendererKey; delete el.dataset.rendererVersion; delete el.dataset.rendererStatus;
+    }
     for (const entry of portRenderPlan(this.state, node.id)) this.renderPort(el, entry.port, entry.ports);
   }
+  disposeNodeRenderer(nodeId, reason) {
+    const renderer = this.nodeRendererInstances.get(nodeId);
+    if (!renderer) return;
+    this.nodeRendererInstances.delete(nodeId); renderer.dispose(reason);
+  }
+  disposeAllNodeRenderers(reason) { for (const nodeId of [...this.nodeRendererInstances.keys()]) this.disposeNodeRenderer(nodeId, reason); }
   renderNodeProperties(body, node, layout) {
     const renderRow = (container, rowLayout, originY = 0) => {
       const property = rowLayout.property, row = document.createElement("label"); row.className = "ghostagram-node-property"; row.dataset.propertyId = property.id;
@@ -855,7 +916,94 @@ class GhostagramEngine {
       else if (typeof sink.invokeMethodAsync === "function") this.interopDelivery.enqueue(event, coalesced);
     } catch { /* callback faults cannot break the renderer */ }
   }
-  dispose() { if (this.lifecycle === "disposed") return { ok: true, instanceId: this.instanceId, disposed: true }; this.lifecycle = "disposing"; this.renderer.cancel(); if (this.previewFrame) cancelAnimationFrame(this.previewFrame); this.interopDelivery.dispose(); this.interactions.dispose(); this.abort.abort(); this.dom.root.remove(); for (const name of ["--ghostagram-grid-size", "--ghostagram-dot-grid-size", "--ghostagram-dot-grid-phase-x", "--ghostagram-dot-grid-phase-y"]) this.host.style.removeProperty(name); this.lifecycle = "disposed"; return { ok: true, instanceId: this.instanceId, disposed: true }; }
+  dispose() { if (this.lifecycle === "disposed") return { ok: true, instanceId: this.instanceId, disposed: true }; this.lifecycle = "disposing"; this.renderer.cancel(); if (this.previewFrame) cancelAnimationFrame(this.previewFrame); this.disposeAllNodeRenderers("engine-disposed"); this.interopDelivery.dispose(); this.interactions.dispose(); this.abort.abort(); this.dom.root.remove(); for (const name of ["--ghostagram-grid-size", "--ghostagram-dot-grid-size", "--ghostagram-dot-grid-phase-x", "--ghostagram-dot-grid-phase-y"]) this.host.style.removeProperty(name); this.lifecycle = "disposed"; return { ok: true, instanceId: this.instanceId, disposed: true }; }
+}
+
+class NodeRendererInstance {
+  constructor(registration, nodeId, element, instanceId, emit) {
+    this.registration = registration; this.nodeId = nodeId; this.element = element; this.instanceId = instanceId; this.emit = emit;
+    this.mounted = false; this.disposed = false; this.state = undefined; this.measurementSignature = null;
+  }
+  matches(registration) { return this.registration === registration; }
+  context(node, reason) {
+    return {
+      element: this.element,
+      node: structuredClone(node),
+      key: this.registration.key,
+      version: this.registration.version,
+      instanceId: this.instanceId,
+      state: this.state,
+      reason,
+      emit: (type, payload = {}) => {
+        if (!type || typeof type !== "string") throw new GhostagramError("INVALID_MODEL", "Renderer events require a string type.");
+        const value = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : { value: payload };
+        this.emit(type, { ...value, nodeId: this.nodeId });
+      }
+    };
+  }
+  render(node) {
+    if (this.disposed) return false;
+    const lifecycle = this.registration.lifecycle;
+    let phase = this.mounted ? "update" : "mount";
+    try {
+      if (!this.mounted) {
+        const context = this.context(node, "mount");
+        phase = lifecycle.mount ? "mount" : "update";
+        this.state = lifecycle.mount ? invokeNodeRendererHook(lifecycle.mount, context, "mount") : lifecycle.update ? invokeNodeRendererHook(lifecycle.update, context, "update") : undefined;
+        this.mounted = true;
+      } else if (lifecycle.update) {
+        invokeNodeRendererHook(lifecycle.update, this.context(node, "update"), "update");
+      }
+      if (lifecycle.measure) {
+        phase = "measure";
+        const measurement = invokeNodeRendererHook(lifecycle.measure, this.context(node, "measure"), "measure");
+        if (measurement != null) {
+          requireObject(measurement, "INVALID_MODEL", "Node renderer measure must return an object, null, or undefined.");
+          const width = measurement.width, height = measurement.height;
+          if ((width !== undefined && (!Number.isFinite(width) || width <= 0)) || (height !== undefined && (!Number.isFinite(height) || height <= 0))) throw new GhostagramError("INVALID_MODEL", "Node renderer measurements must be finite and positive.");
+          const normalized = { ...(width === undefined ? {} : { width }), ...(height === undefined ? {} : { height }) };
+          const signature = JSON.stringify(normalized);
+          if (signature !== this.measurementSignature) { this.measurementSignature = signature; this.emit("node.rendererMeasured", { nodeId: this.nodeId, rendererKey: this.registration.key, rendererVersion: this.registration.version, ...normalized }); }
+        }
+      }
+      return true;
+    } catch (error) {
+      this.emit("node.rendererFailed", { nodeId: this.nodeId, rendererKey: this.registration.key, rendererVersion: this.registration.version, phase, problem: asProblem(error) });
+      this.dispose("renderer-failed");
+      return false;
+    }
+  }
+  dispose(reason = "dispose") {
+    if (this.disposed) return;
+    this.disposed = true;
+    try {
+      if (this.registration.lifecycle.dispose) invokeNodeRendererHook(this.registration.lifecycle.dispose, this.context(null, reason), "dispose");
+    } catch (error) {
+      this.emit("node.rendererFailed", { nodeId: this.nodeId, rendererKey: this.registration.key, rendererVersion: this.registration.version, phase: "dispose", problem: asProblem(error) });
+    }
+    this.element.replaceChildren?.();
+  }
+}
+
+function invokeNodeRendererHook(hook, context, name) {
+  const result = hook(context);
+  if (result && typeof result.then === "function") throw new GhostagramError("CAPABILITY_UNSUPPORTED", `Node renderer hook '${name}' must be synchronous.`);
+  return result;
+}
+
+function nodeRendererDescriptor(node) {
+  const key = node?.rendererKey, version = node?.rendererVersion;
+  if (key === undefined && version === undefined) return null;
+  return { key: typeof key === "string" ? key : null, version: Number.isSafeInteger(version) ? version : null };
+}
+
+function resolveNodeRenderer(node) {
+  const descriptor = nodeRendererDescriptor(node);
+  return descriptor?.key && descriptor.version ? nodeRendererRegistry.get(descriptor.key)?.get(descriptor.version) ?? null : null;
+}
+
+function supportsNodeRendererBody(registration) {
+  return Boolean(registration && (registration.lifecycle.mount || registration.lifecycle.update));
 }
 
 class InteropEventQueue {
@@ -1219,6 +1367,10 @@ function upsertNode(s, raw) {
   if (typeof node.resizable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Node resizable must be boolean.");
   if (typeof node.rotatable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Node rotatable must be boolean.");
   if (typeof node.labelEditable !== "boolean") throw new GhostagramError("INVALID_MODEL", "Node labelEditable must be boolean.");
+  const hasRendererKey = node.rendererKey !== undefined, hasRendererVersion = node.rendererVersion !== undefined;
+  if (hasRendererKey !== hasRendererVersion) throw new GhostagramError("INVALID_MODEL", "Node rendererKey and rendererVersion must be supplied together.");
+  if (hasRendererKey && (typeof node.rendererKey !== "string" || !node.rendererKey.trim())) throw new GhostagramError("INVALID_MODEL", "Node rendererKey must be a non-empty string when supplied.");
+  if (hasRendererVersion && (!Number.isSafeInteger(node.rendererVersion) || node.rendererVersion < 1)) throw new GhostagramError("INVALID_MODEL", "Node rendererVersion must be a positive integer when supplied.");
   if (node.groupId && !s.groups.has(node.groupId)) throw new GhostagramError("MISSING_REFERENCE", `Node '${node.id}' references missing group '${node.groupId}'.`);
   if (prior?.groupId && prior.groupId !== node.groupId) s.nodesByGroup.get(prior.groupId)?.delete(node.id);
   if (node.groupId) (s.nodesByGroup.get(node.groupId) ?? s.nodesByGroup.set(node.groupId, new Set()).get(node.groupId)).add(node.id);
@@ -1601,14 +1753,24 @@ function edgeLabelPlacement(edge, source, target, geometry, routePoints) {
 }
 function edgeRoutePoints(edge, source, target, geometry, routingContext) {
   if (edge.waypoints?.length) return [source, ...edge.waypoints, target];
-  if (edge.connector === "flowchart" || !edge.connector) return flowchartRoutePoints(source, target, geometry?.sourceSide, geometry?.targetSide, flowchartOptions(edge.connectorOptions), routingContext, edge, geometry);
+  if (edge.connector === "flowchart" || !edge.connector) {
+    const cached = routingContext?.routeCache?.get(edge.id);
+    if (cached) return cached;
+    const points = flowchartRoutePoints(source, target, geometry?.sourceSide, geometry?.targetSide, flowchartOptions(edge.connectorOptions), routingContext, edge, geometry);
+    routingContext?.routeCache?.set(edge.id, points);
+    return points;
+  }
   return [source, target];
 }
 function flowchartRoutePoints(source, target, sourceSide, targetSide, options = flowchartOptions(), routingContext, edge, geometry) {
+  const candidates = flowchartRouteCandidates(source, target, sourceSide, targetSide, options, routingContext, edge, geometry);
+  return bestFlowchartRoute(candidates, edge, geometry, routingContext);
+}
+function flowchartRouteCandidates(source, target, sourceSide, targetSide, options = flowchartOptions(), routingContext, edge, geometry) {
   const baseline = basicFlowchartRoutePoints(source, target, sourceSide, targetSide, options);
-  if (!routingContext || !edge || !geometry || geometry.hidden) return baseline;
+  if (!routingContext || !edge || !geometry || geometry.hidden) return [baseline];
   const sourceVector = anchorVector(sourceSide), targetVector = anchorVector(targetSide);
-  if (!sourceVector || !targetVector) return baseline;
+  if (!sourceVector || !targetVector) return [baseline];
   const sourceEscape = { x: source.x + sourceVector.x * options.stub, y: source.y + sourceVector.y * options.stub };
   const targetEscape = { x: target.x + targetVector.x * options.stub, y: target.y + targetVector.y * options.stub };
   const envelope = routingEnvelope(routingContext, geometry, source, target);
@@ -1617,7 +1779,7 @@ function flowchartRoutePoints(source, target, sourceSide, targetSide, options = 
   const bottom = envelope.y + envelope.height + ROUTE_CORRIDOR_CLEARANCE + laneOffset;
   const left = envelope.x - ROUTE_CORRIDOR_CLEARANCE - laneOffset;
   const right = envelope.x + envelope.width + ROUTE_CORRIDOR_CLEARANCE + laneOffset;
-  const candidates = uniqueRoutes([
+  return uniqueRoutes([
     baseline,
     simplifyRoutePoints([source, sourceEscape, { x: targetEscape.x, y: sourceEscape.y }, targetEscape, target]),
     simplifyRoutePoints([source, sourceEscape, { x: sourceEscape.x, y: targetEscape.y }, targetEscape, target]),
@@ -1626,7 +1788,10 @@ function flowchartRoutePoints(source, target, sourceSide, targetSide, options = 
     simplifyRoutePoints([source, sourceEscape, { x: left, y: sourceEscape.y }, { x: left, y: targetEscape.y }, targetEscape, target]),
     simplifyRoutePoints([source, sourceEscape, { x: right, y: sourceEscape.y }, { x: right, y: targetEscape.y }, targetEscape, target])
   ]);
-  let best = baseline, bestScore = Number.POSITIVE_INFINITY;
+}
+function bestFlowchartRoute(candidates, edge, geometry, routingContext) {
+  if (candidates.length === 1 || !routingContext || !edge || !geometry) return candidates[0];
+  let best = candidates[0], bestScore = Number.POSITIVE_INFINITY;
   for (const [index, candidate] of candidates.entries()) {
     const score = flowchartRouteScore(candidate, edge, geometry, routingContext) + index / 1000;
     if (score < bestScore) { best = candidate; bestScore = score; }
@@ -1669,7 +1834,8 @@ function buildRoutingContext(state, previewNodes = new Map(), previewGroups = ne
   }
   return {
     obstacleIndex: buildSpatialIndex(obstacles, item => item),
-    segmentIndex: buildSpatialIndex(occupiedSegments, item => segmentBounds(item.a, item.b, 2))
+    segmentIndex: buildSpatialIndex(occupiedSegments, item => segmentBounds(item.a, item.b, 2)),
+    routeCache: new Map()
   };
 }
 function routingEnvelope(context, geometry, source, target) {
@@ -1713,11 +1879,24 @@ function buildSpatialIndex(items, boundsForItem) {
   for (const item of items) {
     const bounds = boundsForItem(item), range = spatialCellRange(bounds), cells = (range.right - range.left + 1) * (range.bottom - range.top + 1);
     if (cells > 256) { overflow.push(item); continue; }
-    for (let x = range.left; x <= range.right; x++) for (let y = range.top; y <= range.bottom; y++) { const key = `${x}:${y}`, bucket = buckets.get(key) ?? []; bucket.push(item); buckets.set(key, bucket); }
+    for (let x = range.left; x <= range.right; x++) for (let y = range.top; y <= range.bottom; y++) addSpatialIndexItem(buckets, x, y, item);
   }
   return { buckets, overflow };
 }
-function querySpatialIndex(index, bounds) { const found = new Set(index.overflow), range = spatialCellRange(bounds); for (let x = range.left; x <= range.right; x++) for (let y = range.top; y <= range.bottom; y++) for (const item of index.buckets.get(`${x}:${y}`) ?? []) found.add(item); return found; }
+function addSpatialIndexItem(buckets, x, y, item) { const column = buckets.get(x) ?? new Map(), bucket = column.get(y) ?? []; bucket.push(item); column.set(y, bucket); buckets.set(x, column); }
+function querySpatialIndex(index, bounds) {
+  const found = [], stamp = ++spatialQueryStamp, range = spatialCellRange(bounds);
+  for (const item of index.overflow) { item[SPATIAL_QUERY_STAMP] = stamp; found.push(item); }
+  for (let x = range.left; x <= range.right; x++) {
+    const column = index.buckets.get(x);
+    if (!column) continue;
+    for (let y = range.top; y <= range.bottom; y++) for (const item of column.get(y) ?? []) {
+      if (item[SPATIAL_QUERY_STAMP] === stamp) continue;
+      item[SPATIAL_QUERY_STAMP] = stamp; found.push(item);
+    }
+  }
+  return found;
+}
 function spatialCellRange(bounds) { return { left: Math.floor(bounds.x / ROUTE_SPATIAL_CELL), top: Math.floor(bounds.y / ROUTE_SPATIAL_CELL), right: Math.floor((bounds.x + bounds.width) / ROUTE_SPATIAL_CELL), bottom: Math.floor((bounds.y + bounds.height) / ROUTE_SPATIAL_CELL) }; }
 function samePoint(left, right) { return Math.abs(left.x - right.x) < 1e-9 && Math.abs(left.y - right.y) < 1e-9; }
 function sharesEndpoint(a, b, c, d) { return samePoint(a, c) || samePoint(a, d) || samePoint(b, c) || samePoint(b, d); }
@@ -1812,7 +1991,22 @@ function nodesInRectangle(state, rectangle) { return [...state.nodes.values()].f
 function edgesInRectangle(state, rectangle, routingContext = buildRoutingContext(state)) {
   return [...state.edges.values()].filter(rawEdge => {
     const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge);
-    return !geometry.hidden && polylineIntersectsRectangle(edgeSelectionPoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, routingContext), rectangle);
+    if (geometry.hidden) return false;
+    if (!edge.waypoints?.length && (edge.connector === "flowchart" || !edge.connector)) {
+      if (pointInRectangle(geometry.sourcePoint, rectangle) || pointInRectangle(geometry.targetPoint, rectangle)) return true;
+      const cached = routingContext?.routeCache?.get(edge.id);
+      if (cached) return polylineIntersectsRectangle(cached, rectangle);
+      const options = flowchartOptions(edge.connectorOptions);
+      const candidates = flowchartRouteCandidates(geometry.sourcePoint, geometry.targetPoint, geometry.sourceSide, geometry.targetSide, options, routingContext, edge, geometry);
+      let intersectionCount = 0;
+      for (const candidate of candidates) if (polylineIntersectsRectangle(candidate, rectangle)) intersectionCount++;
+      if (intersectionCount === 0) return false;
+      if (intersectionCount === candidates.length) return true;
+      const routePoints = bestFlowchartRoute(candidates, edge, geometry, routingContext);
+      routingContext?.routeCache?.set(edge.id, routePoints);
+      return polylineIntersectsRectangle(routePoints, rectangle);
+    }
+    return polylineIntersectsRectangle(edgeSelectionPoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, routingContext), rectangle);
   }).map(edge => edge.id);
 }
 function edgeSelectionPoints(edge, source, target, geometry, routingContext) {
@@ -1826,10 +2020,31 @@ function edgeSelectionPoints(edge, source, target, geometry, routingContext) {
   for (let index = 0; index <= 12; index++) { const t = index / 12, inverse = 1 - t; points.push({ x: inverse ** 3 * source.x + 3 * inverse ** 2 * t * (source.x + dx) + 3 * inverse * t ** 2 * (target.x - dx) + t ** 3 * target.x, y: inverse ** 3 * source.y + 3 * inverse ** 2 * t * source.y + 3 * inverse * t ** 2 * target.y + t ** 3 * target.y }); }
   return points;
 }
-function polylineIntersectsRectangle(points, rectangle) { return points.some(point => pointInRectangle(point, rectangle)) || points.slice(1).some((point, index) => segmentIntersectsRectangle(points[index], point, rectangle)); }
+function polylineIntersectsRectangle(points, rectangle) {
+  for (const point of points) if (pointInRectangle(point, rectangle)) return true;
+  for (let index = 1; index < points.length; index++) if (segmentIntersectsRectangle(points[index - 1], points[index], rectangle)) return true;
+  return false;
+}
 function pointInRectangle(point, rectangle) { return point.x >= rectangle.x && point.x <= rectangle.x + rectangle.width && point.y >= rectangle.y && point.y <= rectangle.y + rectangle.height; }
-function segmentIntersectsRectangle(a, b, rectangle) { const topLeft = { x: rectangle.x, y: rectangle.y }, topRight = { x: rectangle.x + rectangle.width, y: rectangle.y }, bottomLeft = { x: rectangle.x, y: rectangle.y + rectangle.height }, bottomRight = { x: rectangle.x + rectangle.width, y: rectangle.y + rectangle.height }; return pointInRectangle(a, rectangle) || pointInRectangle(b, rectangle) || [[topLeft, topRight], [topRight, bottomRight], [bottomRight, bottomLeft], [bottomLeft, topLeft]].some(([start, end]) => segmentsIntersect(a, b, start, end)); }
-function segmentsIntersect(a, b, c, d) { const cross = (first, second, third) => (second.x - first.x) * (third.y - first.y) - (second.y - first.y) * (third.x - first.x), abC = cross(a, b, c), abD = cross(a, b, d), cdA = cross(c, d, a), cdB = cross(c, d, b), pointOnSegment = (point, start, end) => Math.abs(cross(start, end, point)) < 1e-9 && point.x >= Math.min(start.x, end.x) && point.x <= Math.max(start.x, end.x) && point.y >= Math.min(start.y, end.y) && point.y <= Math.max(start.y, end.y); if (Math.abs(abC) < 1e-9 && Math.abs(abD) < 1e-9 && Math.abs(cdA) < 1e-9 && Math.abs(cdB) < 1e-9) return pointOnSegment(a, c, d) || pointOnSegment(b, c, d) || pointOnSegment(c, a, b) || pointOnSegment(d, a, b); return abC * abD <= 0 && cdA * cdB <= 0; }
+function segmentIntersectsRectangle(a, b, rectangle) {
+  if (pointInRectangle(a, rectangle) || pointInRectangle(b, rectangle)) return true;
+  const left = rectangle.x, top = rectangle.y, right = left + rectangle.width, bottom = top + rectangle.height;
+  if (Math.max(a.x, b.x) < left || Math.min(a.x, b.x) > right || Math.max(a.y, b.y) < top || Math.min(a.y, b.y) > bottom) return false;
+  return segmentsIntersectCoordinates(a.x, a.y, b.x, b.y, left, top, right, top)
+    || segmentsIntersectCoordinates(a.x, a.y, b.x, b.y, right, top, right, bottom)
+    || segmentsIntersectCoordinates(a.x, a.y, b.x, b.y, right, bottom, left, bottom)
+    || segmentsIntersectCoordinates(a.x, a.y, b.x, b.y, left, bottom, left, top);
+}
+function segmentsIntersect(a, b, c, d) { return segmentsIntersectCoordinates(a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y); }
+function segmentsIntersectCoordinates(ax, ay, bx, by, cx, cy, dx, dy) {
+  const abC = crossCoordinates(ax, ay, bx, by, cx, cy), abD = crossCoordinates(ax, ay, bx, by, dx, dy), cdA = crossCoordinates(cx, cy, dx, dy, ax, ay), cdB = crossCoordinates(cx, cy, dx, dy, bx, by);
+  if (Math.abs(abC) < 1e-9 && Math.abs(abD) < 1e-9 && Math.abs(cdA) < 1e-9 && Math.abs(cdB) < 1e-9) {
+    return pointOnSegmentCoordinates(ax, ay, cx, cy, dx, dy) || pointOnSegmentCoordinates(bx, by, cx, cy, dx, dy) || pointOnSegmentCoordinates(cx, cy, ax, ay, bx, by) || pointOnSegmentCoordinates(dx, dy, ax, ay, bx, by);
+  }
+  return abC * abD <= 0 && cdA * cdB <= 0;
+}
+function crossCoordinates(ax, ay, bx, by, cx, cy) { return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax); }
+function pointOnSegmentCoordinates(px, py, ax, ay, bx, by) { return Math.abs(crossCoordinates(ax, ay, bx, by, px, py)) < 1e-9 && px >= Math.min(ax, bx) && px <= Math.max(ax, bx) && py >= Math.min(ay, by) && py <= Math.max(ay, by); }
 function selectionIdsInRectangle(state, rectangle, routingContext) { return [...nodesInRectangle(state, rectangle), ...groupsForRender(state).filter(group => !isGroupHiddenByCollapsedAncestor(state, group) && rectanglesIntersect(rectangle, group)).map(group => group.id), ...edgesInRectangle(state, rectangle, routingContext)]; }
 function deletionPlan(state, selection) {
   const selectedIds = [...selection], groupIds = new Set(selectedIds.filter(id => state.groups.has(id))), nodeIds = new Set(selectedIds.filter(id => state.nodes.has(id))), edgeIds = new Set(selectedIds.filter(id => state.edges.has(id)));
@@ -1895,7 +2110,21 @@ function exportSvgNode(node) {
   const sectionHeadings = layout.sections.map(section => `<text x="${node.x + 8 + Math.min(section.depth, 4) * 8}" y="${node.y + section.y + 15}" fill="${xml(color)}" font-size="11" font-weight="600">${xml(`${section.collapsed ? "▸ " : "▾ "}${section.section.title}`)}</text>`).join("");
   const icon = iconifyIconName(node.icon) ? `<text x="${node.x + node.width - 8}" y="${node.y + 20}" fill="${xml(color)}" font-size="12" text-anchor="end">◇</text>` : "";
   const headerRule = layout.progressive ? `<path d="M ${node.x} ${node.y + NODE_PROPERTY_TOP} L ${node.x + node.width} ${node.y + NODE_PROPERTY_TOP}" stroke="${xml(node.style?.borderColor ?? "#334155")}" stroke-opacity=".28"/>` : "";
-  return `<g transform="rotate(${node.rotation ?? 0} ${node.x + node.width / 2} ${node.y + node.height / 2})"><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${xml(node.style?.background ?? "#f8fafc")}" stroke="${xml(node.style?.borderColor ?? "#334155")}"/>${headerRule}<text x="${node.x + 8}" y="${labelY}" fill="${xml(color)}" font-size="14">${xml(node.label ?? node.id)}</text>${icon}${sectionHeadings}${rows}</g>`;
+  const standardBody = `${sectionHeadings}${rows}`;
+  const registration = resolveNodeRenderer(node);
+  let body = standardBody, rendererAttributes = "";
+  if (registration?.lifecycle.exportSvg) {
+    try {
+      const customBody = invokeNodeRendererHook(registration.lifecycle.exportSvg, {
+        node: structuredClone(node), key: registration.key, version: registration.version,
+        bounds: { x: node.x, y: node.y + NODE_PROPERTY_TOP, width: node.width, height: Math.max(0, node.height - NODE_PROPERTY_TOP) },
+        escape: xml, standardBody
+      }, "exportSvg");
+      if (typeof customBody !== "string") throw new GhostagramError("INVALID_MODEL", "Node renderer exportSvg must return an SVG fragment string.");
+      body = customBody; rendererAttributes = ` data-renderer-key="${xml(registration.key)}" data-renderer-version="${registration.version}"`;
+    } catch { body = standardBody; }
+  }
+  return `<g${rendererAttributes} transform="rotate(${node.rotation ?? 0} ${node.x + node.width / 2} ${node.y + node.height / 2})"><rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${xml(node.style?.background ?? "#f8fafc")}" stroke="${xml(node.style?.borderColor ?? "#334155")}"/>${headerRule}<text x="${node.x + 8}" y="${labelY}" fill="${xml(color)}" font-size="14">${xml(node.label ?? node.id)}</text>${icon}${body}</g>`;
 }
 function exportMarker(id, type) {
   const descriptor = markerDescriptor(type);
@@ -2002,4 +2231,5 @@ function asProblem(error) {
 function ok(requestId, renderedRevision, stats) { return { ok: true, requestId, renderedRevision, stats }; }
 function failed(request, code, message, renderedRevision, details) { return { ok: false, requestId: request?.requestId ?? null, renderedRevision, stats: {}, problem: { code, message, details } }; }
 
-export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, curvedPath, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgBounds, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteScore, gridCssProjection, groupDragMode, groupDuplicatePayload, groupForGroupPosition, groupForNodePosition, groupInteractionTarget, groupMovePayload, groupVisibilityDescriptor, groupsAtPosition, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLabelStyle, nodeLayoutProjection, nodeUsesFullLabelLayout, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, selectionRequiresMultiGroupDrag, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportExportBounds, viewportPoint };
+export const __nodeRendererTesting = Object.freeze({ NodeRendererInstance, nodeRendererDescriptor, resolveNodeRenderer, supportsNodeRendererBody });
+export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, bestFlowchartRoute, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, curvedPath, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgBounds, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteCandidates, flowchartRouteScore, gridCssProjection, groupDragMode, groupDuplicatePayload, groupForGroupPosition, groupForNodePosition, groupInteractionTarget, groupMovePayload, groupVisibilityDescriptor, groupsAtPosition, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLabelStyle, nodeLayoutProjection, nodeUsesFullLabelLayout, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, selectionRequiresMultiGroupDrag, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportExportBounds, viewportPoint };
