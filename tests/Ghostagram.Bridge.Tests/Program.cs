@@ -13,7 +13,7 @@ var parent = new TestNode(kind, graph, "Parent");
 var child = new TestNode(kind, graph, "Child");
 child.Set("priority", 3L);
 child.Set("obsolete", "remove-me");
-parent.Set("unsafe", new UnsupportedMetadata());
+parent.Set("structured", new Dictionary<string, object?> { ["nested"] = "accepted-semantic-value" });
 var dependency = graph.Connect(parent, child, RelationshipKind.DependsOn, "blocks");
 var contains = graph.Connect(parent, child, RelationshipKind.Contains);
 
@@ -42,8 +42,8 @@ var childDiagram = document.Nodes.Single(node => node.Id == child.Id.ToString())
 Assert(parentDiagram.Id == parent.Id.ToString() && document.Edges.Any(edge => edge.Id == dependency.Id.ToString()), "Projection uses stable graph node and edge ids, never names.");
 Assert(document.Ports.Any(port => port.Id == GraphDiagramIds.InputPort(parent.Id)) && document.Ports.Any(port => port.Id == GraphDiagramIds.OutputPort(parent.Id)), "Projection creates deterministic synthetic input/output ports.");
 Assert(parentDiagram.TypeId == descriptor.TypeId && parentDiagram.TypeVersion == 2 && parentDiagram.RendererKey == "tests.task", "NodeKind registry applies kind-specific descriptor and renderer data.");
-Assert(document.ExtensionData!["projectionDiagnostics"].EnumerateArray().Any(item => item.GetProperty("metadataKey").GetString() == "unsafe") &&
-       parentDiagram.Properties.All(property => property.Id != "unsafe"), "Unsupported CLR metadata is omitted with a projection diagnostic rather than stringified.");
+Assert(document.ExtensionData!["projectionDiagnostics"].EnumerateArray().Any(item => item.GetProperty("metadataKey").GetString() == "structured") &&
+       parentDiagram.Properties.All(property => property.Id != "structured"), "Accepted structured semantic metadata without a diagram projection is omitted with a diagnostic rather than stringified.");
 Assert(parentDiagram.Properties.Single(property => property.Id == "priority").Value is null && childDiagram.Properties.Single(property => property.Id == "priority").Value!.Value.GetInt64() == 3, "Typed descriptors map registered metadata with defaults preserved.");
 Assert(document.Groups.Any(group => group.Id == GraphDiagramIds.Group(parent.Id)) && childDiagram.GroupId == GraphDiagramIds.Group(parent.Id), "Contains relationships project to hierarchy groups and membership.");
 Assert(document.Edges.Single(edge => edge.Id == dependency.Id.ToString()).Waypoints!.Count == 2 && document.Viewport.Zoom == 1.25 && document.Selection.SequenceEqual([child.Id.ToString()]), "Presentation sidecar round-trips waypoints, viewport, and selection.");
@@ -280,8 +280,6 @@ sealed class TestNode(NodeKind kind, IGraph graph, string name) : GraphNode(kind
     public void RenameTo(string name) => SetNodeName(name);
     public void Set(string key, object? value) => SetMetadata(key, value);
 }
-
-sealed class UnsupportedMetadata;
 
 sealed class TestPortProfile(NodeKind kind) : INodePortPresentationProfile
 {

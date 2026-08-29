@@ -17,6 +17,8 @@
     <Project Path="tests/Ghostagram.Server.GraphWorkspace.Tests/Ghostagram.Server.GraphWorkspace.Tests.csproj" />
     <Project Path="tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj" />
     <Project Path="tests/Ghostagram.Cutover.Tests/Ghostagram.Cutover.Tests.csproj" />
+    <Project Path="tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj" />
+    <Project Path="tests/Ghostagram.Graph.Conformance.Tests/Ghostagram.Graph.Conformance.Tests.csproj" />
   </Folder>
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Ghostagram.Bridge.Benchmarks/Ghostagram.Bridge.Benchmarks.csproj" />

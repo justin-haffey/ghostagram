@@ -6,9 +6,9 @@ using Ghostagram.Execution;
 using Ghostworx.System.Graph;
 using Ghostworx.System.Graph.Serialization;
 
-var hierarchyKind = NodeKind.Define("Cutover", "Hierarchy");
-var processKind = NodeKind.Define("Cutover", "ProcessStep");
-var modelKind = NodeKind.Define("Cutover", "Model");
+var hierarchyKind = NodeKind.Collection;
+var processKind = NodeKind.Other;
+var modelKind = NodeKind.Metadata;
 var graph = new GraphStore("cutover", features: null, options: new GraphStoreOptions { NodeRetention = GraphNodeRetentionMode.Strong });
 var hierarchy = new TestNode(hierarchyKind, graph, "Order workflow");
 var intake = new TestNode(processKind, graph, "Intake");
@@ -104,12 +104,30 @@ var beforePersistence = graph.CaptureSnapshot();
 var beforePresentation = presentation.Capture();
 var serializer = new GraphJsonSerializer();
 var presentationSerializer = new GraphPresentationJsonSerializer();
-var persisted = serializer.SerializeGraph(graph);
+var exchange = new GraphExchangeContext(
+    graph.Options.Authority,
+    new GraphOperationContext(GraphCompatibilityProfile.ConformanceSmall, DateTimeOffset.UtcNow.AddMinutes(1)));
+var persistedResult = serializer.Serialize(graph, exchange);
+Assert(persistedResult.IsSuccess, persistedResult.Outcome?.Code.Value ?? "Profiled graph serialization failed.");
+var persisted = persistedResult.Value;
+using (var persistedDocument = JsonDocument.Parse(persisted))
+{
+    var root = persistedDocument.RootElement;
+    Assert(root.GetProperty("schemaVersion").GetInt32() == 2 &&
+           root.GetProperty("contractVersion").GetString() == GraphContractVersion.Current.CanonicalText &&
+           root.GetProperty("originAuthority").GetString() == graph.Options.Authority.Value,
+        "Graph serialization did not use the accepted schema, contract version, or semantic authority.");
+}
 var persistedPresentation = presentationSerializer.Serialize(beforePresentation);
-var restoredGraph = serializer.DeserializeGraph(persisted);
+var restoredResult = serializer.Deserialize(persisted, exchange);
+Assert(restoredResult.IsSuccess, restoredResult.Outcome?.Code.Value ?? "Profiled graph deserialization failed.");
+var restoredGraph = restoredResult.Value;
 var restored = restoredGraph.CaptureSnapshot();
 var restoredPresentation = presentationSerializer.Deserialize(persistedPresentation);
-Assert(SemanticallyEquivalent(beforePersistence, restored), "Graph serialization changed semantic identity, version, kinds, or relationships.");
+var reserializedResult = serializer.Serialize(restoredGraph, exchange);
+Assert(reserializedResult.IsSuccess && reserializedResult.Value == persisted &&
+       restored.GraphId == beforePersistence.GraphId && restored.Version == beforePersistence.Version,
+    "Profiled graph round-trip changed canonical schema-v2 bytes, graph identity, or revision.");
 Assert(presentationSerializer.Serialize(restoredPresentation) == persistedPresentation,
     "Presentation sidecar serialization was not deterministic across reload.");
 var restoredDocument = projection.Project(restored, restoredPresentation);
@@ -133,29 +151,6 @@ Console.WriteLine("PASS graph serialization and presentation projection round tr
 Console.WriteLine("PASS versioned presentation sidecar persistence and reload");
 Console.WriteLine($"PASS graph-native compilation fingerprint {compiledGraph.PlanFingerprint}");
 Console.WriteLine("Ghostagram cutover tests passed.");
-
-static bool SemanticallyEquivalent(GraphSnapshot left, GraphSnapshot right)
-{
-    if (left.GraphId != right.GraphId || left.Version != right.Version) return false;
-    var leftNodes = left.Nodes.OrderBy(node => node.Id.Value).Select(node => new
-    {
-        node.Id,
-        node.Kind,
-        node.NodeName,
-        Metadata = node.Metadata.OrderBy(pair => pair.Key).Select(pair => $"{pair.Key}={pair.Value}").ToArray()
-    });
-    var rightNodes = right.Nodes.OrderBy(node => node.Id.Value).Select(node => new
-    {
-        node.Id,
-        node.Kind,
-        node.NodeName,
-        Metadata = node.Metadata.OrderBy(pair => pair.Key).Select(pair => $"{pair.Key}={pair.Value}").ToArray()
-    });
-    var leftEdges = left.Relationships.OrderBy(item => item.Relationship.Id.Value).Select(item => item.Relationship);
-    var rightEdges = right.Relationships.OrderBy(item => item.Relationship.Id.Value).Select(item => item.Relationship);
-    return JsonElement.DeepEquals(JsonSerializer.SerializeToElement(leftNodes), JsonSerializer.SerializeToElement(rightNodes)) &&
-           leftEdges.SequenceEqual(rightEdges);
-}
 
 static bool StableProjectionEquivalent(DiagramDocument left, DiagramDocument right) =>
     JsonElement.DeepEquals(JsonSerializer.SerializeToElement(left.Nodes.OrderBy(node => node.Id)), JsonSerializer.SerializeToElement(right.Nodes.OrderBy(node => node.Id))) &&

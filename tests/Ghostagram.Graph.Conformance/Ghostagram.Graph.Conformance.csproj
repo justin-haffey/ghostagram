@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Ghostagram.Bridge\Ghostagram.Bridge.csproj" />
+    <ProjectReference Include="..\..\..\ghostworx-system\tests\Ghostworx.System.Graph.Conformance.Support\Ghostworx.System.Graph.Conformance.Support.csproj" />
+    <ProjectReference Include="..\..\..\ghostworx-system\tests\Ghostworx.System.Variable.Conformance.Support\Ghostworx.System.Variable.Conformance.Support.csproj" />
+    <ProjectReference Include="..\..\..\ghostworx-system\tests\Ghostworx.System.SemanticLinks.Conformance\Support\Ghostworx.System.SemanticLinks.Conformance.Support.csproj" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Core\Ghostworx.System.Core.csproj" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Graph.Serialization\Ghostworx.System.Graph.Serialization.csproj" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Variable.Contracts\Ghostworx.System.Variable.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Variable.Serialization\Ghostworx.System.Variable.Serialization.csproj" />
+  </ItemGroup>
+</Project>

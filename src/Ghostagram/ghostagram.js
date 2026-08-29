@@ -497,13 +497,13 @@ class GhostagramEngine {
     let label = this.dom.labelById.get(edge.id);
     if (labelPlacement) {
       if (!label) {
-        label = document.createElementNS(SVG_NS, "text"); label.classList.add("ghostagram-edge-label"); label.dataset.edgeId = edge.id; label.style.pointerEvents = "all"; label.style.cursor = "text";
+        label = document.createElementNS(SVG_NS, "text"); label.classList.add("ghostagram-edge-label"); label.dataset.edgeId = edge.id; label.style.pointerEvents = "all";
         label.addEventListener("pointerdown", event => this.startEdgeLabelDrag(edge.id, event), { signal: this.abort.signal });
         label.addEventListener("click", event => this.selectFromElement(edge.id, event, "edge"), { signal: this.abort.signal });
         label.addEventListener("dblclick", event => { event.stopPropagation(); this.startLabelEdit("edge", edge.id); }, { signal: this.abort.signal });
-        this.dom.edges.append(label); this.dom.labelById.set(edge.id, label);
+        this.dom.overlay.prepend(label); this.dom.labelById.set(edge.id, label);
       }
-      label.textContent = labelPlacement.text; label.style.display = geometry.hidden ? "none" : ""; label.setAttribute("x", String(labelPlacement.x)); label.setAttribute("y", String(labelPlacement.y)); label.setAttribute("fill", edgeStyle.labelColor); label.setAttribute("font-size", String(labelPlacement.fontSize));
+      label.textContent = labelPlacement.text; label.style.display = geometry.hidden ? "none" : ""; label.style.cursor = edge.labelEditable === false ? "pointer" : "grab"; label.setAttribute("x", String(labelPlacement.x)); label.setAttribute("y", String(labelPlacement.y)); label.setAttribute("fill", edgeStyle.labelColor); label.setAttribute("font-size", String(labelPlacement.fontSize)); label.setAttribute("text-anchor", "middle"); label.setAttribute("paint-order", "stroke fill"); label.setAttribute("stroke", "var(--ghostagram-edge-label-halo, #fff)"); label.setAttribute("stroke-width", "4"); label.setAttribute("stroke-linejoin", "round"); label.setAttribute("aria-label", edge.labelEditable === false ? labelPlacement.text : `${labelPlacement.text}. Drag to move; double-click to edit.`);
     } else if (label) { label.remove(); this.dom.labelById.delete(edge.id); }
     if (this.labelEditor?.kind === "edge" && this.labelEditor.id === edge.id) {
       if (label) label.style.visibility = "hidden";
@@ -690,7 +690,7 @@ class GhostagramEngine {
   selectableIds() { return selectableIds(this.state); }
   startSelectionLasso(event) {
     event.preventDefault();
-    const start = this.canvasPoint(event), box = this.dom.selectionBox; let frame = 0, latestPointer = event;
+    const gestureStart = { x: event.clientX, y: event.clientY }, start = this.canvasPoint(event), box = this.dom.selectionBox; let frame = 0, latestPointer = event;
     box.hidden = false;
     const update = () => {
       frame = 0;
@@ -703,6 +703,7 @@ class GhostagramEngine {
     const move = pointer => { latestPointer = pointer; if (!frame) frame = requestAnimationFrame(update); };
     const up = pointer => {
       window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); if (frame) cancelAnimationFrame(frame); box.hidden = true;
+      this.suppressSelectionClickForDrag(gestureStart, pointer);
       const rect = rectangleForPoints(start, this.canvasPoint(pointer)), ids = selectionIdsInRectangle(this.state, rect, this.routingContext);
       this.previewSelection = new Set(ids); this.pending.selection = true; this.schedule();
       this.emit("selection.changed", { kind: "lasso", ids, rect }, "browser");
@@ -1791,12 +1792,18 @@ function flowchartRouteCandidates(source, target, sourceSide, targetSide, option
 }
 function bestFlowchartRoute(candidates, edge, geometry, routingContext) {
   if (candidates.length === 1 || !routingContext || !edge || !geometry) return candidates[0];
+  if (candidates[0].length === 2 && directFlowchartRouteIsClear(candidates[0], geometry, routingContext)) return candidates[0];
   let best = candidates[0], bestScore = Number.POSITIVE_INFINITY;
   for (const [index, candidate] of candidates.entries()) {
     const score = flowchartRouteScore(candidate, edge, geometry, routingContext) + index / 1000;
     if (score < bestScore) { best = candidate; bestScore = score; }
   }
   return best;
+}
+function directFlowchartRouteIsClear(points, geometry, context) {
+  const endpointIds = new Set([geometry.sourceNode?.id, geometry.targetNode?.id].filter(Boolean));
+  const [source, target] = points, bounds = segmentBounds(source, target, 2);
+  return !querySpatialIndex(context.obstacleIndex, bounds).some(obstacle => !endpointIds.has(obstacle.id) && segmentIntersectsRectangle(source, target, obstacle));
 }
 function basicFlowchartRoutePoints(source, target, sourceSide, targetSide, options = flowchartOptions()) {
   const sourceVector = anchorVector(sourceSide), targetVector = anchorVector(targetSide);
@@ -1858,7 +1865,6 @@ function flowchartRouteScore(points, edge, geometry, context) {
       const endpointEscape = endpointIds.has(obstacle.id) && (index === 0 || index === segments.length - 1);
       if (!endpointEscape && segmentIntersectsRectangle(segment.a, segment.b, obstacle)) obstacleHits.add(obstacle.id);
     }
-    if (index === 0 || index === segments.length - 1) continue;
     for (const occupied of querySpatialIndex(context.segmentIndex, bounds)) {
       if (occupied.edgeId === edge.id) continue;
       const shared = collinearOverlapLength(segment.a, segment.b, occupied.a, occupied.b);
@@ -1988,6 +1994,7 @@ function updateGroupVisibilityControl(element, group, selected) {
   if (slash) slash.style.display = descriptor.icon === "mdi:eye-off-outline" ? "" : "none";
 }
 function nodesInRectangle(state, rectangle) { return [...state.nodes.values()].filter(node => !isNodeHiddenByCollapsedGroup(state, node) && rectanglesIntersect(rectangle, node)).map(node => node.id); }
+function groupsInRectangle(state, rectangle) { return groupsForRender(state).filter(group => !isGroupHiddenByCollapsedAncestor(state, group) && rectangleContains(rectangle, group)).map(group => group.id); }
 function edgesInRectangle(state, rectangle, routingContext = buildRoutingContext(state)) {
   return [...state.edges.values()].filter(rawEdge => {
     const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge);
@@ -2045,7 +2052,7 @@ function segmentsIntersectCoordinates(ax, ay, bx, by, cx, cy, dx, dy) {
 }
 function crossCoordinates(ax, ay, bx, by, cx, cy) { return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax); }
 function pointOnSegmentCoordinates(px, py, ax, ay, bx, by) { return Math.abs(crossCoordinates(ax, ay, bx, by, px, py)) < 1e-9 && px >= Math.min(ax, bx) && px <= Math.max(ax, bx) && py >= Math.min(ay, by) && py <= Math.max(ay, by); }
-function selectionIdsInRectangle(state, rectangle, routingContext) { return [...nodesInRectangle(state, rectangle), ...groupsForRender(state).filter(group => !isGroupHiddenByCollapsedAncestor(state, group) && rectanglesIntersect(rectangle, group)).map(group => group.id), ...edgesInRectangle(state, rectangle, routingContext)]; }
+function selectionIdsInRectangle(state, rectangle, routingContext) { return [...nodesInRectangle(state, rectangle), ...groupsInRectangle(state, rectangle), ...edgesInRectangle(state, rectangle, routingContext)]; }
 function deletionPlan(state, selection) {
   const selectedIds = [...selection], groupIds = new Set(selectedIds.filter(id => state.groups.has(id))), nodeIds = new Set(selectedIds.filter(id => state.nodes.has(id))), edgeIds = new Set(selectedIds.filter(id => state.edges.has(id)));
   for (const groupId of [...groupIds]) for (const descendantId of descendantGroupIds(state, groupId)) groupIds.add(descendantId);
@@ -2061,6 +2068,7 @@ function selectableIds(state) {
   return [...nodes, ...groups, ...edges];
 }
 function rectanglesIntersect(a, b) { return a.x <= b.x + b.width && a.x + a.width >= b.x && a.y <= b.y + b.height && a.y + a.height >= b.y; }
+function rectangleContains(outer, inner) { return inner.x >= outer.x && inner.y >= outer.y && inner.x + inner.width <= outer.x + outer.width && inner.y + inner.height <= outer.y + outer.height; }
 function setViewportCenter(state, centerX, centerY, size, zoom) { state.viewport = { ...state.viewport, zoom, x: centerX - size.width / (2 * zoom), y: centerY - size.height / (2 * zoom) }; }
 function exportSvgDocument(state, options = {}) { return exportSvgArtifact(state, options).svg; }
 function exportSvgArtifact(state, options = {}) {
@@ -2069,9 +2077,10 @@ function exportSvgArtifact(state, options = {}) {
   const groups = visibleGroups.map(group => `<rect x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" fill="rgba(148,163,184,.08)" stroke="#64748b" stroke-dasharray="4 3"/><text x="${group.x + 6}" y="${group.y + 18}" fill="#334155" font-size="12" font-weight="600">${xml(group.label ?? group.id)}</text>`).join("");
   const markerIds = Object.fromEntries(markerTypes.map(type => [type, `ghostagram-export-${type}`]));
   const routingContext = buildRoutingContext(state);
-  const edges = [...state.edges.values()].map(rawEdge => { const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge); if (geometry.hidden) return ""; const { sourcePoint, targetPoint } = geometry, routePoints = edgeRoutePoints(edge, sourcePoint, targetPoint, geometry, routingContext), style = edgeStyleDescriptor(edge.style), label = edgeLabelPlacement(edge, sourcePoint, targetPoint, geometry, routePoints), markerStart = markerFor(edge.overlays, markerIds, "start"), markerEnd = markerFor(edge.overlays, markerIds, "end"); return `<path d="${route(edge, sourcePoint, targetPoint, geometry, routePoints)}" fill="none" stroke="${xml(style.stroke)}" stroke-width="${style.strokeWidth}"${svgOptionalAttribute("stroke-dasharray", style.dash)}${svgOptionalAttribute("stroke-linecap", style.lineCap)}${svgOptionalAttribute("stroke-linejoin", style.lineJoin)}${svgOptionalAttribute("opacity", style.opacity)}${markerStart ? ` marker-start="${markerStart}"` : ""}${markerEnd ? ` marker-end="${markerEnd}"` : ""}/>${label ? `<text x="${label.x}" y="${label.y}" fill="${xml(style.labelColor)}" font-size="${label.fontSize}">${xml(label.text)}</text>` : ""}`; }).join("");
+  const edgeArtifacts = [...state.edges.values()].map(rawEdge => { const edge = resolveEdgeDescriptor(rawEdge, state.edgeTypes), geometry = edgeGeometry(state, edge); if (geometry.hidden) return null; const { sourcePoint, targetPoint } = geometry, routePoints = edgeRoutePoints(edge, sourcePoint, targetPoint, geometry, routingContext), style = edgeStyleDescriptor(edge.style), label = edgeLabelPlacement(edge, sourcePoint, targetPoint, geometry, routePoints), markerStart = markerFor(edge.overlays, markerIds, "start"), markerEnd = markerFor(edge.overlays, markerIds, "end"); return { path: `<path d="${route(edge, sourcePoint, targetPoint, geometry, routePoints)}" fill="none" stroke="${xml(style.stroke)}" stroke-width="${style.strokeWidth}"${svgOptionalAttribute("stroke-dasharray", style.dash)}${svgOptionalAttribute("stroke-linecap", style.lineCap)}${svgOptionalAttribute("stroke-linejoin", style.lineJoin)}${svgOptionalAttribute("opacity", style.opacity)}${markerStart ? ` marker-start="${markerStart}"` : ""}${markerEnd ? ` marker-end="${markerEnd}"` : ""}/>`, label: label ? `<text x="${label.x}" y="${label.y}" fill="${xml(style.labelColor)}" font-size="${label.fontSize}" text-anchor="middle" paint-order="stroke fill" stroke="white" stroke-width="4" stroke-linejoin="round">${xml(label.text)}</text>` : "" }; }).filter(Boolean);
+  const edges = edgeArtifacts.map(artifact => artifact.path).join(""), labels = edgeArtifacts.map(artifact => artifact.label).join("");
   const nodes = visibleNodes.map(exportSvgNode).join("");
-  return { bounds, svg: `<svg xmlns="${SVG_NS}" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" role="img"><defs>${Object.entries(markerIds).map(([type, id]) => exportMarker(id, type)).join("")}</defs>${groups}${edges}${nodes}</svg>` };
+  return { bounds, svg: `<svg xmlns="${SVG_NS}" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" role="img"><defs>${Object.entries(markerIds).map(([type, id]) => exportMarker(id, type)).join("")}</defs>${groups}${edges}${nodes}${labels}</svg>` };
 }
 function exportSvgBounds(items, options = {}) {
   if (options.bounds) {
@@ -2232,4 +2241,4 @@ function ok(requestId, renderedRevision, stats) { return { ok: true, requestId, 
 function failed(request, code, message, renderedRevision, details) { return { ok: false, requestId: request?.requestId ?? null, renderedRevision, stats: {}, problem: { code, message, details } }; }
 
 export const __nodeRendererTesting = Object.freeze({ NodeRendererInstance, nodeRendererDescriptor, resolveNodeRenderer, supportsNodeRendererBody });
-export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, bestFlowchartRoute, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, curvedPath, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgBounds, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteCandidates, flowchartRouteScore, gridCssProjection, groupDragMode, groupDuplicatePayload, groupForGroupPosition, groupForNodePosition, groupInteractionTarget, groupMovePayload, groupVisibilityDescriptor, groupsAtPosition, groupsForRender, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLabelStyle, nodeLayoutProjection, nodeUsesFullLabelLayout, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, selectionRequiresMultiGroupDrag, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportExportBounds, viewportPoint };
+export const __testing = { InteropEventQueue, anchorPoint, basicFlowchartRoutePoints, bezierControlDistance, bezierPath, bestFlowchartRoute, buildRoutingContext, buildState, applyOperation, canConnect, canReconnect, canvasCenterPoint, canvasHitDescriptor, centerViewport, cloneState, collapsedProxyGroupForNode, connectionPoliciesCompatible, connectionPolicyAllows, curvedPath, dateTimeInputValue, deletionPlan, descendantGroupIds, descendantNodeIds, dragPosition, editableEdgeLabelValue, editableLabelValue, edgeGeometry, edgeLabelOffsets, edgeLabelPlacement, edgeLabelText, edgeRoutePoints, edgeSelectionPoints, edgeStyleDescriptor, edgesInRectangle, endpointDescriptor, exportSvgBounds, exportSvgDocument, fitViewport, flowAnimationDescriptor, flowchartOptions, flowchartPath, flowchartRouteCandidates, flowchartRouteScore, gridCssProjection, groupDragMode, groupDuplicatePayload, groupForGroupPosition, groupForNodePosition, groupInteractionTarget, groupMovePayload, groupVisibilityDescriptor, groupsAtPosition, groupsForRender, groupsInRectangle, historyDirectionForKey, iconifyIconName, isClickGesture, isGroupHiddenByCollapsedAncestor, isInteractiveNodeTarget, isNodeHiddenByCollapsedGroup, markerDescriptor, markerFor, multiDragPositions, nextNodePresentationRequest, nextSectionPresentationRequest, nodeContentMinimumHeight, nodeLabelStyle, nodeLayoutProjection, nodeUsesFullLabelLayout, nodesInRectangle, normaliseNodePresentation, normaliseNodeProperties, normaliseNodeSections, normalisePropertyEditor, orderedNodePortAnchor, perimeterAnchorPoint, pointAlongPolyline, polylineIntersectsRectangle, portAnchorStyle, portRenderPlan, portVisualDescriptor, previewPointForPort, propertyCommitDecision, propertyDisplayValue, propertyEditorKind, propertyEditorStyle, propertyInputValue, propertyPortAnchor, propertyRowHeight, propertyValueSignature, proxyPortDescriptor, reconnectHandlePoint, rectangleContains, rectangleForPoints, rectanglesIntersect, resizeDimensions, resolveEdgeDescriptor, resolvePortAnchor, revision, rotateAnchorPoint, rotationForPoint, route, scopesCompatible, selectableIds, selectedMovePositions, selectionIdsInRectangle, selectionRequiresMultiGroupDrag, serialiseState, sideStyle, snap, translatePositions, validateConnectionPolicy, validateEdgeTypeDescriptor, validateEndpoint, validateState, viewportExportBounds, viewportPoint };

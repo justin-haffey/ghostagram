@@ -90,11 +90,11 @@ The executable protocol, C# record suggestions, and event mapping are in [`src/G
 Ghostagram owns four ordered layers inside one host element:
 
 1. group DOM for bounds, drag surfaces, and resize handles;
-2. SVG edges and labels;
+2. SVG edge paths;
 3. node DOM and explicit ports;
-4. SVG interaction controls for reconnection and waypoints.
+4. foreground SVG edge labels and interaction controls for reconnection and waypoints.
 
-That layer split ensures group styling never captures node pointer input, while edge controls stay accurately aligned with computed anchors. Group collapse uses perimeter proxies for cross-boundary edges, so a collapsed workflow stays connected rather than visually losing its external dependencies. Rotation, route geometry, endpoint descriptors, and SVG export all derive from the same authoritative model state.
+That layer split ensures group styling never captures node pointer input, while draggable edge labels remain readable above node bodies and edge controls stay accurately aligned with computed anchors. Browser static SVG export preserves the same label-over-node paint order. Group collapse uses perimeter proxies for cross-boundary edges, so a collapsed workflow stays connected rather than visually losing its external dependencies. Rotation, route geometry, endpoint descriptors, and SVG export all derive from the same authoritative model state.
 
 ## C#/Razor integration shape
 

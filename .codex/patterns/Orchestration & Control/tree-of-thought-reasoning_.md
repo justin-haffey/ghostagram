@@ -2,7 +2,6 @@
 url: "https://agentic-patterns.com/patterns/tree-of-thought-reasoning/"
 title: "Tree-of-Thought Reasoning - Awesome Agentic Patterns"
 ---
-
 [Skip to content](https://agentic-patterns.com/patterns/tree-of-thought-reasoning/#problem)
 
 # Tree-of-Thought Reasoning
@@ -23,7 +22,6 @@ while queue:
         score = evaluate(step)
         queue.push((score, step))
 select_best(queue)
-
 ```
 
 ## How to use it

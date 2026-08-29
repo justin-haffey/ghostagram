@@ -375,8 +375,13 @@ test("a lasso rectangle selects visible intersecting nodes, groups, and edges in
   assert.deepEqual(__testing.nodesInRectangle(state, { x: 10, y: 10, width: 80, height: 50 }), ["a"]);
   assert.deepEqual(__testing.nodesInRectangle(state, { x: 100, y: 10, width: 30, height: 30 }), []);
   assert.equal(__testing.rectanglesIntersect({ x: 0, y: 0, width: 10, height: 10 }, { x: 10, y: 10, width: 2, height: 2 }), true);
-  const grouped = __testing.buildState({ ...base, groups: [{ id: "group", x: 0, y: 0, width: 160, height: 100, collapsed: false }] });
-  assert.deepEqual(__testing.selectionIdsInRectangle(grouped, { x: 10, y: 10, width: 80, height: 50 }), ["a", "group", "edge-1"]);
+  const grouped = __testing.buildState({ ...base, groups: [
+    { id: "parent", x: 0, y: 0, width: 200, height: 160, collapsed: false },
+    { id: "child", parentGroupId: "parent", x: 16, y: 8, width: 96, height: 64, collapsed: false }
+  ] });
+  assert.deepEqual(__testing.groupsInRectangle(grouped, { x: 10, y: 4, width: 108, height: 76 }), ["child"]);
+  assert.deepEqual(__testing.selectionIdsInRectangle(grouped, { x: 10, y: 4, width: 108, height: 76 }), ["a", "child", "edge-1"]);
+  assert.equal(__testing.rectangleContains(grouped.groups.get("parent"), { x: 10, y: 4, width: 108, height: 76 }), true, "a containing parent is not itself enclosed by the lasso");
   const edge = state.edges.get("edge-1"), geometry = __testing.edgeGeometry(state, edge), route = __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, __testing.buildRoutingContext(state)), probe = __testing.pointAlongPolyline(route, .5);
   assert.deepEqual(__testing.edgesInRectangle(state, { x: probe.x - 2, y: probe.y - 2, width: 4, height: 4 }), ["edge-1"]);
   assert.equal(__testing.polylineIntersectsRectangle([{ x: 0, y: 0 }, { x: 100, y: 100 }], { x: 45, y: 45, width: 10, height: 10 }), true);
@@ -726,6 +731,50 @@ test("obstacle-aware flowchart routing sends a backward loop through the cleares
   assert.equal(__testing.edgesInRectangle(state, mixedRectangle, selectionContext).includes(edge.id), expected);
 });
 
+test("flowchart routing separates shared endpoint legs after the configured stub", () => {
+  const state = __testing.buildState({
+    documentId: "shared-route-leg",
+    nodes: [
+      { id: "source", x: 0, y: 0, width: 80, height: 40 },
+      { id: "direct-target", x: 320, y: 0, width: 80, height: 40 },
+      { id: "lower-target", x: 240, y: 120, width: 80, height: 40 }
+    ],
+    ports: [
+      { id: "source-out", nodeId: "source", direction: "source", anchor: "right" },
+      { id: "direct-in", nodeId: "direct-target", direction: "target", anchor: "left" },
+      { id: "lower-in", nodeId: "lower-target", direction: "target", anchor: "left" }
+    ],
+    edges: [
+      { id: "direct", sourcePortId: "source-out", targetPortId: "direct-in", connector: "flowchart", connectorOptions: { stub: 32 } },
+      { id: "lower", sourcePortId: "source-out", targetPortId: "lower-in", connector: "flowchart", connectorOptions: { stub: 32 } }
+    ]
+  });
+  const context = __testing.buildRoutingContext(state), edge = state.edges.get("lower"), geometry = __testing.edgeGeometry(state, edge);
+  const points = __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, context);
+  assert.deepEqual(points.slice(0, 2), [{ x: 80, y: 20 }, { x: 112, y: 20 }], "the branch leaves the shared lane after one endpoint stub");
+});
+
+test("flowchart routing keeps a clear direct path between adjacent aligned nodes", () => {
+  const state = __testing.buildState({
+    documentId: "adjacent-direct-route",
+    nodes: [
+      { id: "source", x: 0, y: 0, width: 80, height: 40 },
+      { id: "target", x: 480, y: 0, width: 80, height: 40 }
+    ],
+    ports: [
+      { id: "source-out", nodeId: "source", direction: "source", anchor: "right" },
+      { id: "target-in", nodeId: "target", direction: "target", anchor: "left" }
+    ],
+    edges: [
+      { id: "occupied-corridor", sourcePortId: "source-out", targetPortId: "target-in", connector: "flowchart" },
+      { id: "mcp", sourcePortId: "source-out", targetPortId: "target-in", connector: "flowchart" }
+    ]
+  });
+  const context = __testing.buildRoutingContext(state), edge = state.edges.get("mcp"), geometry = __testing.edgeGeometry(state, edge);
+  const points = __testing.edgeRoutePoints(edge, geometry.sourcePoint, geometry.targetPoint, geometry, context);
+  assert.deepEqual(points, [{ x: 80, y: 20 }, { x: 480, y: 20 }], "an occupied corridor must not bend a clear direct connection");
+});
+
 test("a self-loop clears its own node instead of crossing through it", () => {
   const node = { id: "loop", x: 100, y: 100, width: 100, height: 100 };
   const state = __testing.buildState({
@@ -801,6 +850,17 @@ test("label overlays use deterministic routed locations and reject invalid descr
   assert.deepEqual(__testing.edgeLabelPlacement({ connector: "flowchart", label: "moved", labelOffsetX: 8, labelOffsetY: -4 }, { x: 0, y: 0 }, { x: 100, y: 100 }), { text: "moved", x: 58, y: 46, fontSize: 12 });
   assert.throws(() => __testing.buildState({ ...base, edges: [{ ...base.edges[0], overlays: [{ type: "label", label: "bad", location: 2 }] }] }), /location/i);
   assert.throws(() => __testing.buildState({ ...base, edges: [{ ...base.edges[0], labelOffsetX: "bad" }] }), /label offsets/i);
+});
+
+test("SVG export centers edge labels and paints them above nodes", () => {
+  const state = __testing.buildState({
+    ...base,
+    nodes: [{ ...base.nodes[0], label: "Source" }, { ...base.nodes[1], label: "Destination" }],
+    edges: [{ ...base.edges[0], label: "preliminary_report" }]
+  });
+  const svg = __testing.exportSvgDocument(state);
+  assert.match(svg, /<text[^>]*text-anchor="middle"[^>]*paint-order="stroke fill"[^>]*>preliminary_report<\/text>/);
+  assert.ok(svg.indexOf(">preliminary_report</text>") > svg.indexOf(">Destination</text>"), "edge labels are emitted after node bodies");
 });
 
 test("a rejected operation batch leaves the authoritative snapshot unchanged", () => {
