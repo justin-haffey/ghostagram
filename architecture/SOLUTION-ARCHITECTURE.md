@@ -13,16 +13,25 @@ upstream:
   revision: "None"
 owners:
   - "dennis-ritchie (delegated Ghostagram solution architect)"
+  - "solution-architect (epic002_ghostagram_solution_architecture)"
 created: "2026-08-28"
-updated: "2026-08-28"
+updated: "2026-09-06"
+revision: "2"
 template_version: "2.0.0"
 ---
 
+
+
+
 # Ghostagram Solution Architecture
+
+> Revision 2 is the current Target amendment. The [layered foundation reconciliation](#epic-002-layered-foundation-reconciliation) below replaces the historical P50 Feature/Plan-Pending and delivery sequencing statements. Earlier approval records apply only to their named baseline; revision 2 requires its own independent approval. No implementation or promotion is claimed.
 
 ## 1. Decision and Status
 
-This artifact defines the Ghostagram Solution Target needed to consume the EPIC-001 conformance corpora through Ghostagram's real projection boundary. It adds one reusable, child-owned conformance adapter over the existing `Ghostagram.Bridge` projection, delta, and expected-revision command seams. The adapter is evidence infrastructure: it does not become a semantic authority, production runtime, deployable service, UI feature, or live operational projection client.
+This artifact defines the canonical Ghostagram Solution Target. Sections 1 through 16 and the preserved approval record in Section 18 retain the independently accepted EPIC-001 consumer-conformance Target and its post-Plan reconciliation. Section 17 adds the EPIC-002 read-only Declarative Component Composition projection as a separately reviewed Target slice; it does not replace or promote the EPIC-001 history.
+
+The EPIC-001 slice consumes the conformance corpora through Ghostagram's real projection boundary. It adds one reusable, child-owned conformance adapter over the existing `Ghostagram.Bridge` projection, delta, and expected-revision command seams. The adapter is evidence infrastructure: it does not become a semantic authority, production runtime, deployable service, UI feature, or live operational projection client.
 
 The independently accepted FEATURE-001 through FEATURE-003 Plan amendments now allocate the bounded Ghostagram adapter mapping, tests, per-Feature evidence workspace, and independent local Validation through this Target. Exact project, module, API, and file placement remains a child Design decision. Implementation remains gated by an accepted Design; FEATURE-002 and FEATURE-003 source, tests, adapter mapping, Evidence, and Validation also remain gated by exact FEATURE-001 delivery Evidence and independently Accepted Validation. Plan reconciliation and independent confirmation do not promote this Target to `Implemented` or `Current`.
 
@@ -395,7 +404,198 @@ All original exclusions remain binding: no UI/browser acceptance, Blazor Laborat
 | Evidence | Exact Plan locators and workspaces align with the existing Bridge projection, delta, command, and presentation seams. FEATURE-002/003 remain fail-closed, evidence stays Feature-specific, and no UI, SignalR, live projection, persistence, runtime authority, deployment, copied semantics, or relabeled System execution was introduced. |
 | Bypass reason | None |
 
-## 17. Approval Record
+## 17. EPIC-002 Declarative Composition Projection Target
+
+### 17.1 Decision, lifecycle, and entry gate
+
+Ghostagram will consume accepted System Component Definitions and Composition IR through one read-only, rebuildable projection boundary. `Ghostworx.System` remains the sole semantic and compiler authority. Ghostagram owns only projection interpretation, presentation identity and revision, bounded consumer diagnostics, explicit freshness/skew state, and attributable projection-conformance observations.
+
+This is a pre-Feature P50 Target refinement under [ADR-008](../../../architecture/decisions/ADR-008-pre-feature-child-target-architecture-assignment.md). The exact `repos/ghostagram` assignment is Solution `change`, Package `change`, and Module `change`. The local [governance](../AGENTS.md) and [context](../CONTEXT.md) reconciliations are independently Accepted. Feature: `Pending`. Implementation Plan: `Pending`. This Target authorizes no Design, source, tests, dependency change, Evidence, Validation, deployment, publication, staging, commit, or external mutation.
+
+The overall solution lifecycle remains `Target`. Approval of this EPIC-002 slice is architecture acceptance only; it is not implementation, conformance, runtime-readiness, release, or promotion evidence.
+
+### 17.2 Governing inputs and exact locators
+
+| Artifact | Lifecycle | Ghostagram constraint |
+|---|---|---|
+| [EPIC-002](../../../.swe/epics/002-declarative-composition-model/EPIC.md) (`EPIC-002`) | Accepted | One definition-only Feature family; no runtime, dispatch, transport, provider, or materialization ownership. |
+| [EPIC-002 Concept](../../../.swe/epics/002-declarative-composition-model/CONCEPT.md) (`CONCEPT-EPIC-002`) | Accepted | Preserve recursive Component identity, containment, supervision, encapsulation, requirements, declared surfaces, compatibility, and strict definition/runtime separation. |
+| [EPIC-002 Architecture Impact](../../../.swe/epics/002-declarative-composition-model/ARCHITECTURE-IMPACT.md) (`ARCH-IMPACT-EPIC-002`) | Accepted | Assign Ghostagram Solution/Package/Module `change` for a read-only definition projection; exclude Execution, Server, Blazor, SignalR, and operational projection scope. |
+| [Platform Target](../../../architecture/PLATFORM-ARCHITECTURE.md#epic-002-parent-architecture-assignment) (`ARCH-PLATFORM-GHOSTWORX`) | Target, independently approved | Depend inward on System's accepted records/results and keep presentation outside semantic Content Identity. |
+| [ADR-008](../../../architecture/decisions/ADR-008-pre-feature-child-target-architecture-assignment.md) (`ADR-008`) | Accepted | Permit only this exact Target architecture with the Plan recorded as Pending and require post-Plan reconciliation. |
+| [Declarative Component Composition](../../../architecture/contracts/DECLARATIVE-COMPONENT-COMPOSITION.md) (`CONTRACT-DECLARATIVE-COMPONENT-COMPOSITION`) | Accepted | Preserve normative identity, visibility, version/profile, provenance, Content Identity, diagnostics, finite limits, and failure meaning without copying compiler semantics. |
+| [ADR-005](../../../architecture/decisions/ADR-005-componentmodel-port-definition-and-port-interaction-ownership.md) (`ADR-005`) | Accepted | `IPort` and `IControl` remain non-executable EPIC-002 definitions; EPIC-005 owns interaction semantics. |
+| [Semantic Graph and Federation](../../../architecture/contracts/SEMANTIC-GRAPH-AND-FEDERATION.md) | Accepted | Preserve canonical Semantic Addresses, origin, and exact revisions; do not mint a second identity authority. |
+| [Variable Definition and Resolution](../../../architecture/contracts/VARIABLE-DEFINITION-AND-RESOLUTION.md) | Accepted | Project `VariableRequirement` and `VariableAssignment` without `VariableBinding`, provider locator, credential, resolved value, or implicit resolution. |
+
+### 17.3 Solution boundary
+
+**In scope**
+
+- Read-only projection of accepted Component Definitions and accepted Composition IR into rebuildable `DiagramDocument` state.
+- Preservation of canonical Component and declaration identities, exact source revisions, parent/constituent hierarchy, explicit visibility and exports, requirements/assignments, capability/operation/`IPort`/`IControl` definition meaning, implementation-reference identity, contract/compiler/profile versions, provenance, Content Identity, bounded diagnostics, and projection freshness.
+- Ghostagram-owned presentation sidecars for layout, waypoints, viewport, selection, color, collapsed state, and presentation revision, keyed without changing portable System records.
+- Explicit `fresh`, `stale`, `unsupported`, `skewed`, and `failed` consumer outcomes and full-reprojection behavior when freshness cannot be proved.
+- Attributable Ghostagram projection-conformance observations from the real projection seam after an Accepted Feature and Plan allocate delivery.
+
+**Out of scope**
+
+- Authoritative definition or IR editing, compilation, migration semantics, identity minting, validation authority, compatibility reinterpretation, or Content Identity generation.
+- `VariableBinding` access, provider selection, value resolution, credentials, private locators, resolved payloads, runtime state, or executable behavior.
+- Port Binding, Contract, Channel, envelope, route, transport, middleware, dispatch, authorization, retry, backpressure, cancellation, correlation, runtime coordination, or EPIC-005 interaction ownership.
+- Instance materialization, activation, placement, scheduling, live supervision, lifecycle, health, runtime overlays, or EPIC-010 ownership.
+- `Ghostagram.Execution`, palette definitions, `Ghostagram.Server`, Blazor, JavaScript, SignalR, MCP/HTTP endpoints, persistence services, live operational Projection/Control Ports, deployment, or browser behavior.
+- Semantic mutation through the existing graph command adapter. Authoritative Component definition editing remains unavailable unless a separately Accepted System-owned command, expected-revision, validation, and conflict contract plus separate architecture, Feature, and Plan allocate it.
+
+### 17.4 Exact Package and Module assignment
+
+| Structural scope | Selected boundary | Responsibility | Current-source grounding | Explicit exclusions |
+|---|---|---|---|---|
+| Package | `Ghostagram.Bridge` | Own the adapter from System-owned Component Definition/Composition IR records to Ghostagram-owned projection results and presentation sidecars. | The existing [`GraphDiagramProjection`](../src/Ghostagram.Bridge/Projection.cs) already projects an authoritative System snapshot into `DiagramDocument`, records graph and presentation revisions, emits bounded projection diagnostics, and keeps mutation outside projection. `Ghostagram.Bridge` already references System public contracts and `Ghostagram.Core`. | The Package does not become a compiler, System record owner, runtime, Server endpoint, UI host, or operational projection client. Its unrelated existing Execution dependency does not authorize the new module to consume Execution contracts. |
+| Module | `DeclarativeCompositionProjection` within `Ghostagram.Bridge` | Consume typed, already validated System definitions/IR; produce one immutable read-only projection result with a rebuildable diagram, source/version/provenance/Content Identity facts, presentation revision, freshness state, and bounded redacted diagnostics. Own the future real-seam conformance mapping for this behavior. | [`IGraphDiagramProjection`](../src/Ghostagram.Bridge/BridgeContracts.cs) and [`GraphDiagramDeltaProjector`](../src/Ghostagram.Bridge/Projection.cs) establish the local projection/freshness pattern; [`DiagramDocument`](../src/Ghostagram.Core/DiagramModel.cs) supplies rebuildable presentation state with extension metadata. | No dependency on `Ghostagram.Execution`, palette persistence, Server, Blazor, SignalR, runtime/materialization types, or the graph command adapter for semantic edits. No copied System validation/compiler/migration logic. |
+
+The later Package architect owns `architecture/packages/Ghostagram.Bridge/PACKAGE-ARCHITECTURE.md`; the later Module architect owns `architecture/packages/Ghostagram.Bridge/modules/DeclarativeCompositionProjection/MODULE-ARCHITECTURE.md`. Those artifacts may refine API shape, file placement, and internal collaborators, but they may not select another authority or widen the assigned Package/Module scope. If accepted Feature or Plan discovery requires a production change in `Ghostagram.Core`, `Ghostagram.Execution`, `Ghostagram.Server`, Blazor, or another Package, acceptance stops and returns to portfolio P40/P50 before delivery planning proceeds.
+
+No local ADR is required for this selection. It applies the accepted parent contract to the existing Bridge projection seam without changing authority, dependency direction, deployment, data ownership, or a public cross-solution contract. A later proposal to add authoritative editing, a new public System command, a deployable or live integration, or another Package requires a separately reviewed decision.
+
+### 17.5 Logical and integration view
+
+```mermaid
+flowchart LR
+    SYSTEM["Ghostworx.System\naccepted definitions and IR"]
+    subgraph BRIDGE["Ghostagram.Bridge Package"]
+        PROJECTION["DeclarativeCompositionProjection\nread-only adapter"]
+        SIDECAR["Presentation sidecar\nGhostagram revision"]
+        RESULT["Projection result\ndiagram, source facts, freshness, diagnostics"]
+    end
+    CORE["Ghostagram.Core\nDiagramDocument"]
+    CONFORMANCE["Future Ghostagram conformance mapping\nFeature and Plan gated"]
+
+    SYSTEM -->|"typed accepted records or explicit rejected result"| PROJECTION
+    SIDECAR -->|"layout only"| PROJECTION
+    PROJECTION -->|"rebuild"| CORE
+    PROJECTION --> RESULT
+    RESULT -.->|"actual observations"| CONFORMANCE
+```
+
+**Question answered:** Which exact Ghostagram boundary consumes System definition meaning, and which state remains Ghostagram-owned?
+
+**Relationship semantics:** System-to-projection is a read-only in-process contract dependency. Sidecar-to-projection supplies presentation hints only. Projection-to-Core constructs consumer state. The dashed conformance flow is future test/tooling observation, not runtime traffic or current delivery.
+
+**Omissions:** Authoring commands, compiler internals, interaction routing, Execution, Server hosting, UI rendering, live projection, persistence, and materialization are intentionally absent.
+
+| Integration | Producer | Consumer | Contract and versioning | Failure behavior |
+|---|---|---|---|---|
+| EP2-INT-01 | `Ghostworx.System` | `DeclarativeCompositionProjection` | Typed Component Definition or Composition IR plus exact contract/compiler/profile/canonicalization versions, provenance, and Content Identity. System owns compatibility and validation meaning. | Unsupported or incompatible version/profile is `skewed` or `unsupported`; no best-effort reinterpretation. Rejected System compilation remains rejected and yields no accepted-IR projection. |
+| EP2-INT-02 | Ghostagram presentation sidecar | `DeclarativeCompositionProjection` | Ghostagram-only presentation identity/revision keyed to stable projected identities. | Missing or incompatible sidecar data is ignored or diagnosed and a deterministic default layout is rebuilt; semantic content is unchanged. |
+| EP2-INT-03 | `DeclarativeCompositionProjection` | Ghostagram consumer | Immutable projection result containing `DiagramDocument`, exact source facts, presentation revision, freshness, and bounded diagnostics. | Failure returns no projection that can be mistaken for fresh accepted state. Last-known diagrams, when retained by a caller, remain explicitly stale. |
+| EP2-INT-04 | Future System corpus/profile | Future Ghostagram conformance mapping | System-owned corpus/schema/invariants; Ghostagram-owned real-seam observations. | Missing, failed, malformed, private-field-leaking, skewed, unsupported, or non-attributable cases cannot satisfy acceptance. |
+
+### 17.6 Projection contract and data ownership
+
+The solution-level projection result must preserve the facts below. Exact CLR type names, encodings, ID-mapping algorithm, and file placement remain Package/Module architecture and Design choices.
+
+| Projection fact | Required meaning | Owner |
+|---|---|---|
+| Source identity | Root definition/IR domain, canonical Semantic Address, exact revision, and source-set identity | System |
+| Compatibility identity | Contract, compiler when applicable, profile, canonicalization profile, and extension policy versions | System |
+| Content Identity | System-issued algorithm/profile/digest and predecessor lineage when supplied | System |
+| Hierarchy and visibility | Parent/constituent structure, explicit exports, and opaque/private boundaries without inferred transitive exposure | System meaning, Ghostagram rendering |
+| Declared surfaces | Capabilities, operations, `IPort`, and `IControl` as non-executable descriptive surfaces | System meaning, Ghostagram rendering |
+| Requirements and assignments | Public `VariableRequirement` and `VariableAssignment` identity/reference facts only | System meaning, Ghostagram rendering |
+| Projection identity | Collision-checked deterministic mapping from canonical source identity to diagram elements, always retaining the canonical identity separately | Ghostagram |
+| Presentation sidecar | Layout, waypoints, selection, viewport, color, collapsed state, and presentation revision | Ghostagram |
+| Freshness | Source Content Identity/revision correlated with the produced projection and presentation revision | Ghostagram observation over System facts |
+| Diagnostics | Stable source categories/codes retained without reinterpretation plus separately identified bounded Ghostagram projection diagnostics | System and Ghostagram, distinctly attributed |
+
+The module consumes typed System contracts or a System-governed exchange reader; it does not parse portable bytes into competing semantic records. It never widens visibility. It projects only the declarations and fields present in the System-approved consumer view, preserves explicit export boundaries, and represents unavailable private structure as opaque rather than inferring or exposing it.
+
+Projected `IPort` and `IControl` declarations are read-only descriptive surfaces. They must not register interactive connectors, create routes, enable diagram connection semantics, invoke controls, or reuse local execution contracts as ComponentModel meaning. The current [`IExecutionComponentActivator`](../src/Ghostagram.Execution/ExecutionContracts.cs) is a runtime prototype and is outside this module. The current [`PaletteNodeDefinitionSnapshot`](../src/Ghostagram.Server/Persistence/PaletteCatalogModels.cs) is presentation/catalog state and is not a System Component Definition.
+
+Presentation may be retained across a rebuild only for collision-free stable projected identities that still refer to the same canonical declarations under the accepted compatibility result. A source revision, Content Identity, profile, visibility, or identity mismatch makes the prior projection stale until a full projection succeeds. EPIC-002 allocates no authoritative incremental change feed, so full reprojection is the normative recovery. Incremental projection is permitted only after an accepted System-owned revision/change contract proves equivalent identity, visibility, provenance, and freshness behavior.
+
+### 17.7 Runtime, trust, and failure scenarios
+
+#### Accepted definition or IR projection
+
+```mermaid
+sequenceDiagram
+    participant Caller as Ghostagram consumer
+    participant Projection as DeclarativeCompositionProjection
+    participant System as System records/results
+    participant Sidecar as Presentation sidecar
+
+    Caller->>Projection: Project accepted definition or IR
+    Projection->>System: Read typed identity, hierarchy, visibility, versions, provenance, Content Identity, diagnostics
+    Projection->>Sidecar: Read presentation revision and hints
+    Projection->>Projection: Validate supported profile and bounded input, map stable identities, isolate sidecar
+    Projection-->>Caller: Immutable fresh projection result
+```
+
+The result contains no runtime instance, route, executable delegate, authorization, selected provider, resolved Variable value, or materialization instruction. Rebuilding the same supported source and sidecar inputs yields an equivalent diagram and diagnostics except for explicitly non-semantic consumer metadata.
+
+#### Rejected, skewed, stale, or failed input
+
+- A rejected System compilation result does not produce an accepted-IR diagram; the projection reports the source rejection distinctly from any Ghostagram failure.
+- Unsupported contract/profile/canonicalization versions and incompatible extensions fail explicitly as `skewed` or `unsupported`; Ghostagram does not reinterpret them.
+- A source revision or Content Identity discontinuity invalidates freshness. The caller may display a last-known diagram only with an explicit stale marker while requesting full reprojection.
+- Bounds exceeded, cancellation, deadline expiry, malformed projection input, identity collision, private-field leakage, or presentation merge failure yields a bounded redacted Ghostagram diagnostic and no fresh result.
+- Failures do not mutate System definitions/IR, Graph/Variable history, bindings, prior accepted IR, or the caller's presentation sidecar.
+
+Inputs are untrusted until the System contract's schema, compatibility, content-identity, provenance, and finite-profile checks have succeeded and Ghostagram's projection bounds have been enforced. Public projection state excludes credentials, provider-private locators, `VariableBinding`, resolved payloads, protected tenant context, private endpoints, stack traces, runtime handles, and non-exported declaration details. The boundary is an in-process library seam and introduces no network listener, secret, deployment unit, durable semantic store, HA/DR obligation, or operational control plane.
+
+### 17.8 Quality scenarios and verification duties
+
+| ID | Quality | Scenario | Target response | Future verification after Feature and Plan acceptance |
+|---|---|---|---|---|
+| EP2-Q-01 | Authority | A definition and local palette record use similar names and fields. | Only the System record supplies semantic identity/meaning; palette state may affect presentation only. | Negative dependency and mapping tests. |
+| EP2-Q-02 | Encapsulation | A nested constituent owns non-exported operations, ports, controls, or requirements. | The external projection does not expose or imply them and preserves an opaque boundary. | System corpus negative fixtures plus actual projection observation. |
+| EP2-Q-03 | Determinism | Equivalent accepted IR is projected repeatedly with the same sidecar revision. | Equivalent element mapping, hierarchy, declared facts, freshness, and bounded diagnostics result. | Repeat-run and authoring-order permutation tests. |
+| EP2-Q-04 | Freshness | Source revision or Content Identity changes or skips an unsupported transition. | The old view becomes explicitly stale and full reprojection is required; no fabricated delta or fresh marker. | Revision/content-identity discontinuity tests. |
+| EP2-Q-05 | Separation | Layout, selection, viewport, color, or collapsed state changes. | Only Ghostagram presentation revision/state changes; System records and Content Identity remain unchanged. | Sidecar isolation and round-trip tests. |
+| EP2-Q-06 | Non-execution | Projected `IPort`, `IControl`, Operation, or Implementation Reference is selected. | No connector, dispatch, activation, load, provider selection, route, or runtime action is available from this module. | API/dependency fitness checks and negative interaction tests. |
+| EP2-Q-07 | Failure containment | Input is malformed, over limit, cancelled, incompatible, or leaks a protected field. | One explicit bounded failure, no fresh partial projection, no source or sidecar mutation, and no sensitive detail leakage. | Boundary, deadline, cancellation, redaction, and state non-mutation tests. |
+| EP2-Q-08 | Attribution | A future conformance run exercises the projection. | The envelope identifies `ghostagram`, the real module/runner, exact corpus/profile/schema/digests, source revision, every case, observed fields, and missing/failed/unsupported lists. | System schema/invariant validation and independent local Validation. |
+
+Architecture fitness rules must prove that `DeclarativeCompositionProjection` depends only on accepted System public contracts plus Ghostagram Bridge/Core presentation abstractions; System production packages do not depend on Ghostagram; the new module does not depend on Execution, Server, Blazor, SignalR, palette persistence, or operational projection contracts; and no command path is exposed for semantic definition editing.
+
+### 17.9 Current baseline, divergence, and evolution
+
+| Target fact | Current evidence | Divergence |
+|---|---|---|
+| Authoritative-snapshot projection pattern | [`GraphDiagramProjection`](../src/Ghostagram.Bridge/Projection.cs) consumes System `GraphSnapshot`, emits `DiagramDocument`, and records graph/presentation revisions and projection diagnostics. | It projects EPIC-001 Graph snapshots, not Component Definitions or Composition IR. |
+| Explicit freshness recovery | [`GraphDiagramDeltaProjector`](../src/Ghostagram.Bridge/Projection.cs) requests full projection when authoritative version/path assumptions fail. | No EPIC-002 source revision/Content Identity correlation or composition freshness result exists. |
+| Presentation separation | [`GraphPresentationSnapshot`](../src/Ghostagram.Bridge/BridgeContracts.cs) separately owns node/group layout, waypoints, viewport, selection, and revision. | No composition-specific sidecar keying/compatibility rule or projection identity exists. |
+| Rebuildable consumer model | [`DiagramDocument`](../src/Ghostagram.Core/DiagramModel.cs) is an immutable diagram aggregate with extension metadata. | No definition/IR projection result preserves all required identity, hierarchy, visibility, profile, provenance, Content Identity, and failure facts. |
+| EPIC-002 package/module | None. | Ghostagram.Bridge Package and DeclarativeCompositionProjection Module Targets exist; their current revision 2 gates are recorded below. No composition source, tests, conformance envelope, Evidence or Validation exists. |
+
+The current graph command adapter, palette/catalog model, Execution compiler/activator, Server graph workspace, Blazor/JavaScript renderer, SignalR sessions, and live operational projection remain unchanged and outside this Target slice. Their existence is feasibility or neighboring-product evidence, not Component definition/IR architecture or delivery evidence.
+
+After an EPIC-002 Feature and adjacent Implementation Plan are independently Accepted, the Solution architect must reconcile their exact allocation, acceptance criteria, integration paths, Package/Module locators, conformance duties, and evidence workspaces against this Target before Design. A material mismatch, another affected Package, an authoritative editing requirement, a runtime/interaction/Server seam, or an ownership/dependency change returns to portfolio P40/P50 and independent architecture review. The Plan cannot silently override this Target.
+
+### 17.10 Solution decisions
+
+| ID | Decision | Rationale | Consequence |
+|---|---|---|---|
+| AD-GRAM-EP2-001 | Place the read-only composition projection in the existing `Ghostagram.Bridge` Package. | Bridge is already the child-owned System-to-diagram translation boundary and owns projection freshness/presentation separation patterns. | No second adapter Package or semantic model is introduced. |
+| AD-GRAM-EP2-002 | Create one `DeclarativeCompositionProjection` Module inside Bridge. | Definition/IR projection, freshness, diagnostics, sidecar isolation, and conformance observation form one cohesive responsibility. | Package and Module architects receive one exact bounded target; API/file details remain theirs. |
+| AD-GRAM-EP2-003 | Use full reprojection as the normative recovery path. | The accepted parent contract allocates no authoritative incremental composition-change feed. | Stale or skewed state is explicit; no consumer-invented delta semantics. |
+| AD-GRAM-EP2-004 | Render declared surfaces as non-executable read-only meaning. | ADR-005 assigns interaction semantics to EPIC-005, and local Execution/palette contracts are not ComponentModel authority. | No connector, route, dispatch, control, activation, or implementation loading is implied by the diagram. |
+| AD-GRAM-EP2-005 | Keep authoritative definition editing absent. | The parent contract requires a separately accepted System command/revision/validation/conflict contract and portfolio allocation. | Only presentation sidecars may change locally; semantic editing is a future governed decision. |
+
+### 17.11 EPIC-002 approval record
+
+| Field | Value |
+|---|---|
+| Mode | auto-approve |
+| Author | solution-architect (`epic002_ghostagram_solution_architecture`) |
+| Approver | elon-musk (`epic002_concept_approval`) |
+| Decision | Accepted |
+| Recorded | `2026-08-29T05:20:02.5951909-04:00` |
+| Evidence | Independent cycle-zero `$swe-architect -review` verified accepted parent inputs and child governance/context, exact `Ghostagram.Bridge` Package and `DeclarativeCompositionProjection` Module assignment, Plan Pending, post-Plan reconciliation, and architecture-only exclusions. Current source confirms the real projection, delta/freshness, presentation-sidecar, and immutable diagram seams. The Target explicitly isolates Bridge's pre-existing Execution dependency from the new Module; preserves System identity, visibility, provenance, Content Identity, diagnostics, and freshness; prohibits authoritative editing and graph-command reuse; and excludes Execution, Server, UI, SignalR, EPIC-005 interaction, and EPIC-010 materialization behavior. |
+| Bypass reason | None |
+
+## 18. Preserved EPIC-001 Approval Record
 
 | Field | Value |
 |---|---|
@@ -405,4 +605,57 @@ All original exclusions remain binding: no UI/browser acceptance, Blazor Laborat
 | Decision | Accepted |
 | Recorded | 2026-08-28T13:27:01.0334962-04:00 |
 | Evidence | ARCH-SOLUTION-GHOSTAGRAM correctly anchors conformance to existing public Bridge contracts. Current indexed source confirms GraphDiagramProjection, GraphDiagramDeltaProjector, and GraphDiagramCommandAdapter, including separate graph/presentation revisions, full-reprojection fallback, and revision-checked proposals. The Target excludes UI, browser, SignalR, Server runtime projection, deployment, and protected state. Existing unrelated Ghostagram modifications remain untouched; the architecture is additive and untracked. |
+| Bypass reason | None |
+
+## EPIC-002 Layered Foundation Reconciliation
+
+### Accepted authority and revision scope
+
+This revision follows Accepted [EPIC-002 revision 2](../../../.swe/epics/002-declarative-composition-model/EPIC.md), [CONCEPT-EPIC-002 revision 2](../../../.swe/epics/002-declarative-composition-model/CONCEPT.md), [ARCH-IMPACT-EPIC-002 revision 2](../../../.swe/epics/002-declarative-composition-model/ARCHITECTURE-IMPACT.md), the [Platform layered Target amendment](../../../architecture/PLATFORM-ARCHITECTURE.md), human-Accepted [ADR-009](../../../architecture/decisions/ADR-009-epic-002-definition-packaging-and-planning-gates.md), and accepted Graph/composition contract revisions. The independent parent decisions are recorded in [REVIEW-EPIC-002-LAYERED-PLANNING](../../../architecture/reviews/EPIC-002-LAYERED-PLANNING-REVIEW.md). The author is consumer_planning; Justin explicitly named independent @elon-musk as approver. No bypass is used.
+
+The exact foundation handoff is [FEATURE-004](../../../.swe/epics/002-declarative-composition-model/features/004-layered-system-definition-foundation/FEATURE.md) and [IMPL-PLAN-EPIC-002-FEATURE-004](../../../.swe/epics/002-declarative-composition-model/features/004-layered-system-definition-foundation/IMPLEMENTATION-PLAN.md), repository ghostworx, revision 1. It assigns this child workspace [.swe/implementations/EPIC-002/FEATURE-004/](../.swe/implementations/EPIC-002/FEATURE-004/). Detailed Feature/Plan approval is separate from this Target review.
+
+### Scope and current evidence
+
+FEATURE-004 updates existing Ghostagram Bridge, Execution, host persistence and test/conformance references affected by the System foundation. It does not add FEATURE-003 composition projection, visual redesign, semantic editing, live operational projection, control or runtime capabilities.
+
+Current Bridge and Execution projects reference System Core; GraphCompiler places `DiagramNode`, `DiagramPort` collections and projected-edge objects in Graph snapshot metadata. The refactor replaces semantic metadata crossing that boundary with `GraphSemanticValue`. Ghostagram-only objects remain in a typed local sidecar/intermediate representation keyed to canonical graph identities. System snapshot algorithms receive only portable records; adapters join their returned identities back to the local representation. This preserves existing Ghostagram behavior without teaching System about diagram objects.
+
+Portable projection/compiler consumers depend on the narrowest System portable owners and pure snapshot/codec ports. Mutable stores, legacy object participation and explicit graph materialization belong to outward Ghostagram adapters/host wiring referencing System Graph runtime mechanisms. Public codecs return immutable documents/snapshots. Materialization supplies explicit authority, graph/profile, finite bounds and strong retention for portable graph documents; no implicit shared graph is introduced. Existing command/persistence adapters may use runtime interfaces only at that outward boundary; pure projection paths cannot depend back on them.
+
+The Solution layering is UI/presentation -> projection/Bridge -> portable System meaning, with local presentation sidecars. Existing operational host/adapters wire concrete mechanisms outward. Future Server Projection/Control Ports remain separately governed.
+
+### Allocation and verification
+
+Retain the `Ghostagram.Bridge` Package and `DeclarativeCompositionProjection` Module for FEATURE-003. FEATURE-004's existing Execution/host reference and sidecar changes are bounded Solution integration work, not new formal composition packages/modules. Direct in-repository source/reference updates and intentional source/binary breaks are permitted; no forwarders, shims or migration framework are required.
+
+Ghostagram owns its portions of F004 AC-007 and AC-009: a short affected-project/reference map, changed-project builds, existing relevant Bridge/Execution/persistence/Graph/Variable/Link checks, and focused typed-metadata/sidecar/dependency regression checks against the same System checkout. No bespoke F004 conformance envelope is needed. F003 AC-001 through AC-007 retain producer-bound real-projection conformance and visible read-only verification.
+
+```mermaid
+flowchart LR
+  Host["Existing host and runtime adapters"] --> Projection["Portable Bridge and snapshot consumers"]
+  Host --> Runtime["System Graph runtime and materializer"]
+  Projection --> Pure["System portable records and pure codecs"]
+  Projection --> Sidecar["Ghostagram typed presentation sidecar"]
+  Runtime --> Pure
+```
+
+### Design and delivery gates
+
+F004 Design requires Accepted FEATURE-004, its Plan and this applicable Target revision; consumer Design finalizes against the accepted System F004 Design. Consumer reference work can use that same System checkout/build outputs after accepted local Designs without waiting for F004 to accept itself. F004 portfolio acceptance requires the System and all three consumer Evidence and independent local Validation records.
+
+The composition allocation is [FEATURE-003](../../../.swe/epics/002-declarative-composition-model/features/003-ghostagram-composition-projection/FEATURE.md), with [IMPL-PLAN-EPIC-002-FEATURE-003](../../../.swe/epics/002-declarative-composition-model/features/003-ghostagram-composition-projection/IMPLEMENTATION-PLAN.md). Its revision 2 detailed approval and this Target reconciliation must be Accepted before Design. The accepted local F004 Design and accepted System F001 Design freeze establish the Design inputs. F003 source delivery waits for F004 and F001 portfolio acceptance, producer Evidence/independent Validation, and the accepted producer manifest/envelope.
+
+Architecture approval keeps lifecycle Target. Source, tests, Evidence, Validation and architecture promotion are subsequent phases. Earlier P50 Pending statements describe the historical bootstrap only; these current locators and distinct Design/delivery gates govern EPIC-002. A material conflict returns to the owning architecture/Plan before dependent work.
+
+### Revision 2 Approval Record
+
+| Field | Value |
+|---|---|
+| Mode | auto-approve |
+| Author | consumer_planning |
+| Approver | elon-musk (`/root/elon_musk_approval`) |
+| Decision | Accepted |
+| Recorded | 2026-09-06T22:51:12+00:00 |
+| Evidence | [Independent @elon-musk review](../../../architecture/reviews/EPIC-002-LAYERED-PLANNING-REVIEW.md#consumer-solution-targets-revision-2). Identity-keyed local sidecars remove CLR presentation objects from portable snapshots while preserving existing behavior. F004 refactor, F003 projection and Design/delivery gates remain separate. No conditions; lifecycle remains Target. |
 | Bypass reason | None |

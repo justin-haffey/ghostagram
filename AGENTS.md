@@ -7,9 +7,9 @@ Use **codebase-memory-mcp** to semantically traverse`markdown (.md)` artifacts a
 ## Read Before Acting
 
 1. Inspect `.swe/prototype/STATE.md` when it exists. If its `mode` is `On` or `Closing`, read the installed `$prototype` skill and its mode/backtracking references before acting; stop if those resources are unavailable or the state is malformed.
-2. Resolve the allocated upstream Feature by stable ID and repository-relative path. Use the recorded revision when present. While Prototype Mode is `On`, record a missing or unaccepted Feature as deferred instead of treating it as an implementation entry blocker.
-3. Resolve the portfolio-owned `IMPLEMENTATION-PLAN.md` beside that Feature; do not create a local copy. While Prototype Mode is `On`, record a missing or unaccepted Plan as deferred instead of creating a local substitute.
-4. Read root `CONTEXT.md` when present; otherwise read `CONTEXT-MAP.md` and every linked vocabulary under `.swe/context/`. Then read the accepted Feature and Plan, applicable platform contracts and ADRs, and current local architecture that exist.
+2. For ordinary architecture and every delivery task, resolve the allocated upstream Feature by stable ID and repository-relative path. Use the recorded revision when present. While Prototype Mode is `On`, record a missing or unaccepted Feature as deferred instead of treating it as an implementation entry blocker.
+3. For ordinary architecture and every delivery task, resolve the portfolio-owned `IMPLEMENTATION-PLAN.md` beside that Feature; do not create a local copy. While Prototype Mode is `On`, record a missing or unaccepted Plan as deferred instead of creating a local substitute.
+4. Read root `CONTEXT.md` when present; otherwise read `CONTEXT-MAP.md` and every linked vocabulary under `.swe/context/`. Then read the accepted Feature and Plan, applicable platform contracts and ADRs, and current local architecture that exist. An ADR-008 P50 assignment also requires the exact governing inputs and the independently Accepted local governance and context reconciliations described below before it may be used.
 5. Inspect the exact target before writing. Create missing folders and files, but never overwrite an existing artifact without explicit authorization.
 6. Keep the Feature and Plan upstream. Record implementation decisions, Design, evidence, and validation here.
 
@@ -28,6 +28,14 @@ This repository owns:
 The portfolio repository owns Epics, Concepts, platform architecture, cross-solution contracts, each canonical Feature, and the adjacent `IMPLEMENTATION-PLAN.md`. Do not copy or redefine the Feature, Plan, intent, allocation, or acceptance criteria locally; preserve dual locators and propose upstream changes when delivery evidence exposes a conflict.
 
 Systems are runtime or operational views within Platform or Solution architecture. They are not a separate architecture level. The hierarchy is `Platform -> Solution -> Package -> Module`.
+
+## EPIC-002 Pre-Feature P50 Target Architecture Assignment
+
+[ADR-003](../../architecture/decisions/ADR-003-bootstrap-child-architecture-before-implementation-planning.md) remains normative for the ordinary Feature-first bootstrap: an Accepted Feature explicitly targets this Solution, Target architecture may record the Plan as `Pending`, and the accepted Plan is then reconciled before Design. [ADR-008](../../architecture/decisions/ADR-008-pre-feature-child-target-architecture-assignment.md) permits only one narrow exception to that entry gate: an **Accepted Parent Architecture Assignment** may authorize pre-Feature P50 Target architecture work only after this governance reconciliation and [the Ghostagram context reconciliation](./CONTEXT.md) are independently Accepted. A pending or unreviewed local record is not authorization.
+
+For EPIC-002, the assignment must name `repos/ghostagram`, classify the Solution, Package, and Module scopes as `change`, and carry dual locators to the Accepted [EPIC](../../.swe/epics/002-declarative-composition-model/EPIC.md), [Concept](../../.swe/epics/002-declarative-composition-model/CONCEPT.md), [architecture impact](../../.swe/epics/002-declarative-composition-model/ARCHITECTURE-IMPACT.md), approved [Platform Target](../../architecture/PLATFORM-ARCHITECTURE.md), Accepted ADR-008, and Accepted [Declarative Component Composition contract](../../architecture/contracts/DECLARATIVE-COMPONENT-COMPOSITION.md). It authorizes only the exact Target Solution architecture, an architecture-selected Package boundary, an architecture-selected Module boundary, and necessary local ADRs. The package/module decision must remain within the accepted `change` classification; it cannot authorize an execution, Server, Blazor, SignalR, or operational-projection scope by inference.
+
+The P50 assignment records the portfolio Implementation Plan as `Pending`. It never authorizes a Feature, Plan, Design, source, tests, dependencies, Evidence, Validation, deployment, publication, staging, commit, or external mutation. An Accepted Feature plus Accepted Plan remains mandatory before any delivery work. After Plan acceptance, reconcile the Target against its exact allocation, criteria, integration paths, and evidence duties; return a material conflict, newly affected scope, or authority ambiguity to the portfolio P40/P50 path rather than interpreting it locally.
 
 ## Prototype Mode
 
@@ -95,7 +103,8 @@ When `$swe-architect` is invoked without a scope flag, use the maximum architect
 
 | Stage                       | Entry gate                                                              | Producing skill                                                                                                                                                                 | Author                                                         | Independent decision or handoff                                                                                  |
 | --------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Local Architecture          | Accepted governing Concept, impact assessment, and parent architecture  | `$swe-architect` | Appropriate solution, package, or module architect | `architecture-reviewer` uses `$swe-architect -review`; approval does not change `Target` status |                                                                |                                                                                                                  |
+| Local Architecture (ADR-003 ordinary bootstrap) | Accepted Feature explicitly targeting Ghostagram; governing Concept, impact assessment, and parent architecture; Plan may be `Pending` | `$swe-architect` | Appropriate solution, package, or module architect | Independent reviewer accepts the Target; reconcile it after the Plan is Accepted before Design. |
+| EPIC-002 P50 Target Architecture (ADR-008) | Accepted Parent Architecture Assignment; Accepted local `AGENTS.md` and `CONTEXT.md` reconciliations; exact `ghostagram` Solution/Package/Module `change` scope; Plan `Pending` | `$swe-architect` | Appropriate solution, package, or module architect | Target-only independent review; no delivery work. Reconcile exact allocation, criteria, integration paths, and evidence duties after the Plan is Accepted. |
 | Design                      | Accepted Feature, Implementation Plan, and applicable architecture      | `$swe-design`                                                                                                                                                                 | Assigned developer or architect who will not validate delivery | Independent mapped reviewer or named human accepts`DESIGN.md`                                                  |
 | Implementation and Evidence | Accepted Design                                                         | `$swe-implement`                                                                                                                                                              | Assigned implementation specialist                             | Implementer runs checks and completes`EVIDENCE.md`; Evidence does not approve itself                           |
 | Local Validation            | Accepted Feature, Plan, Design, and architecture plus Complete Evidence | `$swe-validate`                                                                                                                                                               | Independent`solution-validator`                              | Writes`VALIDATION.md` with `Accepted`, `Rejected`, or `Blocked`                                          |
@@ -109,6 +118,16 @@ Implementation agents may verify their own work and produce Evidence, but they m
 The engineering flow is:
 
 `Upstream Feature + portfolio Implementation Plan -> Architecture/ADR -> local Design -> Implementation/Evidence -> local Validation -> portfolio acceptance handoff`
+
+ADR-003 preserves the ordinary Feature-first bootstrap:
+
+`Accepted Feature explicitly targeting Ghostagram -> Target architecture with Plan Pending -> Accepted Plan -> Target/Plan reconciliation -> Design -> delivery`
+
+ADR-008 permits the EPIC-002 P50 sequence only for the exact `ghostagram` Solution/Package/Module `change` assignment:
+
+`Accepted Epic + Concept + Impact + parent Target/ADRs/contract -> Accepted Parent Architecture Assignment -> Accepted local AGENTS + CONTEXT reconciliations -> Target-only architecture with Plan Pending -> Accepted Feature -> Accepted Plan -> Target/Plan reconciliation -> Design -> delivery`
+
+The ADR-008 sequence does not authorize Feature or Plan authorship, Design, source, tests, dependencies, Evidence, Validation, deployment, publication, staging, commit, or external mutation before the ordinary delivery gates are met. A material Plan conflict or newly affected scope returns to the portfolio P40/P50 path.
 
 Architecture is promoted `Target -> Implemented -> Current`. EVIDENCE is required for promotion. If delivered behavior diverges from the accepted target, record the divergence and obtain review before promotion.
 
@@ -136,3 +155,15 @@ The wrap-up must inspect the live status and staged/unstaged diff, read relevant
 - Preserve active non-security Codex settings and relative MCP registrations. Do not introduce machine-specific absolute paths.
 - Do not claim tests, links, approvals, evidence, or promotions that were not verified.
 - Before completion, validate YAML headers, IDs, links, parent/upstream locators, approval records, status transitions, repository boundaries, and requirement-to-test evidence. Report unavailable dynamic validation plainly.
+
+## EPIC-002 Governance Reconciliation Approval Record
+
+| Field | Value |
+|---|---|
+| Mode | `-auto-approve` |
+| Author | repo-author (`epic002_ghostagram_governance`) |
+| Approver | elon-musk (`epic002_concept_approval`) |
+| Decision | Accepted |
+| Recorded | `2026-08-29T04:59:50.8233436-04:00` |
+| Evidence | Cycle-one review verified explicit preservation of ADR-003 ordinary Feature-first bootstrap and a dedicated ADR-008 EPIC-002 P50 path for exact `repos/ghostagram` Solution, Package, and Module `change` scope. The path requires Accepted governance and context reconciliation, records the Plan as Pending, permits independently reviewed Target architecture only, prohibits delivery, requires Accepted Feature and Plan before Design or implementation, and mandates post-Plan reconciliation with P40/P50 return on material conflict or scope expansion. Existing solution, portfolio, review, validation, and safety authority boundaries remain intact. |
+| Bypass reason | None |
