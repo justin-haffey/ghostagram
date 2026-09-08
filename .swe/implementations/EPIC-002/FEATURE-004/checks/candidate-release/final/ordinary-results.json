@@ -1,0 +1,125 @@
+[
+  {
+    "name": "Ghostagram.Core.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Core.Tests/bin/Release/net10.0/Ghostagram.Core.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.515,
+    "stdout": "Ghostagram.Core.Tests.stdout.log",
+    "stderr": "Ghostagram.Core.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Bridge.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Bridge.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.984,
+    "stdout": "Ghostagram.Bridge.Tests.stdout.log",
+    "stderr": "Ghostagram.Bridge.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Execution.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Execution.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.875,
+    "stdout": "Ghostagram.Execution.Tests.stdout.log",
+    "stderr": "Ghostagram.Execution.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Cutover.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostagram.Cutover.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.875,
+    "stdout": "Ghostagram.Cutover.Tests.stdout.log",
+    "stderr": "Ghostagram.Cutover.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Persistence.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Persistence.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.641,
+    "stdout": "Ghostagram.Persistence.Tests.stdout.log",
+    "stderr": "Ghostagram.Persistence.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Server.GraphWorkspace.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.GraphWorkspace.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.984,
+    "stdout": "Ghostagram.Server.GraphWorkspace.Tests.stdout.log",
+    "stderr": "Ghostagram.Server.GraphWorkspace.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Layout.Verification",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Layout.Verification.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.282,
+    "stdout": "Ghostagram.Layout.Verification.stdout.log",
+    "stderr": "Ghostagram.Layout.Verification.stderr.log"
+  },
+  {
+    "name": "composition-foundation",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Bridge.Tests.dll",
+      "--profile",
+      "composition"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.218,
+    "stdout": "composition-foundation.stdout.log",
+    "stderr": "composition-foundation.stderr.log"
+  },
+  {
+    "name": "benchmark",
+    "command": [
+      "dotnet",
+      "benchmarks/Ghostagram.Bridge.Benchmarks/bin/Release/net10.0/Ghostagram.Bridge.Benchmarks.dll",
+      "--repetitions",
+      "1",
+      "--sizes",
+      "100,500,1000"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.313,
+    "stdout": "benchmark.stdout.log",
+    "stderr": "benchmark.stderr.log"
+  }
+]

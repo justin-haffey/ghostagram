@@ -1,0 +1,67 @@
+[
+  {
+    "path": ".swe/implementations/EPIC-002/FEATURE-003/DESIGN.md",
+    "sha256": "1ad10b97765cf6647e8027e3dfdc8cb6cadb7641c4e5dc63214755fa4331b683",
+    "bytes": 24079
+  },
+  {
+    "path": ".swe/implementations/EPIC-002/FEATURE-003/DESIGN-REVISION-001.md",
+    "sha256": "1758b794d6cbcccba65d98b9f8d2dc16377db25a4ef68623f7bac627241eee8f",
+    "bytes": 20190
+  },
+  {
+    "path": "architecture/packages/Ghostagram.Bridge/modules/DeclarativeCompositionProjection/MODULE-ARCHITECTURE.md",
+    "sha256": "892e80b5efce3c15ead1f9233b4f044743ee023f4e2a99645cb84a3b77eeef39",
+    "bytes": 42142
+  },
+  {
+    "path": "architecture/packages/Ghostagram.Bridge/PACKAGE-ARCHITECTURE.md",
+    "sha256": "b126e5a336eef7d4ce4e22201e04a0c35cecbf363ebd82d5a6685e54414c56ab",
+    "bytes": 50613
+  },
+  {
+    "path": "architecture/SOLUTION-ARCHITECTURE.md",
+    "sha256": "7a7080b92b6d6a69e64848ce10325ebf9d0e96234110c22cfe2c32f293e37912",
+    "bytes": 80081
+  },
+  {
+    "path": "src/Ghostagram.Bridge/DeclarativeCompositionProjection/DeclarativeCompositionProjector.cs",
+    "sha256": "2ad19cc9263d1a034aa36787acfff3f85d1d7a5a9d2366b19fdeae7dea9cdac0",
+    "bytes": 19735
+  },
+  {
+    "path": "src/Ghostagram.Bridge/DeclarativeCompositionProjection/ProjectionContracts.cs",
+    "sha256": "b37b566e8a57d726fe86ab8c3e8180ace3e6534b481a71de1ce64db141aacb7c",
+    "bytes": 8274
+  },
+  {
+    "path": "src/Ghostagram.Bridge/DeclarativeCompositionProjection/CompositionProjectionResult.cs",
+    "sha256": "96428a7571c14fd9db09e71d572920f84f4b2a420434dc510fd9346c95669efa",
+    "bytes": 6027
+  },
+  {
+    "path": "src/Ghostagram.Bridge/Ghostagram.Bridge.csproj",
+    "sha256": "fa7ceebb805e7e6fa7fa44942517f60e752fa1eea55f25a7e11d22002f45f185",
+    "bytes": 1443
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/DeclarativeComposition/OwnerDiagnosticProjectionTests.cs",
+    "sha256": "538ca24bef06f4b779c781b79a8bc0efef4a34c65146d4c26df802e37843447c",
+    "bytes": 6401
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/Program.cs",
+    "sha256": "6d89b56d9e391b8ed7b13f7130aee8dd2371832af31f96ea79a03d35a0ca18a5",
+    "bytes": 24763
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/Ghostagram.Bridge.Tests.csproj",
+    "sha256": "3ff7f13972b4019fc99befa76388c5ec1567035ba6563ed81801964ea56dfb5e",
+    "bytes": 1108
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "sha256": "0b40b02b5eee632e7a8a45e4b40cb2283276a9ce30fc28925432b28bbf269367",
+    "bytes": 3358
+  }
+]

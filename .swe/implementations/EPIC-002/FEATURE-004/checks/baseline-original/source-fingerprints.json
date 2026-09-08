@@ -1,0 +1,21 @@
+[
+  {
+    "repository": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram",
+    "head": "d3f2542c28acfed7ecf04f9c37a4e47241138f29",
+    "fileCount": 91,
+    "manifestSha256": "3df29de493f06dc81c587da67c92822a40ac3cf4d4d6a419f350639786a856bb",
+    "status": [
+      "?? .swe/implementations/EPIC-002/FEATURE-004/checks/"
+    ]
+  },
+  {
+    "repository": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system",
+    "head": "b498a215db63f9dbd85a110c23203f1e55f8f87d",
+    "fileCount": 295,
+    "manifestSha256": "f2e98b691ffa521c38625164636e75d77337fa454859916b5e34218ab2721254",
+    "status": [
+      "?? .swe/implementations/EPIC-002/FEATURE-001/results/f004-pre-refactor-baseline-20260907T005532945Z.json",
+      "?? .swe/implementations/EPIC-002/FEATURE-004/checks/"
+    ]
+  }
+]

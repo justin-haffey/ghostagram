@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Ghostagram.Execution.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Execution.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.579,
+    "stdout": "Ghostagram.Execution.Tests.stdout.log",
+    "stderr": "Ghostagram.Execution.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Server.GraphWorkspace.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.GraphWorkspace.Tests.dll"
+    ],
+    "exitCode": null,
+    "ownedProcessExitCode": 1,
+    "forcedTermination": "owned-process-unhandled-exception-hang",
+    "seconds": 6.203,
+    "stdout": "Ghostagram.Server.GraphWorkspace.Tests.stdout.log",
+    "stderr": "Ghostagram.Server.GraphWorkspace.Tests.stderr.log"
+  }
+]

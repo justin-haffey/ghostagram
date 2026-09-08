@@ -1,0 +1,20 @@
+[
+  {
+    "name": "local-projections",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+      "--profile",
+      "composition",
+      "--local-projections",
+      "--output",
+      "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\implementations\\EPIC-002\\FEATURE-003\\checks\\source-integration\\provisional-120942-local-projections-02\\projections"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 4.312,
+    "stdout": "local-projections.stdout.log",
+    "stderr": "local-projections.stderr.log"
+  }
+]

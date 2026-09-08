@@ -1,3 +1,4 @@
+using LocalGraph = Ghostworx.System.Graph.Serialization;
 using System.Collections.Concurrent;
 using Ghostagram.Core;
 using SystemGraph = Ghostworx.System.Graph;
@@ -236,7 +237,9 @@ public interface IOrchestrationAdapter
 public interface IGraphExecutionEngine
 {
     GraphCompilationResult Compile(SystemGraph.GraphSnapshot snapshot, GraphCompileOptions options);
-    [Obsolete("DiagramDocument compilation is a compatibility adapter. Compile a Ghostworx.System.Graph.GraphSnapshot instead.")]
+    GraphCompilationResult Compile(LocalGraph.GraphLocalSnapshot snapshot, GraphCompileOptions options);
+    GraphCompilationResult Compile(GraphCompilationInput input, GraphCompileOptions options);
+    [Obsolete("DiagramDocument compilation is a compatibility adapter. Compile a GraphCompilationInput to preserve diagram context, or a GraphSnapshot for semantic-only input.")]
     GraphCompilationResult Compile(DiagramDocument document, GraphCompileOptions options);
     ValueTask<IGraphExecutionSession> StartSessionAsync(GraphExecutionRequest request, CancellationToken cancellationToken = default);
     ValueTask<GraphExecutionResult> ExecuteAsync(GraphExecutionRequest request, CancellationToken cancellationToken = default);
@@ -247,8 +250,10 @@ public sealed class GraphExecutionEngine(IGraphSnapshotCompiler compiler, IEnume
     private readonly IReadOnlyDictionary<string, IOrchestrationAdapter> _adapters = adapters.ToDictionary(adapter => adapter.Id, StringComparer.Ordinal);
 
     public GraphCompilationResult Compile(SystemGraph.GraphSnapshot snapshot, GraphCompileOptions options) => compiler.Compile(snapshot, options);
+    public GraphCompilationResult Compile(LocalGraph.GraphLocalSnapshot snapshot, GraphCompileOptions options) => compiler.Compile(snapshot, options);
+    public GraphCompilationResult Compile(GraphCompilationInput input, GraphCompileOptions options) => compiler.Compile(input, options);
 
-    [Obsolete("DiagramDocument compilation is a compatibility adapter. Compile a Ghostworx.System.Graph.GraphSnapshot instead.")]
+    [Obsolete("DiagramDocument compilation is a compatibility adapter. Compile a GraphCompilationInput to preserve diagram context, or a GraphSnapshot for semantic-only input.")]
     public GraphCompilationResult Compile(DiagramDocument document, GraphCompileOptions options)
     {
         if (compiler is not IGraphCompiler compatibility)

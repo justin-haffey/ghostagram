@@ -1,0 +1,27 @@
+[
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Composition.dll",
+    "expected": "7058e09ac266eb2d0018187f9cb84c641a34cbf430b49810c15192cdfbdb42de",
+    "actual": "7058e09ac266eb2d0018187f9cb84c641a34cbf430b49810c15192cdfbdb42de"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+    "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Runtime.dll",
+    "expected": "dd8b7f940f8189ab2361faf78127a980431ec5207d930e3eb5af94ad0bc19d6f",
+    "actual": "dd8b7f940f8189ab2361faf78127a980431ec5207d930e3eb5af94ad0bc19d6f"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "expected": "02ecc2841c802aa1c05fce691c1b29937d7d9cc041b01d472476bab82a0ad17b",
+    "actual": "02ecc2841c802aa1c05fce691c1b29937d7d9cc041b01d472476bab82a0ad17b"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Variable.dll",
+    "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+    "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231"
+  }
+]

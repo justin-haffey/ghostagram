@@ -1,0 +1,11 @@
+{
+  "recordedAt": "2026-09-07T02:22:29.244984+00:00",
+  "status": "SourceReadyPendingHostPolicyAndSharedBuildSlot",
+  "projectReferencesChecked": 50,
+  "missingProjectReferences": [],
+  "originalBaselineFilesChecked": 34,
+  "originalBaselinePreserved": true,
+  "changedTrackedFiles": 23,
+  "buildTestRestoreIssuedDuringSourcePhase": false,
+  "hostProfileDisposition": "Pending parent and independent elon-musk; current Csmall context cannot admit host NodeType vocabulary"
+}

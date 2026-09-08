@@ -1,0 +1,581 @@
+{
+  "systemGenerationSourceFingerprint": "7d0b1b09c9300ee8305a204531fff730ed148f488097ee50c2bc59fdef135eb1",
+  "checks": [
+    {
+      "copy": "benchmarks/Ghostagram.Bridge.Benchmarks/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "actual": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "expected": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "benchmarks/Ghostagram.Bridge.Benchmarks/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "benchmarks/Ghostagram.Bridge.Benchmarks/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "benchmarks/Ghostagram.Bridge.Benchmarks/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "benchmarks/Ghostagram.Bridge.Benchmarks/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Bridge/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "actual": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "expected": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Bridge/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Bridge/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Bridge/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Bridge/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Execution/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Execution/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Execution/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.NodeSets.Maf/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.NodeSets.Maf/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.NodeSets.Maf/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.NodeSets.UML/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.NodeSets.UML/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.NodeSets.UML/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Server/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "actual": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "expected": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Server/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Server/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Server/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "src/Ghostagram.Server/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "actual": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "expected": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "actual": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "expected": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "actual": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "expected": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Graph.Conformance.Support.dll",
+      "owner": "tests/Ghostworx.System.Graph.Conformance.Support/bin/Release/net10.0/Ghostworx.System.Graph.Conformance.Support.dll",
+      "actual": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9",
+      "expected": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+      "owner": "tests/Ghostworx.System.SemanticLinks.Conformance/Support/bin/Release/net10.0/Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+      "actual": "e79ae1534ef2b352e49069f62b05c54620c99bce918ab11dd3bac948ff7a9976",
+      "expected": "e79ae1534ef2b352e49069f62b05c54620c99bce918ab11dd3bac948ff7a9976",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.Conformance.Support.dll",
+      "owner": "tests/Ghostworx.System.Variable.Conformance.Support/bin/Release/net10.0/Ghostworx.System.Variable.Conformance.Support.dll",
+      "actual": "6070e822d597e7e5ef241aab86010422f32801ec7ebf24191cef7d95c59a8159",
+      "expected": "6070e822d597e7e5ef241aab86010422f32801ec7ebf24191cef7d95c59a8159",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.Runtime.dll",
+      "owner": "src/Ghostworx.System.Variable.Runtime/bin/Release/net10.0/Ghostworx.System.Variable.Runtime.dll",
+      "actual": "a30a9e63c422f9bdbf7b281b7778491702ba7be3e26618e9851e174b9c7367a1",
+      "expected": "a30a9e63c422f9bdbf7b281b7778491702ba7be3e26618e9851e174b9c7367a1",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.Serialization.dll",
+      "owner": "src/Ghostworx.System.Variable.Serialization/bin/Release/net10.0/Ghostworx.System.Variable.Serialization.dll",
+      "actual": "0e38ac3651fe0eb20593c1340c09a697d9e0307a3d21c97ec78547519bcbf474",
+      "expected": "0e38ac3651fe0eb20593c1340c09a697d9e0307a3d21c97ec78547519bcbf474",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "actual": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "expected": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Conformance.Support.dll",
+      "owner": "tests/Ghostworx.System.Graph.Conformance.Support/bin/Release/net10.0/Ghostworx.System.Graph.Conformance.Support.dll",
+      "actual": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9",
+      "expected": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+      "owner": "tests/Ghostworx.System.SemanticLinks.Conformance/Support/bin/Release/net10.0/Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+      "actual": "e79ae1534ef2b352e49069f62b05c54620c99bce918ab11dd3bac948ff7a9976",
+      "expected": "e79ae1534ef2b352e49069f62b05c54620c99bce918ab11dd3bac948ff7a9976",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Conformance.Support.dll",
+      "owner": "tests/Ghostworx.System.Variable.Conformance.Support/bin/Release/net10.0/Ghostworx.System.Variable.Conformance.Support.dll",
+      "actual": "6070e822d597e7e5ef241aab86010422f32801ec7ebf24191cef7d95c59a8159",
+      "expected": "6070e822d597e7e5ef241aab86010422f32801ec7ebf24191cef7d95c59a8159",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Runtime.dll",
+      "owner": "src/Ghostworx.System.Variable.Runtime/bin/Release/net10.0/Ghostworx.System.Variable.Runtime.dll",
+      "actual": "a30a9e63c422f9bdbf7b281b7778491702ba7be3e26618e9851e174b9c7367a1",
+      "expected": "a30a9e63c422f9bdbf7b281b7778491702ba7be3e26618e9851e174b9c7367a1",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Serialization.dll",
+      "owner": "src/Ghostworx.System.Variable.Serialization/bin/Release/net10.0/Ghostworx.System.Variable.Serialization.dll",
+      "actual": "0e38ac3651fe0eb20593c1340c09a697d9e0307a3d21c97ec78547519bcbf474",
+      "expected": "0e38ac3651fe0eb20593c1340c09a697d9e0307a3d21c97ec78547519bcbf474",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "actual": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "expected": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "actual": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "expected": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+      "actual": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "expected": "18de7a53c54504bb37c87d2b28675c7d8c944aaf98db57b01007607f532b1a53",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+      "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+      "actual": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "expected": "52acf1cf8175b9ff1028f27c0a1d3f5b70488ff5d7bc0b49a2085b151d663002",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+      "actual": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "expected": "ddf64491c67ad61fd2f157ff6670999fe4efd11be2bef167c7b774005838af52",
+      "matches": true,
+      "frozen15Owner": true
+    },
+    {
+      "copy": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+      "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+      "matches": true,
+      "frozen15Owner": true
+    }
+  ]
+}

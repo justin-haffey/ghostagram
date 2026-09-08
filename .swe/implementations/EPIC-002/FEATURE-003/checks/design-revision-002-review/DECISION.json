@@ -1,0 +1,28 @@
+{
+  "artifact_id": "DESIGN-EPIC-002-FEATURE-003-GHOSTAGRAM",
+  "path": ".swe/implementations/EPIC-002/FEATURE-003/DESIGN.md",
+  "revision": "2",
+  "reviewed_sha256": "1ad10b97765cf6647e8027e3dfdc8cb6cadb7641c4e5dc63214755fa4331b683",
+  "mode": "auto-approve, user-named independent approver",
+  "author": "Ghostagram child implementation coordinator",
+  "approver": "elon-musk (/root/elon_bootstrap_diagnosis)",
+  "decision": "Accepted",
+  "verdict": "APPROVED",
+  "cycle": 0,
+  "recorded": "2026-09-07T12:01:36Z",
+  "conditions": [],
+  "review_packet_sha256": "b7097a9ed729f5f02e4055bcdedf076387ce409c2b8a202fb4116feb8f1f43bc",
+  "candidate_manifest_sha256": "f27fe0411043255bd1a70d76305899048ca8c40bdedc7eb04dc5e7f26d9c1afe",
+  "candidate_paths_verified": 13,
+  "reasons": [
+    "Typed diagnostic-only inputs implement the existing accepted Module rejection boundary.",
+    "Actual ordered public ReferenceProvenance preserves source freshness without consumer semantic invention.",
+    "Explicit owner preparation and consumer execution remain attributable and separate.",
+    "Applicability rules cannot exclude required rejected, unavailable, mismatched or unreached-checkpoint cases.",
+    "Feature criteria, authority boundaries and delivery gates remain unchanged."
+  ],
+  "validation_effect": "None; implementation and all seven delivery criteria remain unvalidated.",
+  "architecture_promotion": "None",
+  "f004_review_effect": "None",
+  "bypass_reason": "None for this decision; prototype entry deferral remains separately recorded."
+}

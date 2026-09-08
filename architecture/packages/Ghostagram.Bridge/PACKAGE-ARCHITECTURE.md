@@ -10,12 +10,23 @@ upstream:
   repository: "ghostagram"
   artifact_id: "ARCH-SOLUTION-GHOSTAGRAM"
   path: "architecture/SOLUTION-ARCHITECTURE.md"
-  revision: "None"
+  revision: "3"
+traceability:
+  graph_contract:
+    repository: "ghostworx"
+    artifact_id: "CONTRACT-SEMANTIC-GRAPH-FEDERATION"
+    path: "architecture/contracts/SEMANTIC-GRAPH-AND-FEDERATION.md"
+    revision: "3"
+  system_design:
+    repository: "ghostworx-system"
+    artifact_id: "DESIGN-EPIC-002-FEATURE-004-GHOSTWORX-SYSTEM"
+    path: ".swe/implementations/EPIC-002/FEATURE-004/DESIGN.md"
+    revision: "3"
 owners:
   - "package-architect (epic002_ghostagram_bridge_package)"
 created: "2026-08-29"
-updated: "2026-09-06"
-revision: "2"
+updated: "2026-09-07"
+revision: "3"
 template_version: "2.0.0"
 ---
 
@@ -24,7 +35,7 @@ template_version: "2.0.0"
 
 # Ghostagram.Bridge Package Architecture
 
-> Revision 2 is the current Target amendment. The [layered foundation reconciliation](#epic-002-layered-foundation-reconciliation) below replaces the historical P50 Feature/Plan-Pending and delivery sequencing statements. Earlier approval records apply only to their named baseline; revision 2 requires its own independent approval. No implementation or promotion is claimed.
+> Revision 3 is the current Target candidate. The [legacy-local boundary reconciliation](#epic-002-legacy-local-boundary-reconciliation) supersedes only the earlier F004 statements identified below. [Revision 2](PACKAGE-ARCHITECTURE-REVISION-002.md) is preserved byte-exact (SHA256 `2b12cdd6bc848bd219fc3a54d2db83c60d8a6ab6278e5deadfd269b060b7c0c6`). Prior approvals apply to their historical revisions; revision 3 awaits independent approval and remains Target.
 
 ## 1. Purpose
 
@@ -549,4 +560,39 @@ Architecture approval keeps lifecycle Target. Source, tests, Evidence, Validatio
 | Decision | Accepted |
 | Recorded | 2026-09-06T22:52:00+00:00 |
 | Evidence | [Independent @elon-musk review](../../../../../architecture/reviews/EPIC-002-LAYERED-PLANNING-REVIEW.md#consumer-package-targets-revision-2). Accepted Solution parent verified. Portable projection, outward command/persistence, Execution baggage and typed sidecars have clear dependency boundaries; F004 and F003 scopes remain distinct. No conditions; lifecycle remains Target. |
+| Bypass reason | None |
+
+## EPIC-002 Legacy Local Boundary Reconciliation
+
+Revision 3 implementation evidence also fixes the existing host mutation seam: Bridge-created nodes use System `GraphNode` with deferred transaction registration and initial metadata, so System owns rollback rather than a Bridge-owned mutable-node substitute. The named General policy and explicit compilation handle apply the receiving compiler's finite limits. Schema-1 null governance fields and empty vocabulary/reference arrays retain their historical shape. These observed changes are backtracked in Ghostagram F004 Design revision 2 and its Evidence; this Target revision is independently Accepted; lifecycle remains Target.
+
+
+### Authority and bounded scope
+
+This Package revision refines the [Solution revision-3 local boundary](../../SOLUTION-ARCHITECTURE.md#epic-002-legacy-local-boundary-reconciliation). The Solution must be independently Accepted before Package review; neither artifact approves itself. The accepted governing inputs are repository `ghostworx`, `CONTRACT-SEMANTIC-GRAPH-FEDERATION`, path [architecture/contracts/SEMANTIC-GRAPH-AND-FEDERATION.md](../../../../../architecture/contracts/SEMANTIC-GRAPH-AND-FEDERATION.md#revision-3-legacy-local-persistence-boundary), revision 3, SHA256 `19a94d39d14d7c48cd6c3460ed039e9606a9e09436bf40686ab0a4f628701760`; and repository `ghostworx-system`, `DESIGN-EPIC-002-FEATURE-004-GHOSTWORX-SYSTEM`, path [.swe/implementations/EPIC-002/FEATURE-004/DESIGN.md](../../../../ghostworx-system/.swe/implementations/EPIC-002/FEATURE-004/DESIGN.md#revision-3-repair-cycle-1-separate-local-candidates-from-governed-records), revision 3, final accepted SHA256 `563711439a2e5f15810d72b622bfb82cd8c0cc1f5f7a241ec7235180a1d69432`. The System Design received independent `elon-musk` acceptance at `2026-09-07T09:26:45Z`, repair cycle 1.
+
+The local [source-grounded persistence findings](../../../.swe/implementations/EPIC-002/FEATURE-004/checks/source-ready/persistence-boundary-findings.md) establish why the earlier F004 statement that all existing pure graph projection consumes governed snapshots is insufficient. Revision 3 supersedes only that F004 refinement. Accepted Feature/Plan allocations and F003 behavior, criteria and gates stay as recorded above.
+
+### Package refinement
+
+Existing graph projection/delta APIs consume the separate immutable Graph.Serialization `GraphLocalSnapshot` and local node/relationship/change/history family, using `GraphSemanticValue` metadata and Ghostagram presentation sidecars. This is local structural inspection, not a governed Graph admission claim. Pure projection calls do not depend on live stores. Existing outward command adapters reference Graph.Runtime for stores, transactions and runtime normalization; schema-1 persistence remains in the host. An already-governed input may be explicitly converted to local inspection, losing its admission status. Reverse conversion belongs exclusively to full System destination admission; no wrapper, alias, cast, profile replacement or namespace-based trust shortcut is introduced.
+
+The Solution revision-3 persistence, origin/provenance, capacity, failure and test policies apply at these existing F004 boundaries. In particular, local structural `GraphLocalLimits` is distinct from a compatibility profile; the proposed finite General diagram default is explicitly reviewed in the Solution and owning Design, while historical persistence defaults/bytes retain their independent meaning. Bridge adds no competing codec or admission semantics.
+
+This boundary belongs to existing Bridge graph behavior, **outside** `DeclarativeCompositionProjection`. That F003 Module continues consuming only admitted Composition D3/Variable D2/Core facts under its accepted source contract. It gains no GraphLocal, codec, runtime, Execution or materialization dependency. Its revision-2 behavior and acceptance gates require no semantic amendment. The Package may reference governed owners and outward immutable Graph.Serialization types, but actual type/call dependencies isolate the composition Module from unrelated local graph projection and mutation adapters. No new Package or Module is created.
+
+### Validation and phase order
+
+Review Solution revision 3 before this Package revision 3, then authorize Ghostagram F004 Design revision 2. Preserve AC-007/AC-009 and all original passing observations. Verify the local and governed type distinction, actual dependency isolation, metadata/sidecar behavior and affected builds in the owning Design's existing regression matrix. Source/tests remain frozen during architecture/Design authoring and review. No implementation, Complete Evidence, delivery Validation, F003 source authority or Target promotion follows from this candidate alone.
+
+### Revision 3 Approval Record
+
+| Field | Value |
+|---|---|
+| Mode | auto-approve |
+| Author | ghostagram_bridge (delegated child author) |
+| Approver | elon-musk (`/root/elon_bootstrap_diagnosis`) |
+| Decision | Accepted; cycle 0, no conditions |
+| Recorded | 2026-09-07T10:23:15Z |
+| Evidence | [Independent decision transcription](../../../.swe/implementations/EPIC-002/FEATURE-004/checks/candidate-release/target-review-decision.json); reviewed SHA-256 `122d10dee398f5952bfbea274b1226ac879f5b96328227fc90e46228de39e3ab`. Architecture acceptance only; no delivery Validation or lifecycle promotion. |
 | Bypass reason | None |

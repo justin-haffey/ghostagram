@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Ghostagram.Core.Tests",
+    "command": "dotnet tests/Ghostagram.Core.Tests/bin/Release/net10.0/Ghostagram.Core.Tests.dll",
+    "startedAt": "2026-09-07T01:12:11.4487411+00:00",
+    "finishedAt": "2026-09-07T01:12:11.5930009+00:00",
+    "exitCode": 0,
+    "log": "Ghostagram.Core.Tests.log"
+  },
+  {
+    "name": "Ghostagram.Bridge.Tests",
+    "command": "dotnet tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Bridge.Tests.dll",
+    "startedAt": "2026-09-07T01:12:11.5999957+00:00",
+    "finishedAt": "2026-09-07T01:12:11.9019601+00:00",
+    "exitCode": 0,
+    "log": "Ghostagram.Bridge.Tests.log"
+  },
+  {
+    "name": "Ghostagram.Execution.Tests",
+    "command": "dotnet tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Execution.Tests.dll",
+    "startedAt": "2026-09-07T01:12:11.9028213+00:00",
+    "finishedAt": "2026-09-07T01:15:34.5049075+00:00",
+    "exitCode": -1,
+    "log": "Ghostagram.Execution.Tests.log"
+  },
+  {
+    "name": "Ghostagram.Cutover.Tests",
+    "command": "dotnet tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostagram.Cutover.Tests.dll",
+    "startedAt": "2026-09-07T01:15:34.5066569+00:00",
+    "finishedAt": "2026-09-07T01:15:34.8808759+00:00",
+    "exitCode": 0,
+    "log": "Ghostagram.Cutover.Tests.log"
+  },
+  {
+    "name": "Ghostagram.Persistence.Tests",
+    "command": "dotnet tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Persistence.Tests.dll",
+    "startedAt": "2026-09-07T01:15:34.8815016+00:00",
+    "finishedAt": "2026-09-07T01:15:35.6287962+00:00",
+    "exitCode": 0,
+    "log": "Ghostagram.Persistence.Tests.log"
+  },
+  {
+    "name": "Ghostagram.Server.GraphWorkspace.Tests",
+    "command": "dotnet tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.GraphWorkspace.Tests.dll",
+    "startedAt": "2026-09-07T01:15:35.6294591+00:00",
+    "finishedAt": "2026-09-07T01:15:36.1369751+00:00",
+    "exitCode": 0,
+    "log": "Ghostagram.Server.GraphWorkspace.Tests.log"
+  },
+  {
+    "name": "Ghostagram.Layout.Verification",
+    "command": "dotnet tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Layout.Verification.dll",
+    "startedAt": "2026-09-07T01:15:36.1376080+00:00",
+    "finishedAt": "2026-09-07T01:15:36.9653237+00:00",
+    "exitCode": 0,
+    "log": "Ghostagram.Layout.Verification.log"
+  }
+]

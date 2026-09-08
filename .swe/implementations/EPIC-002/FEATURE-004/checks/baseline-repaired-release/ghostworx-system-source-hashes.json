@@ -1,0 +1,1182 @@
+[
+  {
+    "path": "Ghostworx.System.slnx",
+    "sha256": "166e4e697470953794856624fdc1cea15f90ac611bfa42512e576baf9e099b03"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Compiler/CanonicalIrWriter.cs",
+    "sha256": "71c3dccea622f13d04b7b07a90c3512af3c3e09528cbbdc63f7c9447a5c31a4c"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Compiler/CompilerContracts.cs",
+    "sha256": "552b49efcbd48b6816d2ea87ca4d9c9920bb4e3b991397eafc1c57e4a701c881"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Compiler/CompositionAdmissions.cs",
+    "sha256": "972ca41daf11288d0fb564b99543e0c90100a932faa39503c91ba3e8e11dc2c1"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Compiler/CompositionCompiler.cs",
+    "sha256": "3c585837e1035682d2e3aa299bca467b691f76de90b5032bd707af5ca29be05c"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Compiler/Ghostworx.System.Composition.Compiler.csproj",
+    "sha256": "a4f9505901ac94b3b45d4284f07fc940c8cd614d201ec63dce30ef86437b296d"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Contracts/CompilationContracts.cs",
+    "sha256": "3289c144aa738e98c6281121782562d731160957ab0111316aabe953527b395a"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Contracts/Conformance/ConformanceContracts.cs",
+    "sha256": "74cbb3db0f733b98deb2da30af7d5ba32f5b88477ef6e0766ead71662a5df0d9"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Contracts/ContractValues.cs",
+    "sha256": "024f63dca21850a88c9d5a2b51fb144ca8e49a553864e36d200ea5a32209294c"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Contracts/Definitions/DefinitionAggregate.cs",
+    "sha256": "d13a47d1a9dbe7d57b3a35f2923da509787c1aa370c3cb95481b34e5993394f1"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Contracts/Diagnostics.cs",
+    "sha256": "3c6cbfde27a7984c05889d78eb22befab400c194a92d38678061d94ba33f8538"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Contracts/Ghostworx.System.Composition.Contracts.csproj",
+    "sha256": "a3a1c25d1bccd5450ca636b111803045c1c1651e4b8e4061dbfcdd0af94624e1"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Contracts/ProfilesAndContext.cs",
+    "sha256": "4740ee87ba538d8b13bfa51ce4c97fa92961de3909211c13851a64c2cf0dd1d6"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Contracts/Requirements/VariableContracts.cs",
+    "sha256": "ded6dea0490b96a0c7070c1124fc66c254e8bfd00c1e12ee9846bd82885409fc"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Contracts/Surfaces/DeclaredSurface.cs",
+    "sha256": "7fb8b49343318ca0a6bd923fc6fb87c3f60e68175990ec461b6c6827768ebe25"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Exchange/Documents/CompositionExchange.cs",
+    "sha256": "b4d8c755fabb2717f6fce78a103a19be2550031ca80f81f24ed61d490edab895"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Exchange/Documents/ExchangeContracts.cs",
+    "sha256": "a8e148bd8bd1e9674e841feaabb560159d122ce53b2047d6a72cc6d622b00c4a"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Exchange/Documents/ExchangeOperationGate.cs",
+    "sha256": "e5c62bb59d36ee9de0fb246375989171e7f7ed37843e40e6b748a92df626a763"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Exchange/Ghostworx.System.Composition.Exchange.csproj",
+    "sha256": "57f4507a33d42464e50c5a362d8af60b6619de0d8ed44a0dd32aed8808fda1b5"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Exchange/Migration/CompositionMigration.cs",
+    "sha256": "2dd3e52d237880a97c3779e66f974d76d8c6d41abb9e9d2feed8872ee5cbc6e0"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Exchange/Migration/MigrationContracts.cs",
+    "sha256": "701ed01c127db1e53a8f73f33f2fa4b96b5757c39ca953510affe6f7bbf397df"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Component.cs",
+    "sha256": "ca80c71a80e528e14181d3f4a68a981524dab6eaaaef2e3fd9e67a779285a108"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/ComponentCollection.cs",
+    "sha256": "3d7933a928a203715b0e7a234330c34506e6f33979f26a956556344f3adc4057"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Container.cs",
+    "sha256": "db0d4599d54c2244744b8434bc8f2679bc4f2ccbe6760130a147225c1d91288b"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Graphing/ComponentGraphVocabulary.cs",
+    "sha256": "dfd0829a1c308f7b9b58cf0af6f4e70ff4a53185cc68998de2c5925d1166fe6e"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/IComponent.cs",
+    "sha256": "8ebbeaab9f4ce61bf0062677fdec0a8037c813e38143b0f7fb2a50bc0598a6e5"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/IContainer.cs",
+    "sha256": "4bd396e9ce48451d57071b95e6edb356afd33d41d50ac2cb95e797e07d1f9f0e"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/ISite.cs",
+    "sha256": "48f14e8a28a2cf987c06588b55b2aea9c52d4133aaf25fe410ccf7f669550eff"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/Attribute.cs",
+    "sha256": "e6353309c07fc6297ddf316029a5bcf221e151fac84081d5776789b59fcf81f5"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/AttributeAdapter.cs",
+    "sha256": "cded70ed365a75edc1a52a9aafe7b6f47c768e542e91d23d46c09dd6da2fdfef"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/AttributeCollection.cs",
+    "sha256": "ea280a0129b7583fb889cc93be5eb4c7969d5d2740a839ee054c23199ff5e218"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/BrowsableAttribute.cs",
+    "sha256": "6ab2b9a1ed19be48092715ca74fcada2b37b2de5a3db0958b952b342ff403d87"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/CategoryAttribute.cs",
+    "sha256": "f7420b7e3eb92f6e7ca1f3158f33298fdbab7d701296f03e7a49d3b61916981e"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/CustomTypeDescriptor.cs",
+    "sha256": "5baa3a5a3fa6dd3c1e2ed768fde2646d984512383485b02ad311a52942da193c"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/DefaultValueAttribute.cs",
+    "sha256": "0bcf5bc90c392d82423bc247a4ef164a276509c6bc00bf5ae91fa48b42aded41"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/DescriptionAttribute.cs",
+    "sha256": "6905b4f7b1695ebd29dfebacb61836c25f1bb5b58547604cb5853846180c437d"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/EventDescriptor.cs",
+    "sha256": "51a207984dbd10b3cf155a5544db44bbe1466cd5e993cec6162d4716cb129aa3"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/EventDescriptorCollection.cs",
+    "sha256": "2803d2eccd046f5c06763bfc6d34abf4e2cacb9345332ce5ab4b9442099a8ff9"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/FrameworkCustomTypeDescriptor.cs",
+    "sha256": "0af277ab585291b43acb863ad78708f922f2291122a2f129f6cb1c297ab53662"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/FrameworkEventDescriptor.cs",
+    "sha256": "ccff91b3965e06c8f583f17a0658ed4fad7b622e8cd437cc607d26f511f665dc"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/FrameworkPropertyDescriptor.cs",
+    "sha256": "889ee07dbcfc5fc33a0cd019db4f8b22120f15608facc4d84f5aabd2ae53aa5d"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/FrameworkTypeDescriptionProvider.cs",
+    "sha256": "81879aece525ae5b80ffdc8c08865774d6706bb6f6f607c0666fc196121b9247"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/ICustomTypeDescriptor.cs",
+    "sha256": "da9e51f3d5326d08ef879f9036de2f367b9f986c912c785cbcd261ebc39d60b1"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/MemberDescriptor.cs",
+    "sha256": "692b5bec61b9f9336fff0c4f20063008f50e3f927b67d3aba56b854970a230f1"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/PropertyDescriptor.cs",
+    "sha256": "1267b6f9a1ee7331990d25b0211b5c8709e51872ecba67ce6b2e666740765735"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/PropertyDescriptorCollection.cs",
+    "sha256": "3cfd23ee6dc6fa056ae510cf56d567b0c18425f7d4446316eb23c83a894f91c8"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/TypeConverter.cs",
+    "sha256": "f8d07dcd0ebd0264ea14024ffb063cc60616817e1010c7c89f30a29a1c934763"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/TypeConverterAttribute.cs",
+    "sha256": "c2c741de70727a395c91611cbd5539a4349265ca6fad89c2d3521cc37ff0326c"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/TypeDescriptionProvider.cs",
+    "sha256": "ca99d5aa757eb96d75a68892b428aed83d09143e5edc1dc6f82d2c2328f3e540"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Metadata/TypeDescriptor.cs",
+    "sha256": "fc2c6f089a2736dbaa0c9467ca4cd8309180d1d419effd4896da2908ef767f7a"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Services/IService.cs",
+    "sha256": "d78110422690984dbe5b64f5f7af01ed714924f95a073a8789e3fc4239b3000c"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Services/IServiceProvider.cs",
+    "sha256": "f83c9567176f2c237856073ac0ef5edb706eff68ee50b4bb966a1f1e8c551af9"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Services/IServiceRegistration.cs",
+    "sha256": "1c5f46155dc6cc99018204929164bb346bdcd2bc891fa9b435382cec7c541f37"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Services/IServiceRegistry.cs",
+    "sha256": "3c3c9d57802fae4c2830be191b2d900527402fe4e85343bd3f9b5f64ee2e8354"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Services/Service.cs",
+    "sha256": "141bfb84fb531edd0f8785086a857922d0cb3f7abcc921fe1d91dcfbca2474d5"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Services/ServiceOwnership.cs",
+    "sha256": "b4cc7feecc801c9e3ce08e4fa8835995a97fb60f7eadf391d736db02f9831ebe"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Services/ServiceProvider.cs",
+    "sha256": "a3e09569f79bc73fc262fca6c5639ac8b74b368dbc9b53efe9365ebd8535fedf"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Services/ServiceRegistration.cs",
+    "sha256": "18c79f6c759e610483eef4d45323c3cf3175114cb4faf12214cf404b3a443fd1"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/ComponentModel/Site.cs",
+    "sha256": "0a97eb5c8a3cfddf00bfa1b48e00eb4137f00f712438973f5765583e30088e4e"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Ghostworx.System.Core.csproj",
+    "sha256": "e756cb3cd2b56a7fb2ba70e095a6103ef7de7b22ea341ad7567b64ad5e262ab5"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Algorithms/GraphAlgorithms.cs",
+    "sha256": "cd2b95e7a330ed543122c02ad5ad11e7ed917564d23841f089bf326c0347290a"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphCompatibilityProfile.cs",
+    "sha256": "12b56cc4f13cff422481738094b61852c1723557be0a3d7687fade967d2a27ec"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphContractVersion.cs",
+    "sha256": "990cc0bcb26a218bbe6e43e597398b3513081705a8f6ceccd439a0b2d51e1f4e"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphOperationContext.cs",
+    "sha256": "239dd82e43f79355b27e354b4110fb5728c1fb5ff8518633a9d4b3f97455d48d"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphOutcome.cs",
+    "sha256": "ba8e3aa95424d5c4915fe083d1035f4e08f53f79146b8d2fae41344f23cf5789"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphSemanticValue.cs",
+    "sha256": "b14fa5c9259ba390acc885dd50fdcb5cdb7671bc010311f970e729cd891fe747"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Contracts/IGraphCapabilities.cs",
+    "sha256": "1ebd269753b54191253a6c1875723a302a86feee4c35a734c58554195873232a"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Contracts/IGraphContract.cs",
+    "sha256": "8a79c1500c9d2f04a8fcf8c1ccd2f358d3662cc6d125dc789b17ab486e210769"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Contracts/SemanticAddress.cs",
+    "sha256": "1c43be9fff7290dcdf76b0032812542fa0492e5942d57a1ce686d7cd1984ac91"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Contracts/VocabularyIdentity.cs",
+    "sha256": "46c498907f90ef1fc5ee5d60cda329efd9be38263b5e0b803b872b90448c029a"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/EdgeId.cs",
+    "sha256": "f234da2dbe511e0925de9142b65f1e6fe7cff7308c0113e9de06ad3e0cc150e2"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Features/GraphFeatures.cs",
+    "sha256": "06f1a0b722f8b7cedb520aa38f89c8343504f467f3194b347918dc570da9718a"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Federation/FederationReference.cs",
+    "sha256": "e69d65a4e4103065bc500ec1826bb1568c518aede753ef0a40748d64a74e7c5c"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Federation/FederationResolution.cs",
+    "sha256": "b04767cf9005ca23295204e61e0c6d6aaa88be5119b195765003a5c7fd788b79"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Federation/IFederationReferenceResolver.cs",
+    "sha256": "ea996a1a5ae9456e661795b1344e880ccd25b757bebc615ba9e842e1af7ad89e"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Graph.cs",
+    "sha256": "add183442667e43aefd32ba43041324358446b6502124b2a4add482f3a336888"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphCapabilities.cs",
+    "sha256": "db7173741514b1d4df2fd96f5f894f7c4418f730ab694f9e624263341b148071"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphChange.cs",
+    "sha256": "0844934639ba4601fe1eb6f66cafa211bf5dbaf00a8387e56f5a87d37facfd10"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphChangeKind.cs",
+    "sha256": "4e29be2411ffe0b6266af7ee5450d97266c1b01f4c3496b1313b2fd4b70a80a2"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphEdge.cs",
+    "sha256": "a2409d971f3d41936953206908d14285fa65d72434febc25546684a0e6b25137"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphExtensions.cs",
+    "sha256": "7d03736c5b087c1b8a40d39c51844f25b174cd8c5df121d4c95db35b00f64284"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphFeature.cs",
+    "sha256": "d617bb04baeb70eda90d66d600c42f68a25b6ac4512a968fc2487452c0020d8f"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphNode.cs",
+    "sha256": "985f2d2f2f2fb32916e7fc63c8d1e293042e7d3ef7b582f624c36a9204a99cab"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphNodeRegistrationContext.cs",
+    "sha256": "f4b847edcdbfff0e7cd96933da824617daa693dba2e3d01c95879ec94b38e90e"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphRelationshipContext.cs",
+    "sha256": "495e3ae6b0076924a91063c59aa45970343d0242ff19773c12755217e5562e09"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphStore.cs",
+    "sha256": "c4361ebdec11990fd72b65b853c04c62bf85f1c7d42497956e3f096e5f89d6e8"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphSymbol.cs",
+    "sha256": "8fd231acf0b2f36fffd835ebf600879df4e6c0a434769df9161aa9333ba20740"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/GraphVocabulary.cs",
+    "sha256": "b263b52d62b37a7828623584497dc9a8246aa57bb9b647bc8eda4f13851ae328"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/IGraph.cs",
+    "sha256": "c3b733385b10761a67f2c952f7fcf2978b11f3f65e87e1bfabe851bbaba2d2ab"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/IGraphFeature.cs",
+    "sha256": "9f06873e0c34e5e49ad828f81a53bc1d61c2a4511f264ad4947e34edbeda7dae"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/IMutableNode.cs",
+    "sha256": "b6ea437df5a867d322af12e68535df9a55213a501ee6abec3f3b58e44a6eab28"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/INode.cs",
+    "sha256": "6ce22285b65ffc0593518ed7d1e03dba48b0763620df733c28f72e7d52c72dc2"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/IObjectGraph.cs",
+    "sha256": "3f6eeec293f22703dd53b383c672f7cf11077846b2cb243d6da0a49472d9e56a"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/IObjectNode.cs",
+    "sha256": "ffac160f683bae966d42d7c875c24f3ae7632842af4a64dfba550ea02565bab0"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkCapabilities.cs",
+    "sha256": "47748bebf624ddbab5036810060cfc3ef06e79cff3c977a1c9a1085c7282013f"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkContracts.cs",
+    "sha256": "845c8f0d375e249eb74baf88e00a9789df63d48007845a36c2f3e0b1dce1e049"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkLedger.cs",
+    "sha256": "0e41f6b3c4410c9a88d2981b5b23729f46df3446dd1d48b2868f18691c41a844"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkObserver.cs",
+    "sha256": "4b6828d8160e75b892b4ac3ca271fc7ebeb431332660a19563016ef15f2f7fd5"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkOutcomes.cs",
+    "sha256": "2116f1ace5aff71fc8c32fe48ceb65656ff42661cb621fd85efe42672654b119"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkProfiles.cs",
+    "sha256": "f1f055de2e939f6014e62dc1da0a46e731c923c68d583ca9e1a7289c29585519"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkProjection.cs",
+    "sha256": "5f7082d5dc49451833c31f0cd002823f488b09071c7e523a3f11c45996c521f2"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkValidation.cs",
+    "sha256": "74878b2b294d13eb0630043e2dce9c51d43cee12a0831aa116adc6f14ca10bbe"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/NodeFacet.cs",
+    "sha256": "7c374cca44e1a12ae4e73a6324f7943f7168592659e8bae598a9c3b9dc1ce329"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/NodeId.cs",
+    "sha256": "f2a674adc8d8938208cd110bdbcbe0ec9fd82e7a49d01224304480328ccd2001"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/NodeKind.cs",
+    "sha256": "8df716bb439afbad6d3f12ca5d7a2f0e01db938084c32436c5281a10b432fcbf"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/ObjectNode.cs",
+    "sha256": "bc3c1fcf131657b34df37d5302f4f51e0f4f246c1fdf010aab13d484a341a391"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/RelationshipKind.cs",
+    "sha256": "a2636aa54b46c82dd666da99157335949147427e5a6ed28db565f3bd2cf413ca"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Graph/Validation/GraphValidation.cs",
+    "sha256": "0cabc04d62dfbdba447185e34dc478ad808ee4e3e559a086385ab1bc76b6ff9e"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/Structures/Dictaxotology.cs",
+    "sha256": "8d1b4da6550607eed03faa0a86ece53c4c90170ca80d42ee711d2158fa24a3c1"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/Ghostworx.System.Graph.Serialization.csproj",
+    "sha256": "f10306067024e9f334e124fa874b82ee74695d0fad75e5ffbc98cf10f048a620"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/GraphJsonSerializer.cs",
+    "sha256": "0383222b2b5ab5e94dddae7b38f772365933b2472ee19b604e27a1af71d90a29"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/GraphMetadataCodecs.cs",
+    "sha256": "62664a24933e85c622e6ed6177dfc9b2ce0ca517f1883a301b3fbbb8b69669fd"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/GraphMigrations.cs",
+    "sha256": "5e552bd6eff91cb9cf7942dbae154ae38ba6b2fa115038ed9c4cae9b37e95773"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/GraphSerializationDtos.cs",
+    "sha256": "a4665b227e94cdd13ac63cdef84f395026b834bfee7591ea55e2e07d7d3f7935"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/GraphSerializationRegistry.cs",
+    "sha256": "34360b4cf298d65a857391d1f3ed5b8842182e285763f6a6cce6c78ad273341a"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/IGraphExchangeContract.cs",
+    "sha256": "0d697a40fc8044e8888a8ee61c45d843685449a0d590cf8ce9d10ace9870ee9c"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/Links/SemanticLinkCanonicalJson.cs",
+    "sha256": "2e5687e0b9cf37bd5e374a166413acfcff7a07407e1415d96f5043f1f436aefe"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/Links/SemanticLinkDocuments.cs",
+    "sha256": "fe5d3249cc8e74bee1a05c32868bd9ac13112442565ed2c1db18ce0d2f129b31"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/Links/SemanticLinkDomainDocumentMapper.cs",
+    "sha256": "21fab5a850dd34077e3c49fa59c33912432c5a5d5bd4a50d0708142cd05d36bc"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/Links/SemanticLinkJsonSerializer.cs",
+    "sha256": "1e66840c0eee084fbfcf3f7bf798f136bd69a358651ef32765459c68cf6bbf3c"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/Links/SemanticLinkMigrations.cs",
+    "sha256": "a22b08d843f8f96d56d07d0294b82dcbc90f7acc64a42dfb4f2ed472cdc053e3"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Bindings/VariableBinding.cs",
+    "sha256": "860e2afb69b7c2a12ac6e9e8669f84f8e9eec0b47b0cc1aa824508ee6cbc41db"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Definitions/VariableDefinition.cs",
+    "sha256": "47a2127bf81be6ff8f7219c41bcaac94d0d72250a8f8e328117eb66eafb90fe8"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Definitions/VariableDefinitionGraphAdapter.cs",
+    "sha256": "f3a621c3ecbeeb25a1cbfff64ea2991c47e2dba3c84a68c7e2246083c2266109"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Definitions/VariableGraphVocabulary.cs",
+    "sha256": "ad4e05f8aa7040bdd356af69c91f0729b9438efe8446295f4657ba5068f61fea"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Ghostworx.System.Variable.Contracts.csproj",
+    "sha256": "76bca35ee6c9d63aee9525bdf4302db19cc958c9a6da82b19cb19522dcfd45e8"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Invalidation/VariableDependency.cs",
+    "sha256": "62e13f71f5922dfa06eb2122a12d5c3de3ba086def2f38d28ae1f327ee1f6460"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Invalidation/VariableInvalidation.cs",
+    "sha256": "775667e96f0d3917dcba14d73dd796794078f4f508b17c764d288cfa11e4180b"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Profiles/VariableContractProfile.cs",
+    "sha256": "d81b05acd627f02469f77d5f3d936348251eb4ba1be4e506b5672dcfa98bda5a"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Profiles/VariableLimitGuard.cs",
+    "sha256": "49624aaefcab28ec808bbd10f597c75a59ee4e88f53f1c7e9df6b04304be5ed3"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/References/VariableReference.cs",
+    "sha256": "b52ef9a91c04175483c807a7ac981d8d236e3fdabdbf5bd428e6bfe29219bf7d"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Resolution/VariableInvalidationSubscriber.cs",
+    "sha256": "9f2566fe3e5e48c90c8160e38023fca3368cc3a159cea2c93a79c46d9aee7225"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Resolution/VariableResolutionCacheKey.cs",
+    "sha256": "c2ef6567a75f2d7ec3cf45895390c7a7bcb36ba55a80423f5b29bcf495e62c20"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Resolution/VariableResolutionCoordinator.cs",
+    "sha256": "98f1c4310295adc34d215a3f83717b69ebebe2b1b942197bcb2909e2b23f5080"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Resolution/VariableResolutionModels.cs",
+    "sha256": "7483290dc67416e22ea7d87f9825c5a54fe6eac88b8fee0deb880ddd111c51ab"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Resolution/VariableResolutionPorts.cs",
+    "sha256": "6ae39ec6f28314eddc6c74105655ab8f305750f145cc4a5abcbefa257fb4b086"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Resolution/VariableResolutionReducer.cs",
+    "sha256": "195bcb89354850a15d45f9c6229253ffe61ab9b6d3267fbdc1af1eed2591a730"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Contracts/Resolution/VariableResolutionValueNormalizer.cs",
+    "sha256": "e6620c53a80de5141bcd72d1631dd02dccc291005ebdb245534b234b6cd7f704"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/Ghostworx.System.Variable.Serialization.csproj",
+    "sha256": "f038658709f86638832c7c6806f7fca139e53deb08ed5830ce3be77c32251bb2"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/ProtectedVariableBindingJsonSerializer.cs",
+    "sha256": "f71b11e0416939ec33573dde87ab87f4a4f59442fc77394147892acef9140e3f"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/ProtectedVariableDocumentModels.cs",
+    "sha256": "ae9f07318ea4916c688bd050066f9477f44e82484b777cde89be48f7e2c0df44"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/ProtectedVariableDomainDocumentMapper.cs",
+    "sha256": "47126d24bfb8a19b3e56d76e5fe434f99566f794f1eacda27d375a9dad9ba4e8"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/VariableDocumentModels.cs",
+    "sha256": "ef438007c080ffcfb4dbdd5c371332425709f4f9a2faea4c77d487ae0e4a48af"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/VariableDomainDocumentMapper.cs",
+    "sha256": "0c03e44f4e2b798ee0053200d65a8b2289a9172ce16aa1360997057401d87b9a"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/VariableExtensionRegistry.cs",
+    "sha256": "698b29f6f6b8ca1650e0d3cd1911c6656dd7e4b787c3a79d489b8b0e988d6204"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/VariableJsonSerializer.cs",
+    "sha256": "76bf6adbe62543b0da4e02df672b433f0ae4decdb749c60a697b5eae4499b9b6"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/VariableMigrations.cs",
+    "sha256": "1552a58909b81a91590016755bf39d31972aef32928e869f34de35ee9c4f1a8d"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/VariableWireValidation.cs",
+    "sha256": "f63a1ba26b85cfd401c5cfbcd43762ee605c033207d223cd87b93af57c6e3f9e"
+  },
+  {
+    "path": "src/Ghostworx.System/CompositionContract.cs",
+    "sha256": "c0e3b561ab67b20ab5d7b7d4e750b91c79e549e40d89935ddb4a04ce7285aaad"
+  },
+  {
+    "path": "src/Ghostworx.System/Ghostworx.System.csproj",
+    "sha256": "4e26ea386ed4247799a280c1eb0d223b49f90a502349ae4d37c3559dfab9ec14"
+  },
+  {
+    "path": "src/Ghostworx.System/SemanticGraphContract.cs",
+    "sha256": "efbb6e0087a136249b42978913c67b5a0416250e73640ea2b047704ff73bf946"
+  },
+  {
+    "path": "src/Ghostworx.System/SemanticLinkContract.cs",
+    "sha256": "b3ee7d2822090e03d56e6fc73d9698fb2464fa3b9dc01c958ddfad6b6a76f239"
+  },
+  {
+    "path": "src/Ghostworx.System/VariableSystemContract.cs",
+    "sha256": "2d5c02afb8ad0ff57e722ad7ebf2dd20559a3ad019ae418694b7d792566661da"
+  },
+  {
+    "path": "tests/Ghostworx.System.Algorithms.Tests/Ghostworx.System.Algorithms.Tests.csproj",
+    "sha256": "cf240feea70b928ff17f28944c2f2f27981d3bb774886cfdcf8eb5a4eceaac56"
+  },
+  {
+    "path": "tests/Ghostworx.System.Algorithms.Tests/Program.cs",
+    "sha256": "0f664ec2336802308ca463851bc789fb937dcf32d1a24382a0e17e94e2547a90"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance.Support/AdmittedCorpusAdmissionCore.cs",
+    "sha256": "d481c26eb325b36a9334235bd1e7437543f3b1f02e513aaaf366e1c4aca535ff"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance.Support/AdmittedProducerEnvelopeAdmissionCore.cs",
+    "sha256": "dc896107b09dcdf2d0afe90e1e3eb4c6cddcb6cb5a33aff3f2968ffae3ee03b7"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance.Support/CorpusAdmission.cs",
+    "sha256": "eebcd2afef0621b8733638629932bd9a9d5ff95128074aa6390db8bcb1ebe8db"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance.Support/CorpusArtifactCatalog.cs",
+    "sha256": "fcafe051fc7912e99d0e6a63f3271aa03f5789559228efaa93b77b9c65576214"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance.Support/CoverageLedger.cs",
+    "sha256": "a1f4e6efcd4c67aacd6d2e69205b4802e3a801546f02bc5fe3f10b004fed5303"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance.Support/Ghostworx.System.Composition.Conformance.Support.csproj",
+    "sha256": "954b524b2b3aed3b24a346bd550f24aa26791bcba04aec323b27390cdafa68ad"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/AtomicEnvelopePublisher.cs",
+    "sha256": "472d223911038e958f802a5cc7df88d43d95f7151aaa6d00906512c82b59db2d"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/CompositionProducerRunner.cs",
+    "sha256": "0f87061a8774c4912ebdc7df18846cac02c4ac2bf559ce1aa3ec298572b3b1dd"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/cases-v1.json",
+    "sha256": "8394841f8f567715fa6861aa21ef7ea7c495041584f6e6ac0ceb06c8a339c870"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/coverage-ledger-v1.json",
+    "sha256": "1621523f66f1bb79603a5f089c4ce3251f6328fcdfea651d3f883a9b84ca37ce"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/execution-fixtures-v1.json",
+    "sha256": "70a5197f4c5d018b064b602690e03919f4fa06388616ec00a033914ab46de03e"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/execution-vectors-v1.json",
+    "sha256": "1058bbdc7270c47d458526535be49788a5250de374a2dafaf58a22c1faebf3f2"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/expectations-v1.json",
+    "sha256": "2779fdb39563be3e1b457ed88e7465f8ce8e3381999b8825dcf5f149279e2783"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/expectations/definition-containment-cycle-v1.json",
+    "sha256": "d61dcf6997f5f69a148ea878bf654d89002742fea5d9f2c9d0e710470e97f162"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/expectations/definition-recursive-v1.json",
+    "sha256": "a9434aae551bde327eb8d76771941230d6bbc4a8a6e412dd2caa9b8449cd21c1"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/expectations/definition-variable-binding-prohibited-v1.json",
+    "sha256": "e295a71edb5c35793104b671049526bd3f1cba69e06501ec5f80b28c618eb87d"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/feature-content-scope-v1.json",
+    "sha256": "5738d3554c9a60d1b613424d357aca5b11c5f03bf7a8158c0014c8297365ab36"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/fixtures/definition-containment-cycle-v1.json",
+    "sha256": "ac324966123d4aa60bc1dda1d01031633947b3d847da05fcd5879f8e58f2c2be"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/fixtures/definition-recursive-v1.json",
+    "sha256": "ee8848bcb6ec83b3857251232422375169aafdfafc6c71ace4c25ff01af6baeb"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/fixtures/definition-variable-binding-prohibited-v1.json",
+    "sha256": "a8ced5f07f54650c45d3b1739bea8e1429cb4e07cf69c92646c930488ab3a695"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/invariants-v1.json",
+    "sha256": "96c7f7caef9849d1f2b7d8c40b0799d00295a38049317a79d5e2f977393641a9"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/manifest-v1.json",
+    "sha256": "7129f40639ab2258fc86e39e75cfccf72b7fcbaa7d9a41ba198a3cf0c423cc3b"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/profile-v1.json",
+    "sha256": "37ac9f4bdd99e0accac44d2716d231100257f86cf57ee9dc526155b7154c52df"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/schemas/coverage-ledger-v1.schema.json",
+    "sha256": "31f781b4585259ca5aea892c5a45d8d8f19da3d2debe68da45213d01840d75c2"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/schemas/manifest-v1.schema.json",
+    "sha256": "772df00c3dc55612307d22530109f664b826fefc8ceab92a9f3eca08a8132e4d"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Corpus/V1/schemas/producer-envelope-v1.schema.json",
+    "sha256": "a2bd0c35d495a40f8966f74e0293258b9e8387e994844c02858825c4f2ea862e"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/FeatureContentAttribution.cs",
+    "sha256": "e02f95e088a2661c3af48948ac20bb25e11a61fc1b19eec29dae4f2fc4fe0fdd"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Ghostworx.System.Composition.Conformance.csproj",
+    "sha256": "61b566beed81c8584dc692fc2f4cf89b05cc032987f87c947dae97e802ef5724"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/Program.cs",
+    "sha256": "d58410437c05003d6c1b1813de921a40d2a0694e8ae6f39e60691f0abc307e4f"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/RunnerOptions.cs",
+    "sha256": "c4c2b1741dd8309bac6ac8220bfc2bfef4b52541e826723e774295e2c91725f9"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/AdmissionDelegationTests.cs",
+    "sha256": "688907b2fd2bb6ece3cf8aa8d9f18e2dc2fe981b5d0cbf70349c152a843e51f0"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/CompilerDeterminismTests.cs",
+    "sha256": "f166c950190102029423384a842074752dd809eacbfb7369b743513285974b47"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/CorpusAdmissionTests.cs",
+    "sha256": "0f3f8f67cfb5d0ff7c0246a6025c013bccdbc0bab86749d1613db8e3e5ddc94b"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/DeclaredSurfaceBoundaryTests.cs",
+    "sha256": "25f3a2bbe2f3dd1ef78a8b19874f2d6f263093206bb45843075f5bff533cfc16"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/DefinitionContractTests.cs",
+    "sha256": "890fcccfa55b604a86570ed961f3577a2d6d507ff53523f1a3968202e3d10fa7"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/ExchangeMigrationTests.cs",
+    "sha256": "b6d1d7b0cba85ec199e4962736bc7d591a334eb18c9122832f575a8af35c82bb"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/Ghostworx.System.Composition.Tests.csproj",
+    "sha256": "b5d59248ffc512bb5a0c209255ec040c7a60c24409238be09cc03b99894100a2"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/ProfileBoundaryTests.cs",
+    "sha256": "88e87d8e4f8e5cc005f6cd1afec41adf89ff3e5e932ec1bd88b07e47bcb824ca"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/Program.cs",
+    "sha256": "eaba34f9dd3fb51fb30d152e0d582234984ed345bbb92228c3fbce6e46ddbd2d"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/StaticBoundaryTests.cs",
+    "sha256": "47c2f7a4d0f07a5f5c0e7c637260e39a4062c1c8487f6ac32b6d9755fb1156ad"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/TestData.cs",
+    "sha256": "3edcc9736279b1a604a52662870814d89331264107e00f74491df5daafab13b7"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/TestHarness.cs",
+    "sha256": "9b236495db64492bf371f50c5c73654d23a676ef61dac0b88f7933ee08ed99f5"
+  },
+  {
+    "path": "tests/Ghostworx.System.Core.Tests/Ghostworx.System.Core.Tests.csproj",
+    "sha256": "c6a5275bec77c63c6e1d7ea4881a3d75b747fadde2cbab02385c47556946fe1a"
+  },
+  {
+    "path": "tests/Ghostworx.System.Core.Tests/Program.cs",
+    "sha256": "c928ed8719b202b96bd1606440dad9fbe64377e6e1a9ee0468711936c3c5ef72"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceCorpus.cs",
+    "sha256": "1d675b3ae67082275e95b7b1a5a4d1834122fd65b21693bb87c4736daa7d1fce"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceDigest.cs",
+    "sha256": "fb85111d322d2b0b7267ffc3242d0645a842ed2c7d5fa84a56aebeca392cbd10"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceInvariants.cs",
+    "sha256": "539287c5766db8636b7f296862532a57bbb67cc46b56710219fe6b6e61f16268"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceManifest.cs",
+    "sha256": "91af4ad6e5bcc66b3cf4a9398f09c6fecd663fe6d08e4d2a7975e3ab8ea45f30"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceResultEnvelope.cs",
+    "sha256": "60952a213bd84851cff9f5764136190657763006f5af49a656dd9e36b36631bb"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceResultSchemaValidator.cs",
+    "sha256": "a4fced738151d63abb3900ca1db67d7d0db1915edaa60a1cf7b34c423b5ba594"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance.Support/Ghostworx.System.Graph.Conformance.Support.csproj",
+    "sha256": "c5fc3eb64ae56fc55eaf04c20e143c231a8eafbfc5a6bd797f140931bf8e2dbf"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/boundaries.json",
+    "sha256": "3a731907f7435a2a0e1225c85465bfe8f14146e44f0241c026e363bbae1e97b2"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/exchange-migration.json",
+    "sha256": "66c7ade3cb4bfd846150a53d21d04bee2ad6fed3e0053a45f6ee36fda8ecc037"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/federation.json",
+    "sha256": "d7da2e99924ae272b9e97e19db3674793be61f1c91f9c4247e41c1784a4f518f"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/identity-vocabulary.json",
+    "sha256": "73109bca2e9b0b7dca004567c487a5a6b373a1a748ec1a9a9a80c40471ba7fdd"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/manifest.json",
+    "sha256": "7690d24cad6e8bff13b29c302a1eacaed8cde77c86c3e6a2e27457a116deb5ee"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/mutation-history.json",
+    "sha256": "7fc9081bfbc3303740d33a7c2c665be788dfff3ada546bf04aaaf07d1e07300a"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/profile.json",
+    "sha256": "21bc4f88eb87a9ab3bc6e43d7af001f9bfd48db34588b05d7b324c4e1dba6351"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/skew-redaction.json",
+    "sha256": "ad5c2f200363bc14411c6805cef8d59b94ffa08cd3d6b142cafb14c173294db4"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Ghostworx.System.Graph.Conformance.csproj",
+    "sha256": "3126781c3632d97eeb056f9ee3316053a96dbb374c4fc82cef15eff76c612f61"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/InMemoryFederationParticipant.cs",
+    "sha256": "0cbca858cc18946ec0eaa79acac6311bce6361186caade2e743b5a9d4fb83da9"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Program.cs",
+    "sha256": "1b24aeccdcc81b378c1b77271db9f051f71b0d79fd9c6774f5deeb47b1f6eb63"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/Schemas/conformance-result.schema.json",
+    "sha256": "1f3b3004c2d1229b0965217fd2efe1ef570a04f7e3684509f83e9e0e5399fdf4"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Scenarios/Ghostworx.System.Graph.Scenarios.csproj",
+    "sha256": "4a2b06c4b9721c1aa9eee5ca7949aa002e960f45f593eb75fd5a8e25a0940419"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Scenarios/Program.cs",
+    "sha256": "16666e67c92ba561768ecca340db486a8ba6cb486e7dddb1bbb543ad88aa11f6"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Serialization.Tests/Ghostworx.System.Graph.Serialization.Tests.csproj",
+    "sha256": "4a2b06c4b9721c1aa9eee5ca7949aa002e960f45f593eb75fd5a8e25a0940419"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Serialization.Tests/Program.cs",
+    "sha256": "17a9195ffa9d33b393158a3fbdcd62dc9fd91b2440aba62edf1abaac92abcf21"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/boundary-integrity.json",
+    "sha256": "b16bef0a86ff9a830400b56f832101bf33723c39479287717cb4ba19fb263b6f"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/componentmodel-address-only.json",
+    "sha256": "f88e7ce6b23c3d9452f3b14abccd4d5a283f5fb24aa201f09917b88eaaa4974e"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/construction-identity.json",
+    "sha256": "d3596198e4a6fd5e1b1e898a7ac054326d4474d2443749947c34c05cc2307ce7"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/endpoint-representation.json",
+    "sha256": "a07bc39255ecd5049daa74bb46f3df01d013d989d0ec073bd9c2decdb25691b3"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/envelope-integrity.json",
+    "sha256": "bce9d3ede22e5371b66c3f456d65b9f070ad416ad50923b59435d904f655494e"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/exchange-migration.json",
+    "sha256": "cadd06dece4913236a943ae7a5d647cda643cd00726e98161ba447c7dd975835"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/failure-redaction.json",
+    "sha256": "170f38496a3f26770b34f157769941cf6a1a885cdcad459a0c8dc3778aa8a39f"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/lifecycle-atomicity.json",
+    "sha256": "d4529227bf69e1eeae63c121ccfd26300e6fc95766b2fb13a636d8f7ef842a01"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/observation-finite.json",
+    "sha256": "cf81a2b9064c2b549d1fb72fce97b6410659a45559c0bec85a83e6b0cb5144c1"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/port-oriented-boundary.json",
+    "sha256": "b8a49c7d7d95f76c634d35c3c5bd1c376a4799786d8aba438e039281cb7d1940"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/projection-freshness.json",
+    "sha256": "710959e7b355482790944bc42f6387635e0767bb4eb88426f315d160e5cfb67e"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/security-boundary.json",
+    "sha256": "0554c20f40383f38e1290970fc294f94482dbc3f9d194c9a0df62081b6b2fd8f"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/cases/successor-history.json",
+    "sha256": "87e25eed1bdbabd57d0a231de51f23e4cd244205c5f08fdd7337f14990413c3b"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1/manifest.json",
+    "sha256": "afd4c03c0ed6d33be242a773712707f5e5b6c340745142d01412a4f57ad291a1"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Ghostworx.System.SemanticLinks.Conformance.csproj",
+    "sha256": "6cc57e8e9fa0e2537022b004a1db91f096fbac1e1b4ac4d3eaab691929100b30"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Participants/SemanticLinkBoundaryChecks.cs",
+    "sha256": "fd83a83d54715ce0a2fb5d480669beaa61b813726c8bc5776368df901fd83ef8"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Participants/SystemSemanticLinkParticipants.cs",
+    "sha256": "202129cfe940a15a7876a95b323384c89ccd5a7964ba83a8eb9cf6ea66095ffb"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Profiles/semantic-link-conformance-v1.json",
+    "sha256": "2a90298f331d0735d5f36275b96e3d137d0809a50023e580654214e8aff9e5a9"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Program.cs",
+    "sha256": "174b9a30e4b613d5020c33e05261af07011edc0a21368db94cb5e6304e60c0e5"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Schemas/semantic-link-conformance-fixture-v1.schema.json",
+    "sha256": "1a416eeb9641f8ac962af1acc76f9d1c7277a38f039f0e206ef19d2baa1b0c83"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Schemas/semantic-link-conformance-manifest-v1.schema.json",
+    "sha256": "4e511d6c7c87f0ed029aa40127f20cb042298bf33bdead6b31e675f5cdd76bf8"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Schemas/semantic-link-conformance-profile-v1.schema.json",
+    "sha256": "cb84ccad8a3e79098751af53413de26b13a2b71a8d6ae3f40c52037a93b9b4b6"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Schemas/semantic-link-document-v1.schema.json",
+    "sha256": "4afb914440f035bc7cc5251b108b5d3d7724e44aeacf48532a451e796814497a"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Schemas/semantic-link-result-envelope-v1.schema.json",
+    "sha256": "bb1716ee5e1f802efb29bc3019277cecf2cdaa6921d5a15075415a81c1c36bf7"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/SemanticLinkConformanceRunner.cs",
+    "sha256": "13877012658816f0c32019828263a58169dafa448349955a1efb5ff31814def4"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Support/Ghostworx.System.SemanticLinks.Conformance.Support.csproj",
+    "sha256": "c5fc3eb64ae56fc55eaf04c20e143c231a8eafbfc5a6bd797f140931bf8e2dbf"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Support/SemanticLinkConformanceContracts.cs",
+    "sha256": "9f452862d1b3b14e0c00f8042ebbf97a4009b99650782212bcb240d05db30724"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Support/SemanticLinkConformanceCorpus.cs",
+    "sha256": "93ff2873a38af3439f5c36e1443a43f9401527073a3ad57dad3a88ebe57125eb"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Support/SemanticLinkConformanceResultWriter.cs",
+    "sha256": "c2f4c3041912b635ee97db72f0b7f6f399abf14ec0dba66b86b9cd72f4537eb6"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Support/SemanticLinkConformanceVectors.cs",
+    "sha256": "4ade92e19130230b2042442e2bc8141e5ee7807e76aa6df924939f9de1d593d9"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/Support/SemanticLinkConformanceWire.cs",
+    "sha256": "98c88af4cd83f55eb9a4277220e3d4b42121dad06fcb99108df26f6e0c0e6d30"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance.Support/Ghostworx.System.Variable.Conformance.Support.csproj",
+    "sha256": "c5fc3eb64ae56fc55eaf04c20e143c231a8eafbfc5a6bd797f140931bf8e2dbf"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance.Support/VariableConformanceCorpus.cs",
+    "sha256": "9629d0d98b900f80017ef3258ebeef65b282de66f69640db86e2678a5d8e03d8"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance.Support/VariableConformanceResult.cs",
+    "sha256": "c9d638f4cfa59028e1a50b832ae85444a824579f29de608d3e049539afb34f2c"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance.Support/VariableConformanceResultWriter.cs",
+    "sha256": "c037e4c380bdeb13dceade8b1032d1c0f143feaca92d36922cd7b42b325494d0"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance.Support/VariableConformanceVectors.cs",
+    "sha256": "996f30042adb0c6f9bf6440ab0522d0210f4a11ccdbb7a30c419e6afab9d292d"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance.Support/VariableConformanceWire.cs",
+    "sha256": "fa17e8d05440ec258a9349e3b2dcdde166f954ba2bc14bdc1bce5e237b4c86c4"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/cancellation-deadline-profile-bound-matrix.json",
+    "sha256": "ff07bf92fc9202989246a2694ec735c2f5e68d1e0942fa0747a7489b6c2e490a"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/composition-binding-exclusion.json",
+    "sha256": "5b89da6032e64291e7f4941943bd62f9cf497b3ca9cee70818d8ae44c40f0752"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/composition-no-resolution.json",
+    "sha256": "7b43d7b51310e3b9f92733808c28d5172ea6053d1039be4a1cbc0a64883e579f"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/composition-reference-only.json",
+    "sha256": "4d7598070face388493f1ec5cb6abea489ba15b3f05edef3574b0536df37b95c"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/conformance-wire-digest-bound-matrix.json",
+    "sha256": "0fa922f9d310a8f0b39d3b98fd0f5e215ed37e43b4c6732a3251c87c4420cbb4"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/consumer-skew-redaction-matrix.json",
+    "sha256": "48fa9ba0558d47351bb4744b75bf314779b57a141d6a75e358abb7b0fab72b74"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/definition-reference-contract-matrix.json",
+    "sha256": "690d9f1e18f733667f6af943f7739be18d950290ec3809403469aca1bf9e0dfa"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/freshness-cache-barrier-matrix.json",
+    "sha256": "1693c8957f5912a17f8b24d7c457908885516d13be13a419ca0b3c17d01be948"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/invalidation-replay-race-matrix.json",
+    "sha256": "a2855eb2a6e04df563fd35d404f0463939652e079960475ce3109c3e8e956479"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/public-security-leakage-matrix.json",
+    "sha256": "2b5dd95d554ba7ada78c40891d7f14bfb1ae939a4f66a651117c8232dbe21c17"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/resolution-live-pinned-failure-matrix.json",
+    "sha256": "5265b55cdc6ceb8f1d317c421d4599a2ef9c3d63514f922182f719e284544b53"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/cases/serialization-migration-extension-matrix.json",
+    "sha256": "6436a6621d0cd2d23a07dd72af2fa1e668e6c4cbcdf5d4ad366b120dbd74458d"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1/manifest.json",
+    "sha256": "86b1eea07aaea0dc5c3cade857562b18382d096461aef5ebcd208f29ae4864d6"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Ghostworx.System.Variable.Conformance.csproj",
+    "sha256": "cd4fc49c35a5ceba3012fb9d8085217f1e92d600bfb66dc5d746c6baf378981a"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Participants/CompositionReferenceConsumer.cs",
+    "sha256": "af7b4208207a849650117ace074d8fca1fc6c13b5e25eceef40f68c8f28c8600"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Participants/HostNeutralProviderParticipant.cs",
+    "sha256": "aa98e95a5613a2e2ef42f552d722a9490c23d35221b1f0798cabe0e218dddf2e"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Participants/ProviderExecutionHarness.cs",
+    "sha256": "7ff277bb3feeafb38e1201ed3f9dfaea3f19615180b5e4ae406464dc8413e090"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Participants/SystemProducerParticipant.cs",
+    "sha256": "0a50c6fe490726cf94505cf3ec53af5353605a51c5f106fdf0a645c9a66a393a"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Participants/SystemVariableParticipants.cs",
+    "sha256": "248ccaf7b10be07d72b069238eeb61ff41ac4640af0a6324dcc01b6c2218fd64"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Program.cs",
+    "sha256": "da69f25174b01e915e7e78a806c02bad153fa990dafe4e55f14daa8eef36e73e"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Schemas/conformance-manifest-v1.schema.json",
+    "sha256": "bb1772f961f63adba172030e9cf01728252fb583675e36b1a0c81ee4602e4f29"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Schemas/conformance-result-v1.schema.json",
+    "sha256": "6dab2db333c535e67eb4843e9640fffa58b39776cea0b02f71ca7188bc12d7a5"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Schemas/variable-protected-binding-v1.schema.json",
+    "sha256": "eea48b7010bc922b48b231af35c729dbaa38a2196e8793938c17f0f31956a364"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/Schemas/variable-public-v1.schema.json",
+    "sha256": "aa8c81b165b6ba16e2349c5221125c3cdcbb1b578e500b0ff28e2f934d068a47"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/VariableConformanceRunner.cs",
+    "sha256": "1d0ac0d7d4476b6fcec03d3f4ea17a0101b98333e590c1dc1cdd25373c6203d8"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Contracts.Tests/FreshnessCompletenessTests.cs",
+    "sha256": "9d9d25bf7a8af5228afbd35ad5e8b813a313f3a42a0e73baee72009bad4f2fb5"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Contracts.Tests/Ghostworx.System.Variable.Contracts.Tests.csproj",
+    "sha256": "dc4adc3c51405b1fc354f073cf64805f1b8f243989a74217cfb91f70a7b453a9"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Contracts.Tests/InvalidationLifecycleTests.cs",
+    "sha256": "2e227575dadff4267922bdcf1e0e8713ebc21794db88443472c5f745ed53afda"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Contracts.Tests/Program.cs",
+    "sha256": "1f2d197c4ca6b0c1e9397f4914f7ace9b3bcfec2da06a9c9206a8010a0d67aba"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Contracts.Tests/R4ContractBoundaryTests.cs",
+    "sha256": "bf85f702a8df9c57d98595bd4513e9a11135168ed9376ea507972e970d4d2b25"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Contracts.Tests/ResolutionBehaviorMatrixTests.cs",
+    "sha256": "1773f749323be045fe5e73ee6dd3a7be45f30f68ee3a1c576779262cfa15ab93"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Contracts.Tests/ResolutionCancellationMatrixTests.cs",
+    "sha256": "7fe794f7071eed44d26713a14439cc0bafe7734848975e5f65afc6a49bd9e0b4"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Contracts.Tests/VariableLimitBoundaryTests.cs",
+    "sha256": "4585ec7356e1c7bd8bb8d5ec9d0f3a9ec6a934704ceeee66a18fd4647b0b7e45"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Serialization.Tests/Fixtures/protected-binding.json",
+    "sha256": "023d4458454f75fac98e8273b62dfb7246d2ed19c75ddb16a197e2abd60172cb"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Serialization.Tests/Ghostworx.System.Variable.Serialization.Tests.csproj",
+    "sha256": "d4569670552bfd915de2ecacbfec0951603fcad7cc11b550b2387194af0c804c"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Serialization.Tests/Program.cs",
+    "sha256": "5bdb6f0f776eae20d69394ef40f152be7e6de6d14e2e434d12c860e7fbd52709"
+  }
+]

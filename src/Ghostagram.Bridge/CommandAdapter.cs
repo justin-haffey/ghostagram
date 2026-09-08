@@ -1,8 +1,10 @@
+using Ghostworx.System.Graph.Serialization;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Ghostagram.Contracts;
 using Ghostagram.Core;
 using Ghostworx.System.Graph;
+using Ghostworx.System.Graph.Runtime;
 
 namespace Ghostagram.Bridge;
 
@@ -30,7 +32,7 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
     {
         ArgumentNullException.ThrowIfNull(command);
         if (_graph.Version != command.ExpectedGraphVersion) return Conflict("GRAPH_VERSION_CONFLICT", $"Expected graph version {command.ExpectedGraphVersion}, but the current version is {_graph.Version}.");
-        GraphChangeBatch? changes = null;
+        GraphLocalChangeBatch? changes = null;
         try
         {
             var commit = _presentation.Execute(command.ExpectedDiagramRevision, editor =>
@@ -65,7 +67,7 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
         }
     }
 
-    private void ApplyOperation(GhostagramOperation operation, IGraphTransaction transaction, GraphPresentationEditor editor, GraphSnapshot snapshot,
+    private void ApplyOperation(GhostagramOperation operation, IGraphTransaction transaction, GraphPresentationEditor editor, GraphLocalSnapshot snapshot,
         Dictionary<NodeId, INode> pendingNodes, List<PendingEdgePresentation> pendingEdges)
     {
         switch (operation.Type)
@@ -103,7 +105,7 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
         }
     }
 
-    private void ApplyNode(DiagramNode node, IGraphTransaction transaction, GraphPresentationEditor editor, GraphSnapshot snapshot, Dictionary<NodeId, INode> pendingNodes)
+    private void ApplyNode(DiagramNode node, IGraphTransaction transaction, GraphPresentationEditor editor, GraphLocalSnapshot snapshot, Dictionary<NodeId, INode> pendingNodes)
     {
         ValidateBounds(node.X, node.Y, node.Width, node.Height, node.Rotation, "Node");
         ValidateProperties(node.Properties);
@@ -112,8 +114,9 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
         if (existing is null)
         {
             var kind = ResolveKind(node);
-            var created = new BridgeMutableNode(id, kind, node.Label, _graph);
-            foreach (var property in node.Properties.Where(property => property.Id != "kind")) created.SetMetadata(property.Id, ToClr(property));
+            var metadata = node.Properties.Where(property => property.Id != "kind")
+                .ToDictionary(property => property.Id, ToClr, StringComparer.Ordinal);
+            var created = new BridgeMutableNode(id, kind, node.Label, _graph, metadata);
             transaction.Register(created); pendingNodes[id] = created;
         }
         else
@@ -125,14 +128,16 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
             foreach (var property in replacements.Values)
             {
                 var value = ToClr(property);
-                if (!existing.Metadata.TryGetValue(property.Id, out var old) || !Equals(old, value)) transaction.SetNodeMetadata(id, property.Id, value);
+                var normalized = GraphSemanticValueNormalizer.Normalize(value, GraphLegacyMetadataPolicy.Default.Limits);
+                if (!normalized.IsSuccess) throw new ArgumentException($"Property '{property.Id}' is not admitted: {normalized.Outcome?.Code.Value}.");
+                if (!existing.Metadata.TryGetValue(property.Id, out var old) || !Equals(old, normalized.Value)) transaction.SetNodeMetadata(id, property.Id, value);
             }
         }
         editor.SetNode(id, new(new(node.X, node.Y, node.Width, node.Height, node.Rotation)));
         Reparent(id, node.GroupId, transaction, snapshot, pendingNodes);
     }
 
-    private void ApplyEdge(DiagramEdge edge, IGraphTransaction transaction, GraphPresentationEditor editor, GraphSnapshot snapshot,
+    private void ApplyEdge(DiagramEdge edge, IGraphTransaction transaction, GraphPresentationEditor editor, GraphLocalSnapshot snapshot,
         Dictionary<NodeId, INode> pendingNodes, List<PendingEdgePresentation> pendingEdges)
     {
         ValidateWaypoints(edge.Waypoints ?? []);
@@ -152,7 +157,7 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
         pendingEdges.Add(new(sourceId, targetId, kind, edge.Label, (edge.Waypoints ?? []).Select(point => point with { }).ToArray()));
     }
 
-    private void ApplyGroup(DiagramGroup group, GraphPresentationEditor editor, GraphSnapshot snapshot, IReadOnlyDictionary<NodeId, INode> pendingNodes)
+    private void ApplyGroup(DiagramGroup group, GraphPresentationEditor editor, GraphLocalSnapshot snapshot, IReadOnlyDictionary<NodeId, INode> pendingNodes)
     {
         ValidateBounds(group.X, group.Y, group.Width, group.Height, 0, "Group");
         if (!GraphDiagramIds.TryGroup(group.Id, out var id)) throw new ArgumentException("Graph group ids must identify a semantic graph node.");
@@ -163,21 +168,21 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
         editor.SetGroup(id, new(new(group.X, group.Y, group.Width, group.Height), group.Collapsed));
     }
 
-    private static void ApplyGroupRemoval(string? groupId, IGraphTransaction transaction, GraphPresentationEditor editor, GraphSnapshot snapshot)
+    private static void ApplyGroupRemoval(string? groupId, IGraphTransaction transaction, GraphPresentationEditor editor, GraphLocalSnapshot snapshot)
     {
         if (!GraphDiagramIds.TryGroup(groupId, out var id)) throw new ArgumentException("Graph group ids must identify a semantic graph node.");
         foreach (var relationship in snapshot.Relationships.Where(item => item.Relationship.Source == id && item.Relationship.Kind == RelationshipKind.Contains)) transaction.Disconnect(relationship.Relationship.Id);
         editor.RemoveGroup(id); editor.Selection.Remove(GraphDiagramIds.Group(id));
     }
 
-    private void ApplyGroupAssignment(JsonElement value, IGraphTransaction transaction, GraphSnapshot snapshot, Dictionary<NodeId, INode> pendingNodes)
+    private void ApplyGroupAssignment(JsonElement value, IGraphTransaction transaction, GraphLocalSnapshot snapshot, Dictionary<NodeId, INode> pendingNodes)
     {
         var nodeId = RequireNodeId(value.GetProperty("nodeId").GetString());
         var groupId = value.TryGetProperty("groupId", out var group) && group.ValueKind != JsonValueKind.Null ? group.GetString() : null;
         Reparent(nodeId, groupId, transaction, snapshot, pendingNodes);
     }
 
-    private void Reparent(NodeId nodeId, string? groupId, IGraphTransaction transaction, GraphSnapshot snapshot, Dictionary<NodeId, INode> pendingNodes)
+    private void Reparent(NodeId nodeId, string? groupId, IGraphTransaction transaction, GraphLocalSnapshot snapshot, Dictionary<NodeId, INode> pendingNodes)
     {
         var existing = snapshot.Relationships.Where(item => item.Relationship.Target == nodeId && item.Relationship.Kind == RelationshipKind.Contains).Select(item => item.Relationship).ToArray();
         NodeId? parentId = null;
@@ -217,7 +222,7 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
         return separator > 0 && separator < value.Length - 1 ? RelationshipKind.Define(value[..separator], value[(separator + 1)..]) : RelationshipKind.Define("Ghostagram.Bridge", value);
     }
 
-    private GraphDiagramCommandResult Success(GraphChangeBatch changes)
+    private GraphDiagramCommandResult Success(GraphLocalChangeBatch changes)
     {
         var snapshot = _snapshots.CaptureSnapshot();
         var presentation = _presentation.Capture();
@@ -276,7 +281,7 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
             throw new ArgumentException("Edge waypoints must be finite.");
     }
 
-    private static void ApplySelection(JsonElement value, GraphPresentationEditor editor, GraphSnapshot snapshot, IReadOnlyDictionary<NodeId, INode> pendingNodes)
+    private static void ApplySelection(JsonElement value, GraphPresentationEditor editor, GraphLocalSnapshot snapshot, IReadOnlyDictionary<NodeId, INode> pendingNodes)
     {
         var ids = value.GetProperty("ids").EnumerateArray().Select(item => item.GetString() ?? throw new ArgumentException("Selection ids must be strings.")).ToArray();
         var nodeIds = snapshot.Nodes.Select(node => node.Id).Concat(pendingNodes.Keys).ToHashSet();
@@ -293,17 +298,8 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
 
     private sealed record PendingEdgePresentation(NodeId Source, NodeId Target, RelationshipKind Kind, string? Label, IReadOnlyList<DiagramPoint> Waypoints);
 
-    private sealed class BridgeMutableNode(NodeId id, NodeKind kind, string? name, IGraph graph) : IMutableNode
-    {
-        private readonly Dictionary<string, object?> _metadata = new(StringComparer.Ordinal);
-        public NodeId Id { get; } = id;
-        public NodeKind Kind { get; } = kind;
-        public string? NodeName { get; private set; } = name;
-        public IGraph Graph { get; } = graph;
-        public IReadOnlyDictionary<string, object?> Metadata => new Dictionary<string, object?>(_metadata, StringComparer.Ordinal);
-        public IReadOnlyList<GraphEdge> Edges => Graph.GetEdges(Id);
-        public void Rename(string? nodeName) => NodeName = nodeName;
-        public void SetMetadata(string key, object? value) => _metadata[key] = value;
-        public bool RemoveMetadata(string key) => _metadata.Remove(key);
-    }
+    // System owns transactional mutation and rollback. Delay registration until the
+    // enclosing graph transaction accepts this node and its initial metadata atomically.
+    private sealed class BridgeMutableNode(NodeId id, NodeKind kind, string? name, IGraph graph,
+        IReadOnlyDictionary<string, object?> metadata) : GraphNode(kind, graph, name, id, metadata, register: false);
 }

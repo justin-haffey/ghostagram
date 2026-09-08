@@ -1,3 +1,4 @@
+using Ghostworx.System.Graph.Serialization;
 using System.Collections.ObjectModel;
 using System.Collections.Immutable;
 using System.Text.Json;
@@ -36,7 +37,7 @@ public sealed class DefaultNodePresentationMapper(
     private readonly INodeKindDescriptorRegistry _descriptors = descriptors ?? NodeKindDescriptorRegistry.Empty;
     private readonly INodePortPresentationProfileRegistry _portProfiles = portProfiles ?? new NodePortPresentationProfileRegistry();
 
-    public NodeDiagramProjection Map(GraphNodeSnapshot node, GraphPresentationSnapshot presentation, int ordinal)
+    public NodeDiagramProjection Map(GraphLocalNodeSnapshot node, GraphPresentationSnapshot presentation, int ordinal)
     {
         var saved = presentation.Nodes.GetValueOrDefault(node.Id);
         var descriptor = _descriptors.TryGet(node.Kind, out var typed) ? typed : null;
@@ -57,20 +58,20 @@ public sealed class DefaultNodePresentationMapper(
         return new(projected, ports);
     }
 
-    private static IReadOnlyList<DiagramPort> GenericPorts(GraphNodeSnapshot node, DiagramNode projected) =>
+    private static IReadOnlyList<DiagramPort> GenericPorts(GraphLocalNodeSnapshot node, DiagramNode projected) =>
     [
         new DiagramPort(GraphDiagramIds.InputPort(node.Id), projected.Id, "target", "graph", Anchor: "left", Label: "In", Order: 0),
         new DiagramPort(GraphDiagramIds.OutputPort(node.Id), projected.Id, "source", "graph", Anchor: "right", Label: "Out", Order: 1)
     ];
 
-    private static IReadOnlyList<DiagramPort> DescriptorPorts(GraphNodeSnapshot node, DiagramNode projected, NodeTypeDescriptor descriptor) =>
+    private static IReadOnlyList<DiagramPort> DescriptorPorts(GraphLocalNodeSnapshot node, DiagramNode projected, NodeTypeDescriptor descriptor) =>
         descriptor.Ports.OrderBy(port => port.Order).ThenBy(port => port.Id, StringComparer.Ordinal)
             .Select(port => new DiagramPort(GraphDiagramIds.Port(node.Id, port.Id), projected.Id, port.Direction, port.Scope,
                 port.MaxConnections, Anchor: port.Anchor, PropertyId: port.PropertyId, Label: port.Label, Order: port.Order))
             .ToArray();
 
     private static IReadOnlyList<DiagramPort> ValidateProfilePorts(
-        GraphNodeSnapshot node,
+        GraphLocalNodeSnapshot node,
         DiagramNode projected,
         IReadOnlyList<DiagramPort>? ports)
     {
@@ -87,7 +88,7 @@ public sealed class DefaultNodePresentationMapper(
         return values;
     }
 
-    private static IReadOnlyList<DiagramNodeProperty> GenericProperties(GraphNodeSnapshot node)
+    private static IReadOnlyList<DiagramNodeProperty> GenericProperties(GraphLocalNodeSnapshot node)
     {
         var properties = new List<DiagramNodeProperty>
         {
@@ -101,7 +102,7 @@ public sealed class DefaultNodePresentationMapper(
         return properties;
     }
 
-    private static IReadOnlyList<DiagramNodeProperty> DescriptorProperties(GraphNodeSnapshot node, NodeTypeDescriptor descriptor) =>
+    private static IReadOnlyList<DiagramNodeProperty> DescriptorProperties(GraphLocalNodeSnapshot node, NodeTypeDescriptor descriptor) =>
         descriptor.Properties.Select(property =>
         {
             var value = node.Metadata.TryGetValue(property.Id, out var metadata) && GraphMetadataProjection.TrySerialize(metadata, property.Type, out var serialized)
@@ -110,69 +111,76 @@ public sealed class DefaultNodePresentationMapper(
                 property.Required, property.Connectable, property.Options, property.Metadata?.Clone(), property.SectionId, property.Editor);
         }).ToArray();
 
-    private static string InferType(object? value) => value switch
+    private static string InferType(GraphSemanticValue value) => value.Kind switch
     {
-        bool => DiagramPropertyTypes.Boolean,
-        byte or sbyte or short or ushort or int or uint or long or ulong => DiagramPropertyTypes.Integer,
-        float or double or decimal => DiagramPropertyTypes.Decimal,
-        DateTimeOffset => DiagramPropertyTypes.DateTime,
-        JsonElement => DiagramPropertyTypes.Json,
+        GraphSemanticValueKind.Boolean => DiagramPropertyTypes.Boolean,
+        GraphSemanticValueKind.Int8 or GraphSemanticValueKind.Int16 or GraphSemanticValueKind.Int32 or GraphSemanticValueKind.Int64 => DiagramPropertyTypes.Integer,
+        GraphSemanticValueKind.Double or GraphSemanticValueKind.Decimal => DiagramPropertyTypes.Decimal,
+        GraphSemanticValueKind.DateTimeOffset => DiagramPropertyTypes.DateTime,
+        GraphSemanticValueKind.Array or GraphSemanticValueKind.Object => DiagramPropertyTypes.Json,
         _ => DiagramPropertyTypes.String
     };
 }
 
 internal static class GraphMetadataProjection
 {
-    public static bool TrySerialize(object? value, string? declaredType, out JsonElement serialized)
+    public static bool TrySerialize(GraphSemanticValue value, string? declaredType, out JsonElement serialized)
     {
-        if (declaredType is not null) return TrySerializeDeclared(value, declaredType, out serialized);
-        switch (value)
+        serialized = default;
+        if (!Supported(value)) return false;
+        var kind = value.Kind;
+        if (declaredType != DiagramPropertyTypes.Json && kind is GraphSemanticValueKind.Array or GraphSemanticValueKind.Object) return false;
+        if (kind != GraphSemanticValueKind.Null && declaredType is not null && !(declaredType switch
         {
-            case null: serialized = JsonSerializer.SerializeToElement<object?>(null); return true;
-            case JsonElement json when json.ValueKind != JsonValueKind.Undefined: serialized = json.Clone(); return true;
-            case string text: serialized = JsonSerializer.SerializeToElement(text); return true;
-            case bool boolean: serialized = JsonSerializer.SerializeToElement(boolean); return true;
-            case int integer: serialized = JsonSerializer.SerializeToElement(integer); return true;
-            case long integer: serialized = JsonSerializer.SerializeToElement(integer); return true;
-            case double number when double.IsFinite(number): serialized = JsonSerializer.SerializeToElement(number); return true;
-            case decimal number: serialized = JsonSerializer.SerializeToElement(number); return true;
-            case Guid guid: serialized = JsonSerializer.SerializeToElement(guid); return true;
-            case DateTimeOffset date: serialized = JsonSerializer.SerializeToElement(date); return true;
-            default: serialized = default; return false;
-        }
+            DiagramPropertyTypes.String or DiagramPropertyTypes.Enum or DiagramPropertyTypes.Date => kind == GraphSemanticValueKind.String,
+            DiagramPropertyTypes.DateTime => kind is GraphSemanticValueKind.String or GraphSemanticValueKind.DateTimeOffset,
+            DiagramPropertyTypes.Boolean => kind == GraphSemanticValueKind.Boolean,
+            DiagramPropertyTypes.Integer => kind is GraphSemanticValueKind.Int8 or GraphSemanticValueKind.Int16 or GraphSemanticValueKind.Int32 or GraphSemanticValueKind.Int64,
+            DiagramPropertyTypes.Decimal => kind is GraphSemanticValueKind.Double or GraphSemanticValueKind.Decimal,
+            DiagramPropertyTypes.Json => true,
+            _ => false
+        })) return false;
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream)) Write(writer, value);
+        using var document = JsonDocument.Parse(stream.ToArray());
+        serialized = document.RootElement.Clone();
+        return true;
     }
 
-    private static bool TrySerializeDeclared(object? value, string type, out JsonElement serialized)
+    private static bool Supported(GraphSemanticValue value) => value.Kind switch
     {
-        if (value is null) { serialized = JsonSerializer.SerializeToElement<object?>(null); return true; }
-        switch (type)
+        GraphSemanticValueKind.Bytes or GraphSemanticValueKind.OpaqueExtension => false,
+        GraphSemanticValueKind.Array => value.GetArray().All(Supported),
+        GraphSemanticValueKind.Object => value.GetObject().Values.All(Supported),
+        _ => true
+    };
+
+    private static void Write(Utf8JsonWriter writer, GraphSemanticValue value)
+    {
+        switch (value.Kind)
         {
-            case DiagramPropertyTypes.String:
-            case DiagramPropertyTypes.Enum:
-            case DiagramPropertyTypes.Date:
-                if (value is string text) { serialized = JsonSerializer.SerializeToElement(text); return true; }
-                break;
-            case DiagramPropertyTypes.DateTime:
-                if (value is DateTimeOffset date) { serialized = JsonSerializer.SerializeToElement(date); return true; }
-                if (value is string dateText) { serialized = JsonSerializer.SerializeToElement(dateText); return true; }
-                break;
-            case DiagramPropertyTypes.Boolean:
-                if (value is bool boolean) { serialized = JsonSerializer.SerializeToElement(boolean); return true; }
-                break;
-            case DiagramPropertyTypes.Integer:
-                if (value is int integer) { serialized = JsonSerializer.SerializeToElement(integer); return true; }
-                if (value is long longInteger) { serialized = JsonSerializer.SerializeToElement(longInteger); return true; }
-                break;
-            case DiagramPropertyTypes.Decimal:
-                if (value is double number && double.IsFinite(number)) { serialized = JsonSerializer.SerializeToElement(number); return true; }
-                if (value is decimal decimalNumber) { serialized = JsonSerializer.SerializeToElement(decimalNumber); return true; }
-                break;
-            case DiagramPropertyTypes.Json:
-                if (value is JsonElement json && json.ValueKind != JsonValueKind.Undefined) { serialized = json.Clone(); return true; }
-                break;
+            case GraphSemanticValueKind.Null: writer.WriteNullValue(); break;
+            case GraphSemanticValueKind.Boolean: writer.WriteBooleanValue(value.GetScalar<bool>()); break;
+            case GraphSemanticValueKind.Int8: writer.WriteNumberValue(value.GetScalar<sbyte>()); break;
+            case GraphSemanticValueKind.Int16: writer.WriteNumberValue(value.GetScalar<short>()); break;
+            case GraphSemanticValueKind.Int32: writer.WriteNumberValue(value.GetScalar<int>()); break;
+            case GraphSemanticValueKind.Int64: writer.WriteNumberValue(value.GetScalar<long>()); break;
+            case GraphSemanticValueKind.Double: writer.WriteNumberValue(value.GetScalar<double>()); break;
+            case GraphSemanticValueKind.Decimal: writer.WriteNumberValue(value.GetScalar<decimal>()); break;
+            case GraphSemanticValueKind.String: writer.WriteStringValue(value.GetScalar<string>()); break;
+            case GraphSemanticValueKind.Guid: writer.WriteStringValue(value.GetScalar<Guid>()); break;
+            case GraphSemanticValueKind.DateTimeOffset: writer.WriteStringValue(value.GetScalar<DateTimeOffset>()); break;
+            case GraphSemanticValueKind.Array:
+                writer.WriteStartArray();
+                foreach (var item in value.GetArray()) Write(writer, item);
+                writer.WriteEndArray(); break;
+            case GraphSemanticValueKind.Object:
+                writer.WriteStartObject();
+                foreach (var pair in value.GetObject().OrderBy(pair => pair.Key, StringComparer.Ordinal))
+                { writer.WritePropertyName(pair.Key); Write(writer, pair.Value); }
+                writer.WriteEndObject(); break;
+            default: throw new InvalidOperationException("Semantic value has no presentation JSON mapping.");
         }
-        serialized = default;
-        return false;
     }
 }
 
@@ -181,7 +189,7 @@ public sealed class DefaultRelationshipPresentationMapper(IRelationshipPresentat
     private readonly IRelationshipPresentationProfileRegistry _profiles = profiles ?? new RelationshipPresentationProfileRegistry();
 
     public DiagramEdge Map(
-        GraphRelationshipSnapshot item,
+        GraphLocalRelationshipSnapshot item,
         GraphPresentationSnapshot presentation,
         IReadOnlyList<DiagramPort> sourcePorts,
         IReadOnlyList<DiagramPort> targetPorts)
@@ -216,7 +224,7 @@ public sealed class ContainsHierarchyPresentationMapper(RelationshipKind? contai
 {
     private readonly RelationshipKind _containmentKind = containmentKind ?? RelationshipKind.Contains;
 
-    public HierarchyDiagramProjection Map(GraphSnapshot snapshot, IReadOnlyDictionary<NodeId, DiagramNode> nodes, GraphPresentationSnapshot presentation)
+    public HierarchyDiagramProjection Map(GraphLocalSnapshot snapshot, IReadOnlyDictionary<NodeId, DiagramNode> nodes, GraphPresentationSnapshot presentation)
     {
         var containment = snapshot.Relationships.Where(item => item.Relationship.Kind == _containmentKind)
             .Select(item => item.Relationship).OrderBy(edge => edge.Id.Value).ToArray();
@@ -259,7 +267,7 @@ public sealed class GraphDiagramProjection(
     private readonly IRelationshipPresentationMapper _relationships = relationships ?? new DefaultRelationshipPresentationMapper();
     private readonly IHierarchyPresentationMapper _hierarchy = hierarchy ?? new ContainsHierarchyPresentationMapper();
 
-    public DiagramDocument Project(GraphSnapshot snapshot, GraphPresentationSnapshot presentation)
+    public DiagramDocument Project(GraphLocalSnapshot snapshot, GraphPresentationSnapshot presentation)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(presentation);
@@ -275,7 +283,7 @@ public sealed class GraphDiagramProjection(
         var diagnostics = snapshot.Nodes.SelectMany(node => node.Metadata
             .Where(pair => !GraphMetadataProjection.TrySerialize(pair.Value, null, out _))
             .Select(pair => new GraphProjectionDiagnostic("UNSUPPORTED_METADATA", node.Id.ToString(), pair.Key,
-                $"Metadata '{pair.Key}' was omitted because its CLR value has no explicit durable JSON projection.")))
+                $"Metadata '{pair.Key}' was omitted because its semantic kind has no explicit durable JSON projection.")))
             .ToArray();
         return document with { ExtensionData = new Dictionary<string, JsonElement>(StringComparer.Ordinal)
         {
@@ -285,9 +293,9 @@ public sealed class GraphDiagramProjection(
         } };
     }
 
-    internal NodeDiagramProjection ProjectNode(GraphNodeSnapshot node, GraphPresentationSnapshot presentation, int ordinal) => _nodes.Map(node, presentation, ordinal);
+    internal NodeDiagramProjection ProjectNode(GraphLocalNodeSnapshot node, GraphPresentationSnapshot presentation, int ordinal) => _nodes.Map(node, presentation, ordinal);
     internal DiagramEdge ProjectRelationship(
-        GraphRelationshipSnapshot relationship,
+        GraphLocalRelationshipSnapshot relationship,
         GraphPresentationSnapshot presentation,
         IReadOnlyList<DiagramPort> sourcePorts,
         IReadOnlyList<DiagramPort> targetPorts) => _relationships.Map(relationship, presentation, sourcePorts, targetPorts);
@@ -295,7 +303,7 @@ public sealed class GraphDiagramProjection(
 
 public sealed class GraphDiagramDeltaProjector(IGraphDiagramProjection projection) : IGraphDiagramDeltaProjector
 {
-    public GraphDiagramOperationBatch Project(GraphChangeBatch batch, DiagramDocument currentDocument, GraphSnapshot authoritativeSnapshot, GraphPresentationSnapshot presentation)
+    public GraphDiagramOperationBatch Project(GraphLocalChangeBatch batch, DiagramDocument currentDocument, GraphLocalSnapshot authoritativeSnapshot, GraphPresentationSnapshot presentation)
     {
         ArgumentNullException.ThrowIfNull(batch); ArgumentNullException.ThrowIfNull(currentDocument); ArgumentNullException.ThrowIfNull(authoritativeSnapshot);
         var metadata = new Dictionary<string, JsonElement>(StringComparer.Ordinal)

@@ -1,0 +1,7 @@
+PASS representative hierarchy/process/model projection
+PASS semantic and presentation proposals with conflict recovery
+PASS authoritative browser edge recovery browser-edge-temp -> f7c4959e42c54de1abd25e63c6f11475
+PASS graph serialization and presentation projection round trip
+PASS versioned presentation sidecar persistence and reload
+PASS graph-native compilation fingerprint adb0ca2323d186f5f8739225b99979fc57b8d0c67e4950fc1949b202944f7257
+Ghostagram cutover tests passed.

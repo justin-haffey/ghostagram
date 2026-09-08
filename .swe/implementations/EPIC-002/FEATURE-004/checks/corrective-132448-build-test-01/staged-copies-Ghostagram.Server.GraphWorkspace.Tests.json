@@ -1,0 +1,37 @@
+[
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Composition.dll",
+    "owner": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+    "before": "7058e09ac266eb2d0018187f9cb84c641a34cbf430b49810c15192cdfbdb42de",
+    "after": "7058e09ac266eb2d0018187f9cb84c641a34cbf430b49810c15192cdfbdb42de",
+    "expected": "7058e09ac266eb2d0018187f9cb84c641a34cbf430b49810c15192cdfbdb42de"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "owner": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "before": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+    "after": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+    "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Runtime.dll",
+    "owner": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+    "before": "dd8b7f940f8189ab2361faf78127a980431ec5207d930e3eb5af94ad0bc19d6f",
+    "after": "dd8b7f940f8189ab2361faf78127a980431ec5207d930e3eb5af94ad0bc19d6f",
+    "expected": "dd8b7f940f8189ab2361faf78127a980431ec5207d930e3eb5af94ad0bc19d6f"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "owner": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "before": "02ecc2841c802aa1c05fce691c1b29937d7d9cc041b01d472476bab82a0ad17b",
+    "after": "02ecc2841c802aa1c05fce691c1b29937d7d9cc041b01d472476bab82a0ad17b",
+    "expected": "02ecc2841c802aa1c05fce691c1b29937d7d9cc041b01d472476bab82a0ad17b"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Variable.dll",
+    "owner": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+    "before": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+    "after": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+    "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231"
+  }
+]

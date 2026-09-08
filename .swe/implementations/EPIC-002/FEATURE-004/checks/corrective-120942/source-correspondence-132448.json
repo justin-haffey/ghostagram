@@ -1,0 +1,1408 @@
+{
+  "recorded": "2026-09-07T13:50:35.0730380Z",
+  "classification": "Archive-only accepted cycle3 to actual corrective execution generation correspondence",
+  "cycle3": {
+    "sourceFingerprint": "63d4bfb69171c971e53518ab87def8aad6bf0d111606e7aed07cd0c0c47dd06f",
+    "sourceManifestSha256": "901af4d6d9c8e89de184db4e83e680b28e05f93f1c07a1fdd2b5a271422bf335",
+    "validationSha256": "8ffbfe44fc3369115fc65aa7d9e74e0c785c2f77e34267530513f776ad7e1754",
+    "decision": "Accepted"
+  },
+  "provisional132448": {
+    "sourceFingerprint": "9fcf09c46233cf03bfc60f081c000d2615fef5a66f47391ec4f9901a45f4bb4a",
+    "sourceManifestSha256": "e87b4f098d4d224a9b2ae9156123d271570802b312d13a7ef8f9ce8b14a97193",
+    "sourceArchiveSha256": "2865c19a47e4d2c8e1f629d7dbb2a83667c1f30fa498b4d4e7114436814800a7",
+    "ownerManifestSha256": "86837e727c9decfcf914b29710fbeaa341f643ed81ea223faac1f1d34a84c370",
+    "classification": "Provisional F00112owner boundedresult attempt2;232/473concrete53groups;PendingTargets/DraftDesign5;notacceptance"
+  },
+  "summary": {
+    "selectedCount": 197,
+    "productionCount": 163,
+    "productionEqualCount": 163,
+    "productionDifferentCount": 0,
+    "testCount": 34,
+    "testEqualCount": 34,
+    "testDifferentCount": 0,
+    "differentPaths": []
+  },
+  "entries": [
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Component.cs",
+      "classification": "production",
+      "cycle3Sha256": "d90b1ee889aabda74a7e6e5253eb26a65b75b375c1eb845f6c953e5586940c64",
+      "provisional132448Sha256": "d90b1ee889aabda74a7e6e5253eb26a65b75b375c1eb845f6c953e5586940c64",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/ComponentCollection.cs",
+      "classification": "production",
+      "cycle3Sha256": "c7f67a9654bd253225edf883218970c9fcefb8bc0170ac7b103c494affd2c79e",
+      "provisional132448Sha256": "c7f67a9654bd253225edf883218970c9fcefb8bc0170ac7b103c494affd2c79e",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Container.cs",
+      "classification": "production",
+      "cycle3Sha256": "a8bd3ff1f35ccf69017ae64011db9854e1f020c8e6b5648f3033b8a0121f08a0",
+      "provisional132448Sha256": "a8bd3ff1f35ccf69017ae64011db9854e1f020c8e6b5648f3033b8a0121f08a0",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Ghostworx.System.ComponentModel.csproj",
+      "classification": "production",
+      "cycle3Sha256": "2ec46416ad99445cc544539b9a344509cd8a380518e18bcd52b707cc706e7dd0",
+      "provisional132448Sha256": "2ec46416ad99445cc544539b9a344509cd8a380518e18bcd52b707cc706e7dd0",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/GlobalUsings.cs",
+      "classification": "production",
+      "cycle3Sha256": "c1955c0c89e05c5c69c64eb0412e66eca7ec8128d3d156df8ccb85646d86080e",
+      "provisional132448Sha256": "c1955c0c89e05c5c69c64eb0412e66eca7ec8128d3d156df8ccb85646d86080e",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Graphing/ComponentGraphVocabulary.cs",
+      "classification": "production",
+      "cycle3Sha256": "3f531db392bcb232a0200c03e9c0ace5309138dbd4335a849944e0331e1a89f5",
+      "provisional132448Sha256": "3f531db392bcb232a0200c03e9c0ace5309138dbd4335a849944e0331e1a89f5",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/IComponent.cs",
+      "classification": "production",
+      "cycle3Sha256": "24d2bc0e0b0ce0cb13f89c06383e053ce124d6ac61e45e14097899ea96da8909",
+      "provisional132448Sha256": "24d2bc0e0b0ce0cb13f89c06383e053ce124d6ac61e45e14097899ea96da8909",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/IContainer.cs",
+      "classification": "production",
+      "cycle3Sha256": "debb20b05ea6081c7786f471a4ac7b7c01e3477b2aaa59b161cf57fda4944bf8",
+      "provisional132448Sha256": "debb20b05ea6081c7786f471a4ac7b7c01e3477b2aaa59b161cf57fda4944bf8",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/ISite.cs",
+      "classification": "production",
+      "cycle3Sha256": "65bc7d29f0b41008b353ad110d15abd6627b9f7fa829947495602ce0699c6d6e",
+      "provisional132448Sha256": "65bc7d29f0b41008b353ad110d15abd6627b9f7fa829947495602ce0699c6d6e",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/Attribute.cs",
+      "classification": "production",
+      "cycle3Sha256": "af97a79c6bcb40defee97d9229e91bb4665bbdee4943fd2ef7edad91753fb1cb",
+      "provisional132448Sha256": "af97a79c6bcb40defee97d9229e91bb4665bbdee4943fd2ef7edad91753fb1cb",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/AttributeAdapter.cs",
+      "classification": "production",
+      "cycle3Sha256": "66476c9068c947e11661c8a68c9b9bb59f478a6bb277dd647ef8b5fcf0fc7ec9",
+      "provisional132448Sha256": "66476c9068c947e11661c8a68c9b9bb59f478a6bb277dd647ef8b5fcf0fc7ec9",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/AttributeCollection.cs",
+      "classification": "production",
+      "cycle3Sha256": "b1a502b5fb82a2128697e261cbe1f9c61b31fc44cf26e6b7e32526354fcee4d4",
+      "provisional132448Sha256": "b1a502b5fb82a2128697e261cbe1f9c61b31fc44cf26e6b7e32526354fcee4d4",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/BrowsableAttribute.cs",
+      "classification": "production",
+      "cycle3Sha256": "2948e72bc0633224fc06eccbd7cd6a3dc01c19eb3b146796299741bfbc48986a",
+      "provisional132448Sha256": "2948e72bc0633224fc06eccbd7cd6a3dc01c19eb3b146796299741bfbc48986a",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/CategoryAttribute.cs",
+      "classification": "production",
+      "cycle3Sha256": "5eb46bc183a2f466dab1d0214afedfa5f36da91d8547e459c3bd9acff8990ab7",
+      "provisional132448Sha256": "5eb46bc183a2f466dab1d0214afedfa5f36da91d8547e459c3bd9acff8990ab7",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/CustomTypeDescriptor.cs",
+      "classification": "production",
+      "cycle3Sha256": "ae944e1dc2a1d5f8c4a6dc90d6d0a5f633b4610c8071a6d18398ca0f58071ff2",
+      "provisional132448Sha256": "ae944e1dc2a1d5f8c4a6dc90d6d0a5f633b4610c8071a6d18398ca0f58071ff2",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/DefaultValueAttribute.cs",
+      "classification": "production",
+      "cycle3Sha256": "f46c6ec63aaa8ee77012c46d558496037c65fbba825b41ca22fdeb21781b9b8e",
+      "provisional132448Sha256": "f46c6ec63aaa8ee77012c46d558496037c65fbba825b41ca22fdeb21781b9b8e",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/DescriptionAttribute.cs",
+      "classification": "production",
+      "cycle3Sha256": "dc2ec281e298f69eb6eb9134d93c274b4e5b3fac05b27cc91c73b1464d99315e",
+      "provisional132448Sha256": "dc2ec281e298f69eb6eb9134d93c274b4e5b3fac05b27cc91c73b1464d99315e",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/EventDescriptor.cs",
+      "classification": "production",
+      "cycle3Sha256": "8def222b187faed78b5567254e6c436637c704d53e4321be796759c66269ef5a",
+      "provisional132448Sha256": "8def222b187faed78b5567254e6c436637c704d53e4321be796759c66269ef5a",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/EventDescriptorCollection.cs",
+      "classification": "production",
+      "cycle3Sha256": "5f2f3226f70fd5e6659880c1eb07fa71eacfe430d5ab0d8ec5c6ab7df7209853",
+      "provisional132448Sha256": "5f2f3226f70fd5e6659880c1eb07fa71eacfe430d5ab0d8ec5c6ab7df7209853",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/FrameworkCustomTypeDescriptor.cs",
+      "classification": "production",
+      "cycle3Sha256": "dd309cfe6e9f796d12061dbd1abc52b6686ce3cede3309fb3020bd3697cc98c1",
+      "provisional132448Sha256": "dd309cfe6e9f796d12061dbd1abc52b6686ce3cede3309fb3020bd3697cc98c1",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/FrameworkEventDescriptor.cs",
+      "classification": "production",
+      "cycle3Sha256": "dfc8fb17ca2837231f9eaf5a28692a1174cfe8965e8483244420d7543267fd0a",
+      "provisional132448Sha256": "dfc8fb17ca2837231f9eaf5a28692a1174cfe8965e8483244420d7543267fd0a",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/FrameworkPropertyDescriptor.cs",
+      "classification": "production",
+      "cycle3Sha256": "2d65e399e7d06d8573ba40eb540375eaed99fa255e87761e021593539f3b2bae",
+      "provisional132448Sha256": "2d65e399e7d06d8573ba40eb540375eaed99fa255e87761e021593539f3b2bae",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/FrameworkTypeDescriptionProvider.cs",
+      "classification": "production",
+      "cycle3Sha256": "8d0afb66dcb5461fa90cb274ed1792b6e8edaed73c883185193a3e515f47622c",
+      "provisional132448Sha256": "8d0afb66dcb5461fa90cb274ed1792b6e8edaed73c883185193a3e515f47622c",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/ICustomTypeDescriptor.cs",
+      "classification": "production",
+      "cycle3Sha256": "a01c22fcb62c3aae88c049c6cf6cf170226a5d7034a99cb2449060a10b0b8be8",
+      "provisional132448Sha256": "a01c22fcb62c3aae88c049c6cf6cf170226a5d7034a99cb2449060a10b0b8be8",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/MemberDescriptor.cs",
+      "classification": "production",
+      "cycle3Sha256": "f1ca6d6fa98118025f73c521f095daf078e20ddfc2359b4b71b7b4baf2ea556e",
+      "provisional132448Sha256": "f1ca6d6fa98118025f73c521f095daf078e20ddfc2359b4b71b7b4baf2ea556e",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/PropertyDescriptor.cs",
+      "classification": "production",
+      "cycle3Sha256": "2b8e92d2087fa991fb04144910630724fe66c5d5008ccd762311a27a291348df",
+      "provisional132448Sha256": "2b8e92d2087fa991fb04144910630724fe66c5d5008ccd762311a27a291348df",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/PropertyDescriptorCollection.cs",
+      "classification": "production",
+      "cycle3Sha256": "c166e145bc82e8afc76b714104da9f694e0318db6477ba81f6f8cceb730b3461",
+      "provisional132448Sha256": "c166e145bc82e8afc76b714104da9f694e0318db6477ba81f6f8cceb730b3461",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/TypeConverter.cs",
+      "classification": "production",
+      "cycle3Sha256": "9d5571a7f84b5e054c0cb217c52506ca864e1b9487730dab3fe887e4a6a01ec8",
+      "provisional132448Sha256": "9d5571a7f84b5e054c0cb217c52506ca864e1b9487730dab3fe887e4a6a01ec8",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/TypeConverterAttribute.cs",
+      "classification": "production",
+      "cycle3Sha256": "c86f911f5d303d628c5abf45c483cbb6267efdd5ea54fe5d66433cc38829da89",
+      "provisional132448Sha256": "c86f911f5d303d628c5abf45c483cbb6267efdd5ea54fe5d66433cc38829da89",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/TypeDescriptionProvider.cs",
+      "classification": "production",
+      "cycle3Sha256": "c6326459b20c7126baeeafcf4703c85efbed4a6a81f96f4dd27c49b9daaeefb5",
+      "provisional132448Sha256": "c6326459b20c7126baeeafcf4703c85efbed4a6a81f96f4dd27c49b9daaeefb5",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Metadata/TypeDescriptor.cs",
+      "classification": "production",
+      "cycle3Sha256": "f9768282d4ab95aa185511ebfaec1ea6326a3b81c61121447fe2d94ad9233133",
+      "provisional132448Sha256": "f9768282d4ab95aa185511ebfaec1ea6326a3b81c61121447fe2d94ad9233133",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Services/IService.cs",
+      "classification": "production",
+      "cycle3Sha256": "dece213e4cee9065530513819f1eb0e3466ac301e17ea58db4501bb349abb666",
+      "provisional132448Sha256": "dece213e4cee9065530513819f1eb0e3466ac301e17ea58db4501bb349abb666",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Services/IServiceProvider.cs",
+      "classification": "production",
+      "cycle3Sha256": "4fd4db8ea9d9ee87b3cf42497abf32a176b5bc12df72ade7fb13a12f283e33ba",
+      "provisional132448Sha256": "4fd4db8ea9d9ee87b3cf42497abf32a176b5bc12df72ade7fb13a12f283e33ba",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Services/IServiceRegistration.cs",
+      "classification": "production",
+      "cycle3Sha256": "0bc93bd6ac4b3f814ea98824c1d7889794176beb67d90b756482301a1c2c7eb8",
+      "provisional132448Sha256": "0bc93bd6ac4b3f814ea98824c1d7889794176beb67d90b756482301a1c2c7eb8",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Services/IServiceRegistry.cs",
+      "classification": "production",
+      "cycle3Sha256": "44330de3483b52d55003d41969eeef3c794404ac3144587443c9841d40981e60",
+      "provisional132448Sha256": "44330de3483b52d55003d41969eeef3c794404ac3144587443c9841d40981e60",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Services/Service.cs",
+      "classification": "production",
+      "cycle3Sha256": "7a07519f58af549f43d1c0f3dcec31b7220176a8baf0585d5fd9048590f7c119",
+      "provisional132448Sha256": "7a07519f58af549f43d1c0f3dcec31b7220176a8baf0585d5fd9048590f7c119",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Services/ServiceOwnership.cs",
+      "classification": "production",
+      "cycle3Sha256": "52598721ccb09140b162f3cb45266a0a36370cae1b22ee93060761f274c4aea1",
+      "provisional132448Sha256": "52598721ccb09140b162f3cb45266a0a36370cae1b22ee93060761f274c4aea1",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Services/ServiceProvider.cs",
+      "classification": "production",
+      "cycle3Sha256": "d71d6d7c3dd5a5be10fc9ca51a50b9674d1cf8c043f4f1c7f3b3a303daa86b96",
+      "provisional132448Sha256": "d71d6d7c3dd5a5be10fc9ca51a50b9674d1cf8c043f4f1c7f3b3a303daa86b96",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Services/ServiceRegistration.cs",
+      "classification": "production",
+      "cycle3Sha256": "281cea87e9fc07a3ee7af08346c521021f82ed55f58d75e165ca775c1aaeaf85",
+      "provisional132448Sha256": "281cea87e9fc07a3ee7af08346c521021f82ed55f58d75e165ca775c1aaeaf85",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.ComponentModel/Site.cs",
+      "classification": "production",
+      "cycle3Sha256": "ef310965247d6967e031220e9ed194805166b73f02d9b82e1b253d8aab5b755d",
+      "provisional132448Sha256": "ef310965247d6967e031220e9ed194805166b73f02d9b82e1b253d8aab5b755d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/ComponentModel/README.md",
+      "classification": "production",
+      "cycle3Sha256": "48cb808c9bc5ef79a3d387873d0460dbb8805aa8f664c3961ba8f0e8ea921b3d",
+      "provisional132448Sha256": "48cb808c9bc5ef79a3d387873d0460dbb8805aa8f664c3961ba8f0e8ea921b3d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Ghostworx.System.Core.csproj",
+      "classification": "production",
+      "cycle3Sha256": "3d63be356cf8cd9a970688faa8a19db14cbf65ccb70dd3abb4ea4ef20da1e753",
+      "provisional132448Sha256": "3d63be356cf8cd9a970688faa8a19db14cbf65ccb70dd3abb4ea4ef20da1e753",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Global/README.md",
+      "classification": "production",
+      "cycle3Sha256": "56bf866a0b8a687c7a314d6e8f8dfa30ed2d494d88f9dfc50ae35e418b292ae3",
+      "provisional132448Sha256": "56bf866a0b8a687c7a314d6e8f8dfa30ed2d494d88f9dfc50ae35e418b292ae3",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphCompatibilityProfile.cs",
+      "classification": "production",
+      "cycle3Sha256": "0896278986c697eefd1cd6ab081976c4024639559c7c9aaac3fc172fcb3f5b5e",
+      "provisional132448Sha256": "0896278986c697eefd1cd6ab081976c4024639559c7c9aaac3fc172fcb3f5b5e",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphContractVersion.cs",
+      "classification": "production",
+      "cycle3Sha256": "990cc0bcb26a218bbe6e43e597398b3513081705a8f6ceccd439a0b2d51e1f4e",
+      "provisional132448Sha256": "990cc0bcb26a218bbe6e43e597398b3513081705a8f6ceccd439a0b2d51e1f4e",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphOperationContext.cs",
+      "classification": "production",
+      "cycle3Sha256": "239dd82e43f79355b27e354b4110fb5728c1fb5ff8518633a9d4b3f97455d48d",
+      "provisional132448Sha256": "239dd82e43f79355b27e354b4110fb5728c1fb5ff8518633a9d4b3f97455d48d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphOutcome.cs",
+      "classification": "production",
+      "cycle3Sha256": "ba8e3aa95424d5c4915fe083d1035f4e08f53f79146b8d2fae41344f23cf5789",
+      "provisional132448Sha256": "ba8e3aa95424d5c4915fe083d1035f4e08f53f79146b8d2fae41344f23cf5789",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphSemanticValue.cs",
+      "classification": "production",
+      "cycle3Sha256": "8ec22f7b1ea25427add4e91f882cd0f06be8e46bbeff13c004bb4ad605335e5d",
+      "provisional132448Sha256": "8ec22f7b1ea25427add4e91f882cd0f06be8e46bbeff13c004bb4ad605335e5d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Contracts/GraphSnapshots.cs",
+      "classification": "production",
+      "cycle3Sha256": "1f8ed376f98a8a3a837724f4eba5dd7a203df0d98f60bbd87a54ee0e6c75ea61",
+      "provisional132448Sha256": "1f8ed376f98a8a3a837724f4eba5dd7a203df0d98f60bbd87a54ee0e6c75ea61",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Contracts/IGraphCapabilities.cs",
+      "classification": "production",
+      "cycle3Sha256": "b4d28a7812b835100f06f87d36131c326c968a4c7ae79a794c9410647c3f6c71",
+      "provisional132448Sha256": "b4d28a7812b835100f06f87d36131c326c968a4c7ae79a794c9410647c3f6c71",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Contracts/IGraphContract.cs",
+      "classification": "production",
+      "cycle3Sha256": "edd4e81cb8e7e73e0a6d71a2281acddbdc28632583211d89bb72593a4efea93e",
+      "provisional132448Sha256": "edd4e81cb8e7e73e0a6d71a2281acddbdc28632583211d89bb72593a4efea93e",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Contracts/SemanticAddress.cs",
+      "classification": "production",
+      "cycle3Sha256": "7efc6f7a618ffd7dcc28457d460080921d30d0771031c0572487abad323c5f76",
+      "provisional132448Sha256": "7efc6f7a618ffd7dcc28457d460080921d30d0771031c0572487abad323c5f76",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Contracts/VocabularyIdentity.cs",
+      "classification": "production",
+      "cycle3Sha256": "0192b797ea422ded33ed0e5170a18e9a56650b80db01097f88e8a4b7ee843c0b",
+      "provisional132448Sha256": "0192b797ea422ded33ed0e5170a18e9a56650b80db01097f88e8a4b7ee843c0b",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/EdgeId.cs",
+      "classification": "production",
+      "cycle3Sha256": "f234da2dbe511e0925de9142b65f1e6fe7cff7308c0113e9de06ad3e0cc150e2",
+      "provisional132448Sha256": "f234da2dbe511e0925de9142b65f1e6fe7cff7308c0113e9de06ad3e0cc150e2",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Federation/FederationReference.cs",
+      "classification": "production",
+      "cycle3Sha256": "55c64b1a764dfbd908e550c29e2242bfd2ae8007dd2f3e5607c78a1177e41023",
+      "provisional132448Sha256": "55c64b1a764dfbd908e550c29e2242bfd2ae8007dd2f3e5607c78a1177e41023",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/GraphChange.cs",
+      "classification": "production",
+      "cycle3Sha256": "3a873168c3ff6c5b7216cc00a34c54d2595b3ba790f2e0819cb2380a90dd1ab6",
+      "provisional132448Sha256": "3a873168c3ff6c5b7216cc00a34c54d2595b3ba790f2e0819cb2380a90dd1ab6",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/GraphChangeKind.cs",
+      "classification": "production",
+      "cycle3Sha256": "4e29be2411ffe0b6266af7ee5450d97266c1b01f4c3496b1313b2fd4b70a80a2",
+      "provisional132448Sha256": "4e29be2411ffe0b6266af7ee5450d97266c1b01f4c3496b1313b2fd4b70a80a2",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/GraphEdge.cs",
+      "classification": "production",
+      "cycle3Sha256": "a2409d971f3d41936953206908d14285fa65d72434febc25546684a0e6b25137",
+      "provisional132448Sha256": "a2409d971f3d41936953206908d14285fa65d72434febc25546684a0e6b25137",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/GraphSymbol.cs",
+      "classification": "production",
+      "cycle3Sha256": "8fd231acf0b2f36fffd835ebf600879df4e6c0a434769df9161aa9333ba20740",
+      "provisional132448Sha256": "8fd231acf0b2f36fffd835ebf600879df4e6c0a434769df9161aa9333ba20740",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/GraphVocabulary.cs",
+      "classification": "production",
+      "cycle3Sha256": "b263b52d62b37a7828623584497dc9a8246aa57bb9b647bc8eda4f13851ae328",
+      "provisional132448Sha256": "b263b52d62b37a7828623584497dc9a8246aa57bb9b647bc8eda4f13851ae328",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkCapabilities.cs",
+      "classification": "production",
+      "cycle3Sha256": "0ff60c7c35299fb6ba51060b6a3c9db11c4110a1f01e84c4d4746d09813c8766",
+      "provisional132448Sha256": "0ff60c7c35299fb6ba51060b6a3c9db11c4110a1f01e84c4d4746d09813c8766",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkContracts.cs",
+      "classification": "production",
+      "cycle3Sha256": "4449b4aaae9ab896edfad1e8aa5d4b1834ce244c22ed9e585f9f8b2edc9dfcdf",
+      "provisional132448Sha256": "4449b4aaae9ab896edfad1e8aa5d4b1834ce244c22ed9e585f9f8b2edc9dfcdf",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkOutcomes.cs",
+      "classification": "production",
+      "cycle3Sha256": "a9f4af3adffd282b560d55ca6ef9a1de44e7f80b8d77a6efca44cb209bf6a365",
+      "provisional132448Sha256": "a9f4af3adffd282b560d55ca6ef9a1de44e7f80b8d77a6efca44cb209bf6a365",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkProfiles.cs",
+      "classification": "production",
+      "cycle3Sha256": "30fef122801c21c9976fdcfb26612525fb7c20cf42e7aa81082a5de36e367e9a",
+      "provisional132448Sha256": "30fef122801c21c9976fdcfb26612525fb7c20cf42e7aa81082a5de36e367e9a",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkProjection.cs",
+      "classification": "production",
+      "cycle3Sha256": "9a1a21edc5e77b9f3dd82ee7fc971dd1808bc210241aba36df97554b765dd505",
+      "provisional132448Sha256": "9a1a21edc5e77b9f3dd82ee7fc971dd1808bc210241aba36df97554b765dd505",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/Links/SemanticLinkValidation.cs",
+      "classification": "production",
+      "cycle3Sha256": "75d30f5f6157db417e4604513a4b6f4e85314a65f72788b1980b28601173f9bc",
+      "provisional132448Sha256": "75d30f5f6157db417e4604513a4b6f4e85314a65f72788b1980b28601173f9bc",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/NodeId.cs",
+      "classification": "production",
+      "cycle3Sha256": "f2a674adc8d8938208cd110bdbcbe0ec9fd82e7a49d01224304480328ccd2001",
+      "provisional132448Sha256": "f2a674adc8d8938208cd110bdbcbe0ec9fd82e7a49d01224304480328ccd2001",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/NodeKind.cs",
+      "classification": "production",
+      "cycle3Sha256": "8df716bb439afbad6d3f12ca5d7a2f0e01db938084c32436c5281a10b432fcbf",
+      "provisional132448Sha256": "8df716bb439afbad6d3f12ca5d7a2f0e01db938084c32436c5281a10b432fcbf",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Graph/RelationshipKind.cs",
+      "classification": "production",
+      "cycle3Sha256": "a2636aa54b46c82dd666da99157335949147427e5a6ed28db565f3bd2cf413ca",
+      "provisional132448Sha256": "a2636aa54b46c82dd666da99157335949147427e5a6ed28db565f3bd2cf413ca",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Patterns/README.md",
+      "classification": "production",
+      "cycle3Sha256": "fa861e827e1d381500a4e7d1a3dbd8330b2b1df352c6d4ac3a320aa05bb8efca",
+      "provisional132448Sha256": "fa861e827e1d381500a4e7d1a3dbd8330b2b1df352c6d4ac3a320aa05bb8efca",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Primitives/SemanticAuthority.cs",
+      "classification": "production",
+      "cycle3Sha256": "4d0c1ea8702c4d36b1f0e40c1402b495f593ee7701889a733f0fb75277a9e17b",
+      "provisional132448Sha256": "4d0c1ea8702c4d36b1f0e40c1402b495f593ee7701889a733f0fb75277a9e17b",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Primitives/SemanticVersion.cs",
+      "classification": "production",
+      "cycle3Sha256": "d6a32d037f644555c7547f2e7fed973dc5e13dd95c881a17bcdbc9eb9f3c82e6",
+      "provisional132448Sha256": "d6a32d037f644555c7547f2e7fed973dc5e13dd95c881a17bcdbc9eb9f3c82e6",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Core/Structures/README.md",
+      "classification": "production",
+      "cycle3Sha256": "eff35f6b9d289feb101fcd89e0e46422357c824f0397eaa378561c160cc4be09",
+      "provisional132448Sha256": "eff35f6b9d289feb101fcd89e0e46422357c824f0397eaa378561c160cc4be09",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Algorithms/GraphAlgorithms.cs",
+      "classification": "production",
+      "cycle3Sha256": "b52358a4e6f6bd1dcc831657b1b4850bdded1033e6192c11c56d10a0c529aa47",
+      "provisional132448Sha256": "b52358a4e6f6bd1dcc831657b1b4850bdded1033e6192c11c56d10a0c529aa47",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Features/GraphFeatures.cs",
+      "classification": "production",
+      "cycle3Sha256": "f5b69291058146af1b97666d171b586ea1721bd52429ef0d8da4908bd1b1ef24",
+      "provisional132448Sha256": "f5b69291058146af1b97666d171b586ea1721bd52429ef0d8da4908bd1b1ef24",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Federation/FederationResolution.cs",
+      "classification": "production",
+      "cycle3Sha256": "b46b143bf473cf7ca84cfda69098ab21c070fba84be82bab7aa26a9464485d2c",
+      "provisional132448Sha256": "b46b143bf473cf7ca84cfda69098ab21c070fba84be82bab7aa26a9464485d2c",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Federation/IFederationReferenceResolver.cs",
+      "classification": "production",
+      "cycle3Sha256": "8d6b80a0aa5c52939e26a23b1c9b8899028457c34f01e5f08178db8908de2ebf",
+      "provisional132448Sha256": "8d6b80a0aa5c52939e26a23b1c9b8899028457c34f01e5f08178db8908de2ebf",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Ghostworx.System.Graph.Runtime.csproj",
+      "classification": "production",
+      "cycle3Sha256": "1e83f7875537ae193a9ace10eedc1fab2d9c4506f9964efc16ab3e3eaa565c7d",
+      "provisional132448Sha256": "1e83f7875537ae193a9ace10eedc1fab2d9c4506f9964efc16ab3e3eaa565c7d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GlobalUsings.cs",
+      "classification": "production",
+      "cycle3Sha256": "95680bfc6304c07d1549052ad1b73512c2ac0fb6741ea9bf098752e1d838ca7f",
+      "provisional132448Sha256": "95680bfc6304c07d1549052ad1b73512c2ac0fb6741ea9bf098752e1d838ca7f",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Graph.cs",
+      "classification": "production",
+      "cycle3Sha256": "86370dbc95f65894c827c845d90d59b7b9e5daed081e8df60e071b8f0e66cf6f",
+      "provisional132448Sha256": "86370dbc95f65894c827c845d90d59b7b9e5daed081e8df60e071b8f0e66cf6f",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GraphCapabilities.cs",
+      "classification": "production",
+      "cycle3Sha256": "fc94d6ff1a34dc888a3112a93a7f23b91f45c5bb47e2b19dafc9e305d89d434f",
+      "provisional132448Sha256": "fc94d6ff1a34dc888a3112a93a7f23b91f45c5bb47e2b19dafc9e305d89d434f",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GraphDocumentMapping.cs",
+      "classification": "production",
+      "cycle3Sha256": "72860175bdbaa1a6c83b1294f0fd5028cd3f121448fe4d577aa7f5504f582f00",
+      "provisional132448Sha256": "72860175bdbaa1a6c83b1294f0fd5028cd3f121448fe4d577aa7f5504f582f00",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GraphExtensions.cs",
+      "classification": "production",
+      "cycle3Sha256": "bc4ef7cd8262584a73508a48d18c7d2204cb95be2cc40b836bb8dd18c69b21c5",
+      "provisional132448Sha256": "bc4ef7cd8262584a73508a48d18c7d2204cb95be2cc40b836bb8dd18c69b21c5",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GraphFeature.cs",
+      "classification": "production",
+      "cycle3Sha256": "05f95940e991d13574d3468eb945809935bbd9fffa463551176a8a41c48d7f0a",
+      "provisional132448Sha256": "05f95940e991d13574d3468eb945809935bbd9fffa463551176a8a41c48d7f0a",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GraphNode.cs",
+      "classification": "production",
+      "cycle3Sha256": "7080025e54858304e7c9293b655cd0f112117b83b1265de470eb9b169d4230ee",
+      "provisional132448Sha256": "7080025e54858304e7c9293b655cd0f112117b83b1265de470eb9b169d4230ee",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GraphNodeRegistrationContext.cs",
+      "classification": "production",
+      "cycle3Sha256": "0c31321b7a557a685e3a0ea187516b936414099cb786926023c6f53e1427c6d9",
+      "provisional132448Sha256": "0c31321b7a557a685e3a0ea187516b936414099cb786926023c6f53e1427c6d9",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GraphParticipantMutation.cs",
+      "classification": "production",
+      "cycle3Sha256": "7a8312623c6690c8cde3d3f4aa2a348e10566b4a9429ac0a630ff733f5c300cf",
+      "provisional132448Sha256": "7a8312623c6690c8cde3d3f4aa2a348e10566b4a9429ac0a630ff733f5c300cf",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GraphRelationshipContext.cs",
+      "classification": "production",
+      "cycle3Sha256": "307cc82f7e934ebfbd47a24ed226ecf0b8fd8ce93287f9ae52b543e575c2fb2f",
+      "provisional132448Sha256": "307cc82f7e934ebfbd47a24ed226ecf0b8fd8ce93287f9ae52b543e575c2fb2f",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GraphSemanticValueNormalizer.cs",
+      "classification": "production",
+      "cycle3Sha256": "de13117b61e50b3e6c4ca8a54fd6440c6235011b8d349cfaee1a6287b7cca7af",
+      "provisional132448Sha256": "de13117b61e50b3e6c4ca8a54fd6440c6235011b8d349cfaee1a6287b7cca7af",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/GraphStore.cs",
+      "classification": "production",
+      "cycle3Sha256": "67c7c28a992ec0d445cba719b04da9380af0b339bfa8df02ef25c6429f2ef1bd",
+      "provisional132448Sha256": "67c7c28a992ec0d445cba719b04da9380af0b339bfa8df02ef25c6429f2ef1bd",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/IGraph.cs",
+      "classification": "production",
+      "cycle3Sha256": "cd30231fcb34fa6fa552e2ff73eee8ef51d03f14d71e7e6110b39630bf6a2a2d",
+      "provisional132448Sha256": "cd30231fcb34fa6fa552e2ff73eee8ef51d03f14d71e7e6110b39630bf6a2a2d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/IGraphFeature.cs",
+      "classification": "production",
+      "cycle3Sha256": "657b686cca26f9d9bf747a8db05bcd4275d157f1c3c90a63a0515f1f4b822d17",
+      "provisional132448Sha256": "657b686cca26f9d9bf747a8db05bcd4275d157f1c3c90a63a0515f1f4b822d17",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/IMutableNode.cs",
+      "classification": "production",
+      "cycle3Sha256": "6b20379a9b9a88c54d557c8feeff83930ef3d1acb3fc3458c9bdfe2229c4c657",
+      "provisional132448Sha256": "6b20379a9b9a88c54d557c8feeff83930ef3d1acb3fc3458c9bdfe2229c4c657",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/INode.cs",
+      "classification": "production",
+      "cycle3Sha256": "4e79b44e9897367f8c5438d14352e609259c1fd2b7ff53b0516e9fa72aa4b2dd",
+      "provisional132448Sha256": "4e79b44e9897367f8c5438d14352e609259c1fd2b7ff53b0516e9fa72aa4b2dd",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/IObjectGraph.cs",
+      "classification": "production",
+      "cycle3Sha256": "ed84ef5d492325faf29352cb3c56c2ea43ba9d6a4b12230cb0ac0ece2e089eee",
+      "provisional132448Sha256": "ed84ef5d492325faf29352cb3c56c2ea43ba9d6a4b12230cb0ac0ece2e089eee",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/IObjectNode.cs",
+      "classification": "production",
+      "cycle3Sha256": "41a1b48ab0d5313479ced6ab81a508593ba41cee2bc329bddf41d728fc123210",
+      "provisional132448Sha256": "41a1b48ab0d5313479ced6ab81a508593ba41cee2bc329bddf41d728fc123210",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Links/SemanticLinkLedger.cs",
+      "classification": "production",
+      "cycle3Sha256": "a0df5241db3cfc3c4b992bdd16584eb5a9f94420ed48e0148e2db23ceb952ca2",
+      "provisional132448Sha256": "a0df5241db3cfc3c4b992bdd16584eb5a9f94420ed48e0148e2db23ceb952ca2",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Links/SemanticLinkObserver.cs",
+      "classification": "production",
+      "cycle3Sha256": "cec57fd90e333969023e42bd1e914ef60354cc6cee272ac6c256cdde016cb73d",
+      "provisional132448Sha256": "cec57fd90e333969023e42bd1e914ef60354cc6cee272ac6c256cdde016cb73d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Links/SemanticLinkProjectionBuilder.cs",
+      "classification": "production",
+      "cycle3Sha256": "112fb3e3913a653d0606df422c92adcec864fd1b4d42a58c5177752ceda62308",
+      "provisional132448Sha256": "112fb3e3913a653d0606df422c92adcec864fd1b4d42a58c5177752ceda62308",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Links/SemanticLinkStore.cs",
+      "classification": "production",
+      "cycle3Sha256": "3789d250e77d380eba518da7e0ef56dc1581bf1f13bf88b27c99c698ec97bc57",
+      "provisional132448Sha256": "3789d250e77d380eba518da7e0ef56dc1581bf1f13bf88b27c99c698ec97bc57",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/NodeFacet.cs",
+      "classification": "production",
+      "cycle3Sha256": "3cb5bf92276604543427327abc65064d0a094c40ee64ec464233447fcf76aa20",
+      "provisional132448Sha256": "3cb5bf92276604543427327abc65064d0a094c40ee64ec464233447fcf76aa20",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/ObjectNode.cs",
+      "classification": "production",
+      "cycle3Sha256": "f58cdd7b4d10dae41637955fa73d7e1393e0908c23fbce87be9ed8df371c28de",
+      "provisional132448Sha256": "f58cdd7b4d10dae41637955fa73d7e1393e0908c23fbce87be9ed8df371c28de",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/SemanticGraphContract.cs",
+      "classification": "production",
+      "cycle3Sha256": "d528125718e686bebf77e5de8cfe30b9091f92b2e2da98b56efca6dc2072e8d2",
+      "provisional132448Sha256": "d528125718e686bebf77e5de8cfe30b9091f92b2e2da98b56efca6dc2072e8d2",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/SemanticLinkContract.cs",
+      "classification": "production",
+      "cycle3Sha256": "1ed43884d615cc37414324e032267efce28d12d037a9065cb5a897dbd1392c8d",
+      "provisional132448Sha256": "1ed43884d615cc37414324e032267efce28d12d037a9065cb5a897dbd1392c8d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Runtime/Validation/GraphValidation.cs",
+      "classification": "production",
+      "cycle3Sha256": "27efdc4b7e6902b2f05d9fe4f1c64dc185e8c177395579f48a8a0e887e054a60",
+      "provisional132448Sha256": "27efdc4b7e6902b2f05d9fe4f1c64dc185e8c177395579f48a8a0e887e054a60",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/AssemblyInfo.cs",
+      "classification": "production",
+      "cycle3Sha256": "6930ebe57be7e1f61446d8e09acb231d5635c5bc2c4b68c20f3f971a6235af0b",
+      "provisional132448Sha256": "6930ebe57be7e1f61446d8e09acb231d5635c5bc2c4b68c20f3f971a6235af0b",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/Ghostworx.System.Graph.Serialization.csproj",
+      "classification": "production",
+      "cycle3Sha256": "a70e9989b0b3cd7de2bd055baa433e5d688da972cab79549045778a4c9e09d97",
+      "provisional132448Sha256": "a70e9989b0b3cd7de2bd055baa433e5d688da972cab79549045778a4c9e09d97",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphBoundedOutput.cs",
+      "classification": "production",
+      "cycle3Sha256": "c8e3c942321d4749982078891e529e686e2b3caadc72a3b60089a44f509dc719",
+      "provisional132448Sha256": "c8e3c942321d4749982078891e529e686e2b3caadc72a3b60089a44f509dc719",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphDestinationAdmission.cs",
+      "classification": "production",
+      "cycle3Sha256": "0543c2009a1fe867ec517b8aac00103443218da3ddd898de1aa1cc44310fd18c",
+      "provisional132448Sha256": "0543c2009a1fe867ec517b8aac00103443218da3ddd898de1aa1cc44310fd18c",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphDocument.cs",
+      "classification": "production",
+      "cycle3Sha256": "f2fb94fb01bb1df42871d89632b52f48deedb4aae15878bd0c30e416a60738a3",
+      "provisional132448Sha256": "f2fb94fb01bb1df42871d89632b52f48deedb4aae15878bd0c30e416a60738a3",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphDocumentJson.cs",
+      "classification": "production",
+      "cycle3Sha256": "691d371a34432841b683326bd2e02bedd1590394bc97209924a801db191d1389",
+      "provisional132448Sha256": "691d371a34432841b683326bd2e02bedd1590394bc97209924a801db191d1389",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphJsonSerializer.cs",
+      "classification": "production",
+      "cycle3Sha256": "c5ddc21fa6d3d25803c9a87177f922b749628aa943e6ab1a2916048109bb35e1",
+      "provisional132448Sha256": "c5ddc21fa6d3d25803c9a87177f922b749628aa943e6ab1a2916048109bb35e1",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphLocalDocument.cs",
+      "classification": "production",
+      "cycle3Sha256": "441146f026e1fb7489e45c6467b2d611153d07a9364bbf7fc60bccacd82ebcf2",
+      "provisional132448Sha256": "441146f026e1fb7489e45c6467b2d611153d07a9364bbf7fc60bccacd82ebcf2",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphLocalModels.cs",
+      "classification": "production",
+      "cycle3Sha256": "8366321b947cb4e3fa5250484faf1303f3c59e4b4c44491d0bf84d94caf6aecb",
+      "provisional132448Sha256": "8366321b947cb4e3fa5250484faf1303f3c59e4b4c44491d0bf84d94caf6aecb",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphMetadataCodecs.cs",
+      "classification": "production",
+      "cycle3Sha256": "c6b7e6fcfe6edd5d37013bbf16464e130661cc044e5856fbf55d426ac5ba64a1",
+      "provisional132448Sha256": "c6b7e6fcfe6edd5d37013bbf16464e130661cc044e5856fbf55d426ac5ba64a1",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphMigrations.cs",
+      "classification": "production",
+      "cycle3Sha256": "43cbf51ee657c27c0073b2f1b98f4287b61fc01c4a38ed6d9619153f84e33d68",
+      "provisional132448Sha256": "43cbf51ee657c27c0073b2f1b98f4287b61fc01c4a38ed6d9619153f84e33d68",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphSerializationDtos.cs",
+      "classification": "production",
+      "cycle3Sha256": "52b35b8913ac867328f28c7506c3b1daf5322f1916edf5d424b1686bd44a0c6d",
+      "provisional132448Sha256": "52b35b8913ac867328f28c7506c3b1daf5322f1916edf5d424b1686bd44a0c6d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/GraphSerializationRegistry.cs",
+      "classification": "production",
+      "cycle3Sha256": "7aa5a33523b2e4849b4700f31ed8c01986963300e07864e5ac91a1ba0f2a5923",
+      "provisional132448Sha256": "7aa5a33523b2e4849b4700f31ed8c01986963300e07864e5ac91a1ba0f2a5923",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/IGraphDocumentCodec.cs",
+      "classification": "production",
+      "cycle3Sha256": "7fa4314b5338ac933b7cd67e1f041149bd0839acd5cc31599ada7829c38e654d",
+      "provisional132448Sha256": "7fa4314b5338ac933b7cd67e1f041149bd0839acd5cc31599ada7829c38e654d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/Links/SemanticLinkCanonicalJson.cs",
+      "classification": "production",
+      "cycle3Sha256": "2eb49570aef5dd1546b7f7d3b1c12fdb942c2cf80ae2f26d61c6b030525cc589",
+      "provisional132448Sha256": "2eb49570aef5dd1546b7f7d3b1c12fdb942c2cf80ae2f26d61c6b030525cc589",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/Links/SemanticLinkDocuments.cs",
+      "classification": "production",
+      "cycle3Sha256": "bae5f7c123f1cb7b501f37c87cb3cf4646d9797d244f85f587ae081ac3d686ce",
+      "provisional132448Sha256": "bae5f7c123f1cb7b501f37c87cb3cf4646d9797d244f85f587ae081ac3d686ce",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/Links/SemanticLinkDomainDocumentMapper.cs",
+      "classification": "production",
+      "cycle3Sha256": "d52066845a91196723b5186ebd04b15c2ec94e5d165df5f9b364e4a6f25b8d7a",
+      "provisional132448Sha256": "d52066845a91196723b5186ebd04b15c2ec94e5d165df5f9b364e4a6f25b8d7a",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/Links/SemanticLinkJsonSerializer.cs",
+      "classification": "production",
+      "cycle3Sha256": "65894476270441a2f15b6d2ca1a57e9be0d2960b2265f4d254817295f6dd1701",
+      "provisional132448Sha256": "65894476270441a2f15b6d2ca1a57e9be0d2960b2265f4d254817295f6dd1701",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Graph.Serialization/Links/SemanticLinkMigrations.cs",
+      "classification": "production",
+      "cycle3Sha256": "cee1ab4241a0958559fd0e8cc0b1bc228f490faf0854479997a7731421c054d0",
+      "provisional132448Sha256": "cee1ab4241a0958559fd0e8cc0b1bc228f490faf0854479997a7731421c054d0",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Bindings/VariableBinding.cs",
+      "classification": "production",
+      "cycle3Sha256": "962a212d16301937921d9ba7984794c775234a83e7c54e2e8dd046f183b979f5",
+      "provisional132448Sha256": "962a212d16301937921d9ba7984794c775234a83e7c54e2e8dd046f183b979f5",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Definitions/VariableDefinitionGraphAdapter.cs",
+      "classification": "production",
+      "cycle3Sha256": "db664a76f4511f67dc14f27ece69c366ca4994199cfc5dd89b1b3f39917fd041",
+      "provisional132448Sha256": "db664a76f4511f67dc14f27ece69c366ca4994199cfc5dd89b1b3f39917fd041",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Definitions/VariableDefinitionGraphProfile.cs",
+      "classification": "production",
+      "cycle3Sha256": "12d88a274e84571efb7e02d942098a0e103706b609452395388cf7a554f5be55",
+      "provisional132448Sha256": "12d88a274e84571efb7e02d942098a0e103706b609452395388cf7a554f5be55",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Definitions/VariableGraphVocabulary.cs",
+      "classification": "production",
+      "cycle3Sha256": "3428485028609827ebec3f6b9fb0278f5d6423ffe3802cfa0f2ad2d4feda2aa9",
+      "provisional132448Sha256": "3428485028609827ebec3f6b9fb0278f5d6423ffe3802cfa0f2ad2d4feda2aa9",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Ghostworx.System.Variable.Runtime.csproj",
+      "classification": "production",
+      "cycle3Sha256": "a92002e7b4d5b0dc827b3931aaa5e2ff3d559a29ab33c7981d6f7a6b9e927151",
+      "provisional132448Sha256": "a92002e7b4d5b0dc827b3931aaa5e2ff3d559a29ab33c7981d6f7a6b9e927151",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/GlobalUsings.cs",
+      "classification": "production",
+      "cycle3Sha256": "3fca9e79358f120e8b4647fb9e935343868f410be2be466bfeeb4d9331989252",
+      "provisional132448Sha256": "3fca9e79358f120e8b4647fb9e935343868f410be2be466bfeeb4d9331989252",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Invalidation/VariableDependency.cs",
+      "classification": "production",
+      "cycle3Sha256": "a122f34fc580f2a80cd860b3bdc52cd9aff58a7950e11d1c9498929fdc645175",
+      "provisional132448Sha256": "a122f34fc580f2a80cd860b3bdc52cd9aff58a7950e11d1c9498929fdc645175",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Invalidation/VariableInvalidation.cs",
+      "classification": "production",
+      "cycle3Sha256": "fb1f80a7887847217136a72a9a666729630cd0db6f70b143cab47b4c8055740c",
+      "provisional132448Sha256": "fb1f80a7887847217136a72a9a666729630cd0db6f70b143cab47b4c8055740c",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Resolution/VariableInvalidationSubscriber.cs",
+      "classification": "production",
+      "cycle3Sha256": "0c6b6b488c8586fc7d4f8f0ca162f654338ebb565c97ee316ba23f54f6974b46",
+      "provisional132448Sha256": "0c6b6b488c8586fc7d4f8f0ca162f654338ebb565c97ee316ba23f54f6974b46",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Resolution/VariableResolutionCacheKey.cs",
+      "classification": "production",
+      "cycle3Sha256": "8efdb0f4eb1b12b56ddab1f94dbdf824d5f7759c7fe16bddc59e30e7db737854",
+      "provisional132448Sha256": "8efdb0f4eb1b12b56ddab1f94dbdf824d5f7759c7fe16bddc59e30e7db737854",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Resolution/VariableResolutionCoordinator.cs",
+      "classification": "production",
+      "cycle3Sha256": "ee12ab4dba4725ca512e7f40cad1e2cd9894a15c1667df54d19c7e0090db1652",
+      "provisional132448Sha256": "ee12ab4dba4725ca512e7f40cad1e2cd9894a15c1667df54d19c7e0090db1652",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Resolution/VariableResolutionModels.cs",
+      "classification": "production",
+      "cycle3Sha256": "a5a4541f2a8342a716395aebb8c3ca4fe5b2c24e5459fe34335bbadfdfe06008",
+      "provisional132448Sha256": "a5a4541f2a8342a716395aebb8c3ca4fe5b2c24e5459fe34335bbadfdfe06008",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Resolution/VariableResolutionPorts.cs",
+      "classification": "production",
+      "cycle3Sha256": "3bcbcc80cb0816937c021cc9468a5e2d843c49c37b720fb16ab7c7ae60a76288",
+      "provisional132448Sha256": "3bcbcc80cb0816937c021cc9468a5e2d843c49c37b720fb16ab7c7ae60a76288",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Resolution/VariableResolutionReducer.cs",
+      "classification": "production",
+      "cycle3Sha256": "70ee03397defd58251507b7f86f4b0c0a0992ec6b1ddc092760140d7abdeed9a",
+      "provisional132448Sha256": "70ee03397defd58251507b7f86f4b0c0a0992ec6b1ddc092760140d7abdeed9a",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Resolution/VariableResolutionValueNormalizer.cs",
+      "classification": "production",
+      "cycle3Sha256": "73c4f01a97fc07734e8a889f093e507b96526c1fe87b39a13a2a455aadb71415",
+      "provisional132448Sha256": "73c4f01a97fc07734e8a889f093e507b96526c1fe87b39a13a2a455aadb71415",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Serialization/ProtectedVariableBindingJsonSerializer.cs",
+      "classification": "production",
+      "cycle3Sha256": "e2283956d889b2b14db9a8d36a5e9c400fd7bcaf59224f070e89e49a60976ae2",
+      "provisional132448Sha256": "e2283956d889b2b14db9a8d36a5e9c400fd7bcaf59224f070e89e49a60976ae2",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Serialization/ProtectedVariableDocumentModels.cs",
+      "classification": "production",
+      "cycle3Sha256": "9defc6abf9dc182fc76c72f14b8815ade6342675c41f93e08340c71e4727e716",
+      "provisional132448Sha256": "9defc6abf9dc182fc76c72f14b8815ade6342675c41f93e08340c71e4727e716",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Serialization/ProtectedVariableDomainDocumentMapper.cs",
+      "classification": "production",
+      "cycle3Sha256": "80fc9050b382e1eee8fd71559d67630fbc22ec8cd2d82d9a932b45e904bdbb12",
+      "provisional132448Sha256": "80fc9050b382e1eee8fd71559d67630fbc22ec8cd2d82d9a932b45e904bdbb12",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Serialization/RuntimeVariableDocumentSchema.cs",
+      "classification": "production",
+      "cycle3Sha256": "8b488df330df1bb1e1630cb8f13e0cba34b1148aabc3331b44d4c9e727f4ee57",
+      "provisional132448Sha256": "8b488df330df1bb1e1630cb8f13e0cba34b1148aabc3331b44d4c9e727f4ee57",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Serialization/RuntimeVariableDomainDocumentMapper.cs",
+      "classification": "production",
+      "cycle3Sha256": "82da5e40f7aa144580b7bec73870b61562704896931498b4c2125c5eea348b97",
+      "provisional132448Sha256": "82da5e40f7aa144580b7bec73870b61562704896931498b4c2125c5eea348b97",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Serialization/RuntimeVariableJsonSerializer.cs",
+      "classification": "production",
+      "cycle3Sha256": "6992d6fdd7a5ce088aafdc9e52ec59d1ab585749cbc51bf053b973aab43b8661",
+      "provisional132448Sha256": "6992d6fdd7a5ce088aafdc9e52ec59d1ab585749cbc51bf053b973aab43b8661",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/Serialization/RuntimeVariableWireValidation.cs",
+      "classification": "production",
+      "cycle3Sha256": "f50cce6df71a0824b4ecf08f335e55af3e6e4f0b5d1d679af169de2ccfe477f2",
+      "provisional132448Sha256": "f50cce6df71a0824b4ecf08f335e55af3e6e4f0b5d1d679af169de2ccfe477f2",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Runtime/VariableSystemContract.cs",
+      "classification": "production",
+      "cycle3Sha256": "27c5527d2cfe95c6f5d11fff9388aacf12210469f603fc9a25a4dc93ee0bfbc5",
+      "provisional132448Sha256": "27c5527d2cfe95c6f5d11fff9388aacf12210469f603fc9a25a4dc93ee0bfbc5",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Serialization/AssemblyInfo.cs",
+      "classification": "production",
+      "cycle3Sha256": "6d004a3f61c6266d5eb499bcf73de3ccd4b7d3a49458f4a36097048013609a7f",
+      "provisional132448Sha256": "6d004a3f61c6266d5eb499bcf73de3ccd4b7d3a49458f4a36097048013609a7f",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Serialization/Ghostworx.System.Variable.Serialization.csproj",
+      "classification": "production",
+      "cycle3Sha256": "a7391e315ea67f80c4fd349324a5f3ef1a5d17bcd490a5c2cf4911cc4e074bd2",
+      "provisional132448Sha256": "a7391e315ea67f80c4fd349324a5f3ef1a5d17bcd490a5c2cf4911cc4e074bd2",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Serialization/VariableDocumentModels.cs",
+      "classification": "production",
+      "cycle3Sha256": "3573ff972aa33e83b9ed31f711c27beeb315db624c65ec982eb97efa04c934f7",
+      "provisional132448Sha256": "3573ff972aa33e83b9ed31f711c27beeb315db624c65ec982eb97efa04c934f7",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Serialization/VariableDomainDocumentMapper.cs",
+      "classification": "production",
+      "cycle3Sha256": "114fcf506fabe7e4351390f475a587af37b7ffc7a4435b060ed2f6e887ad2cc4",
+      "provisional132448Sha256": "114fcf506fabe7e4351390f475a587af37b7ffc7a4435b060ed2f6e887ad2cc4",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Serialization/VariableExtensionRegistry.cs",
+      "classification": "production",
+      "cycle3Sha256": "698b29f6f6b8ca1650e0d3cd1911c6656dd7e4b787c3a79d489b8b0e988d6204",
+      "provisional132448Sha256": "698b29f6f6b8ca1650e0d3cd1911c6656dd7e4b787c3a79d489b8b0e988d6204",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Serialization/VariableJsonSerializer.cs",
+      "classification": "production",
+      "cycle3Sha256": "c0d9adf05d279abfd87ebfc31c4f4948c6644e9bb7dc278291670f3c4a34c255",
+      "provisional132448Sha256": "c0d9adf05d279abfd87ebfc31c4f4948c6644e9bb7dc278291670f3c4a34c255",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Serialization/VariableMigrations.cs",
+      "classification": "production",
+      "cycle3Sha256": "1552a58909b81a91590016755bf39d31972aef32928e869f34de35ee9c4f1a8d",
+      "provisional132448Sha256": "1552a58909b81a91590016755bf39d31972aef32928e869f34de35ee9c4f1a8d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable.Serialization/VariableWireValidation.cs",
+      "classification": "production",
+      "cycle3Sha256": "c0b277581b8f46db9faf23de2dd52026a60ec5111a3dceedc6629e256e6b7993",
+      "provisional132448Sha256": "c0b277581b8f46db9faf23de2dd52026a60ec5111a3dceedc6629e256e6b7993",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable/AssemblyInfo.cs",
+      "classification": "production",
+      "cycle3Sha256": "6f15182ea66067d987d4c8b462f9cf5145f02085e7ce0505ef58b50b0e1f29e1",
+      "provisional132448Sha256": "6f15182ea66067d987d4c8b462f9cf5145f02085e7ce0505ef58b50b0e1f29e1",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable/Definitions/VariableDefinition.cs",
+      "classification": "production",
+      "cycle3Sha256": "225c3eff4b2bda3aeeaee04f1fcaa012644c78fbfedaa5ad92938f94e8bd5806",
+      "provisional132448Sha256": "225c3eff4b2bda3aeeaee04f1fcaa012644c78fbfedaa5ad92938f94e8bd5806",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable/Ghostworx.System.Variable.csproj",
+      "classification": "production",
+      "cycle3Sha256": "ac09d9c7f2c867d0b78b8d838d34f90e1d90e2bd3d98dc6633740513f733f6d9",
+      "provisional132448Sha256": "ac09d9c7f2c867d0b78b8d838d34f90e1d90e2bd3d98dc6633740513f733f6d9",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable/Profiles/VariableContractProfile.cs",
+      "classification": "production",
+      "cycle3Sha256": "60640cf4381e0561726b3f798c4f621adcb1100921abade28408421157a2d31c",
+      "provisional132448Sha256": "60640cf4381e0561726b3f798c4f621adcb1100921abade28408421157a2d31c",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable/Profiles/VariableLimitGuard.cs",
+      "classification": "production",
+      "cycle3Sha256": "49624aaefcab28ec808bbd10f597c75a59ee4e88f53f1c7e9df6b04304be5ed3",
+      "provisional132448Sha256": "49624aaefcab28ec808bbd10f597c75a59ee4e88f53f1c7e9df6b04304be5ed3",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable/Profiles/VariableOutcomes.cs",
+      "classification": "production",
+      "cycle3Sha256": "1f45467594b651133dcac69e40616b9a0f903d7cdc6771d9b142b6f951eac19a",
+      "provisional132448Sha256": "1f45467594b651133dcac69e40616b9a0f903d7cdc6771d9b142b6f951eac19a",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable/References/VariableReference.cs",
+      "classification": "production",
+      "cycle3Sha256": "b52ef9a91c04175483c807a7ac981d8d236e3fdabdbf5bd428e6bfe29219bf7d",
+      "provisional132448Sha256": "b52ef9a91c04175483c807a7ac981d8d236e3fdabdbf5bd428e6bfe29219bf7d",
+      "equal": true
+    },
+    {
+      "path": "src/Ghostworx.System.Variable/References/VariableReferenceValidator.cs",
+      "classification": "production",
+      "cycle3Sha256": "5f28a93e5ba8c9b1a0b2947fed7920fc7cc99f43a79418266f286bb4346e9f20",
+      "provisional132448Sha256": "5f28a93e5ba8c9b1a0b2947fed7920fc7cc99f43a79418266f286bb4346e9f20",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Core.Tests/Program.cs",
+      "classification": "test",
+      "cycle3Sha256": "b819b2cc6bac452562962b241f90591c2ffa24055a8eee448c5ed8ecc9773bf4",
+      "provisional132448Sha256": "b819b2cc6bac452562962b241f90591c2ffa24055a8eee448c5ed8ecc9773bf4",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceCorpus.cs",
+      "classification": "test",
+      "cycle3Sha256": "1d675b3ae67082275e95b7b1a5a4d1834122fd65b21693bb87c4736daa7d1fce",
+      "provisional132448Sha256": "1d675b3ae67082275e95b7b1a5a4d1834122fd65b21693bb87c4736daa7d1fce",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceDigest.cs",
+      "classification": "test",
+      "cycle3Sha256": "fb85111d322d2b0b7267ffc3242d0645a842ed2c7d5fa84a56aebeca392cbd10",
+      "provisional132448Sha256": "fb85111d322d2b0b7267ffc3242d0645a842ed2c7d5fa84a56aebeca392cbd10",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceInvariants.cs",
+      "classification": "test",
+      "cycle3Sha256": "539287c5766db8636b7f296862532a57bbb67cc46b56710219fe6b6e61f16268",
+      "provisional132448Sha256": "539287c5766db8636b7f296862532a57bbb67cc46b56710219fe6b6e61f16268",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceManifest.cs",
+      "classification": "test",
+      "cycle3Sha256": "91af4ad6e5bcc66b3cf4a9398f09c6fecd663fe6d08e4d2a7975e3ab8ea45f30",
+      "provisional132448Sha256": "91af4ad6e5bcc66b3cf4a9398f09c6fecd663fe6d08e4d2a7975e3ab8ea45f30",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceResultEnvelope.cs",
+      "classification": "test",
+      "cycle3Sha256": "60952a213bd84851cff9f5764136190657763006f5af49a656dd9e36b36631bb",
+      "provisional132448Sha256": "60952a213bd84851cff9f5764136190657763006f5af49a656dd9e36b36631bb",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Conformance.Support/ConformanceResultSchemaValidator.cs",
+      "classification": "test",
+      "cycle3Sha256": "a4fced738151d63abb3900ca1db67d7d0db1915edaa60a1cf7b34c423b5ba594",
+      "provisional132448Sha256": "a4fced738151d63abb3900ca1db67d7d0db1915edaa60a1cf7b34c423b5ba594",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Conformance/InMemoryFederationParticipant.cs",
+      "classification": "test",
+      "cycle3Sha256": "0842dbb5c91a76f9c29457bebb001bafb7412ee74d94afa6eb539ff2a4f06018",
+      "provisional132448Sha256": "0842dbb5c91a76f9c29457bebb001bafb7412ee74d94afa6eb539ff2a4f06018",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Conformance/Program.cs",
+      "classification": "test",
+      "cycle3Sha256": "0ee8d2dcfc1e6abf1bd9b4cd12fbe4664c5addde3dabe9caf0a06148231bc671",
+      "provisional132448Sha256": "0ee8d2dcfc1e6abf1bd9b4cd12fbe4664c5addde3dabe9caf0a06148231bc671",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Scenarios/Program.cs",
+      "classification": "test",
+      "cycle3Sha256": "918b5fed0c3ac48be94b7e93a3a711d0669fa19435df9662b2fdb49b131875c0",
+      "provisional132448Sha256": "918b5fed0c3ac48be94b7e93a3a711d0669fa19435df9662b2fdb49b131875c0",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Serialization.Tests/LocalBoundaryTests.cs",
+      "classification": "test",
+      "cycle3Sha256": "d2b8b642fb6fda50c6f8223bab890fd01e4cb3112364a7bcecddadf84915e836",
+      "provisional132448Sha256": "d2b8b642fb6fda50c6f8223bab890fd01e4cb3112364a7bcecddadf84915e836",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Serialization.Tests/OpaqueMetadataEditTests.cs",
+      "classification": "test",
+      "cycle3Sha256": "0b4264ee5937e9b011fea7c3ec35e573967848e256af0bd71d42433cce6de629",
+      "provisional132448Sha256": "0b4264ee5937e9b011fea7c3ec35e573967848e256af0bd71d42433cce6de629",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Serialization.Tests/Program.cs",
+      "classification": "test",
+      "cycle3Sha256": "9ea10843191370f567ab5e47a92a2b5a6aa96c1fb5f6808c68b0a1af05543590",
+      "provisional132448Sha256": "9ea10843191370f567ab5e47a92a2b5a6aa96c1fb5f6808c68b0a1af05543590",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Graph.Serialization.Tests/RuntimeImportBoundsTests.cs",
+      "classification": "test",
+      "cycle3Sha256": "d932c2536b83582530e8888f2ada1688dfc848c1c3b4a8b055a6d4f99b524009",
+      "provisional132448Sha256": "d932c2536b83582530e8888f2ada1688dfc848c1c3b4a8b055a6d4f99b524009",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance.Support/VariableConformanceCorpus.cs",
+      "classification": "test",
+      "cycle3Sha256": "8f57b324ab78fb7f3f2854f61eb7379c85630f3910c1dea56299496f0801b593",
+      "provisional132448Sha256": "8f57b324ab78fb7f3f2854f61eb7379c85630f3910c1dea56299496f0801b593",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance.Support/VariableConformanceResult.cs",
+      "classification": "test",
+      "cycle3Sha256": "b611a18742b4d68d36b2b89441090a8a81528a8cb8aed5b9aaed8d9f89c0344e",
+      "provisional132448Sha256": "b611a18742b4d68d36b2b89441090a8a81528a8cb8aed5b9aaed8d9f89c0344e",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance.Support/VariableConformanceResultWriter.cs",
+      "classification": "test",
+      "cycle3Sha256": "b0b77ffe3f6cf36239e2ee3ada5b05fe359b4b811faf7a36d558cb3cc2b23144",
+      "provisional132448Sha256": "b0b77ffe3f6cf36239e2ee3ada5b05fe359b4b811faf7a36d558cb3cc2b23144",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance.Support/VariableConformanceVectors.cs",
+      "classification": "test",
+      "cycle3Sha256": "d2d413cc8fd54fd336ac5cc42a27c2505a597f5d6d14f52ab1a46e28b9d28673",
+      "provisional132448Sha256": "d2d413cc8fd54fd336ac5cc42a27c2505a597f5d6d14f52ab1a46e28b9d28673",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance.Support/VariableConformanceWire.cs",
+      "classification": "test",
+      "cycle3Sha256": "cb3284ffbfc0afd48938f36f066cb56e38e49da144b97eebc817f8aa56349aab",
+      "provisional132448Sha256": "cb3284ffbfc0afd48938f36f066cb56e38e49da144b97eebc817f8aa56349aab",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance/Participants/CompositionReferenceConsumer.cs",
+      "classification": "test",
+      "cycle3Sha256": "af7b4208207a849650117ace074d8fca1fc6c13b5e25eceef40f68c8f28c8600",
+      "provisional132448Sha256": "af7b4208207a849650117ace074d8fca1fc6c13b5e25eceef40f68c8f28c8600",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance/Participants/HostNeutralProviderParticipant.cs",
+      "classification": "test",
+      "cycle3Sha256": "62738585768e7e8910e284d797c7e67e022a52ec38e0d73b5dbac26d1a30c1d1",
+      "provisional132448Sha256": "62738585768e7e8910e284d797c7e67e022a52ec38e0d73b5dbac26d1a30c1d1",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance/Participants/ProviderExecutionHarness.cs",
+      "classification": "test",
+      "cycle3Sha256": "fabfd90c0b0979cb785d601613f1380b7591c91e2f247b1827c30b0c9b05e506",
+      "provisional132448Sha256": "fabfd90c0b0979cb785d601613f1380b7591c91e2f247b1827c30b0c9b05e506",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance/Participants/SystemProducerParticipant.cs",
+      "classification": "test",
+      "cycle3Sha256": "c4f440d16efbfd95a98d46bb761e44d9ca8da00c6e7c76541fad7f93cbff3c8d",
+      "provisional132448Sha256": "c4f440d16efbfd95a98d46bb761e44d9ca8da00c6e7c76541fad7f93cbff3c8d",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance/Participants/SystemVariableParticipants.cs",
+      "classification": "test",
+      "cycle3Sha256": "1dcdd4de98b9262b4a913e7bfc70ff06c7d83838c44299f7ab7a5fae22861e9e",
+      "provisional132448Sha256": "1dcdd4de98b9262b4a913e7bfc70ff06c7d83838c44299f7ab7a5fae22861e9e",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance/Program.cs",
+      "classification": "test",
+      "cycle3Sha256": "97e5bab34ed97b01b2e4fe3036bc68a1090246ac8feca9ecd09a738e0d08c629",
+      "provisional132448Sha256": "97e5bab34ed97b01b2e4fe3036bc68a1090246ac8feca9ecd09a738e0d08c629",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Conformance/VariableConformanceRunner.cs",
+      "classification": "test",
+      "cycle3Sha256": "f9f71f2508dcf34b4b544be938e1627c358a7900705e9576052fde177620f14c",
+      "provisional132448Sha256": "f9f71f2508dcf34b4b544be938e1627c358a7900705e9576052fde177620f14c",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Contracts.Tests/FreshnessCompletenessTests.cs",
+      "classification": "test",
+      "cycle3Sha256": "0c02c5b61160115e5fa3b5d51532d5a6c4c16858c024a60dd2ed8a94d75c5269",
+      "provisional132448Sha256": "0c02c5b61160115e5fa3b5d51532d5a6c4c16858c024a60dd2ed8a94d75c5269",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Contracts.Tests/InvalidationLifecycleTests.cs",
+      "classification": "test",
+      "cycle3Sha256": "a83bfc790eef791f103fae29d1e5e6f84e0ae1bb37fdbb675b09ab1a26d2d327",
+      "provisional132448Sha256": "a83bfc790eef791f103fae29d1e5e6f84e0ae1bb37fdbb675b09ab1a26d2d327",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Contracts.Tests/Program.cs",
+      "classification": "test",
+      "cycle3Sha256": "4d0e57f35b80202d7a552176d57c1e9cc0223c07b01bc4320fc8ddc525924642",
+      "provisional132448Sha256": "4d0e57f35b80202d7a552176d57c1e9cc0223c07b01bc4320fc8ddc525924642",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Contracts.Tests/R4ContractBoundaryTests.cs",
+      "classification": "test",
+      "cycle3Sha256": "49a61b43dfe23ba02df3c392833272dae096abe31958d2e34f0f77976ce2dfad",
+      "provisional132448Sha256": "49a61b43dfe23ba02df3c392833272dae096abe31958d2e34f0f77976ce2dfad",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Contracts.Tests/ResolutionBehaviorMatrixTests.cs",
+      "classification": "test",
+      "cycle3Sha256": "a2e46511ad520bd08ef962a0b20af8fa4a3bcd1ecdb21a2635ea11a8de4f0c11",
+      "provisional132448Sha256": "a2e46511ad520bd08ef962a0b20af8fa4a3bcd1ecdb21a2635ea11a8de4f0c11",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Contracts.Tests/ResolutionCancellationMatrixTests.cs",
+      "classification": "test",
+      "cycle3Sha256": "1e016682220d5b2bbb11c5d1e17ba7e5fb9a3f3a1cccb1de91d77bf57127db97",
+      "provisional132448Sha256": "1e016682220d5b2bbb11c5d1e17ba7e5fb9a3f3a1cccb1de91d77bf57127db97",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Contracts.Tests/VariableLimitBoundaryTests.cs",
+      "classification": "test",
+      "cycle3Sha256": "df2dc21716416bd8414961c4f6ae1348095cb05cdb41227da3dae1749a21f65f",
+      "provisional132448Sha256": "df2dc21716416bd8414961c4f6ae1348095cb05cdb41227da3dae1749a21f65f",
+      "equal": true
+    },
+    {
+      "path": "tests/Ghostworx.System.Variable.Serialization.Tests/Program.cs",
+      "classification": "test",
+      "cycle3Sha256": "ba67f4199e070b7c89288778a207fff6056bc88090d993a62c35d8ef972d8e4c",
+      "provisional132448Sha256": "ba67f4199e070b7c89288778a207fff6056bc88090d993a62c35d8ef972d8e4c",
+      "equal": true
+    }
+  ]
+}

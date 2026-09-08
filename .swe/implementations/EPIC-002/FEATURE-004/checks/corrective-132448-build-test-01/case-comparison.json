@@ -1,0 +1,87 @@
+[
+  {
+    "profile": "graph",
+    "baselineCaseCount": 47,
+    "currentCaseCount": 47,
+    "missing": [],
+    "added": [],
+    "differences": [],
+    "totalsEqual": true,
+    "baselineTotals": {
+      "failed": 0,
+      "missing": 0,
+      "passed": 10,
+      "total": 47,
+      "unsupported": 37
+    },
+    "currentTotals": {
+      "failed": 0,
+      "missing": 0,
+      "passed": 10,
+      "total": 47,
+      "unsupported": 37
+    },
+    "generatedGraphIdsNormalized": [
+      "federation.mirror-projection-distinct",
+      "federation.origin-preserved",
+      "identity.address-roundtrip"
+    ],
+    "passed": true,
+    "baselineSha256": "c8dac0e8589c976ff3b75e7db8319e536a1480bbc85961cac3e33b0ffbfe7419",
+    "currentSha256": "60bff11a289f2f84acf21b23aa9ddcf50746adf276b6bc6548cb9301cf54d111"
+  },
+  {
+    "profile": "variable",
+    "baselineCaseCount": 12,
+    "currentCaseCount": 12,
+    "missing": [],
+    "added": [],
+    "differences": [],
+    "totalsEqual": true,
+    "baselineTotals": {
+      "failed": 0,
+      "passed": 8,
+      "skipped": 0,
+      "total": 12,
+      "unsupported": 4
+    },
+    "currentTotals": {
+      "failed": 0,
+      "passed": 8,
+      "skipped": 0,
+      "total": 12,
+      "unsupported": 4
+    },
+    "generatedGraphIdsNormalized": [],
+    "passed": true,
+    "baselineSha256": "3e6152b9a1f269e8c496ddd4f90deaf637afa5ad991d4469ee41b9713028c665",
+    "currentSha256": "9b23eb38f9248512513bd94354a0eab5873571488245754d8bba58042784faa9"
+  },
+  {
+    "profile": "links",
+    "baselineCaseCount": 13,
+    "currentCaseCount": 13,
+    "missing": [],
+    "added": [],
+    "differences": [],
+    "totalsEqual": true,
+    "baselineTotals": {
+      "failed": 0,
+      "passed": 3,
+      "skipped": 0,
+      "total": 13,
+      "unsupported": 10
+    },
+    "currentTotals": {
+      "failed": 0,
+      "passed": 3,
+      "skipped": 0,
+      "total": 13,
+      "unsupported": 10
+    },
+    "generatedGraphIdsNormalized": [],
+    "passed": true,
+    "baselineSha256": "0bf9745d7b14b05456eed51576c63b68af6a3afea456709f0f26b5ef7a142d95",
+    "currentSha256": "b238c7b1ae7945f5caeaec279840aa33d678a9aa1d1556d44c8f4fc134a62575"
+  }
+]

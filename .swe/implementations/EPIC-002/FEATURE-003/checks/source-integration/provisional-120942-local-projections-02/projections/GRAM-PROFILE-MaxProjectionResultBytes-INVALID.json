@@ -1,0 +1,1 @@
+{"status":"Failed","sourceAnchor":null,"presentationRevision":0,"sourceDiagnostics":[{"category":"FiniteExecution","code":"CMP-LIMIT-INVALID","severity":"Error","detail":"The complete positive finite conformance-v1 profile is required.","path":"","correlationId":"","identity":null,"revision":null}],"diagnostics":[]}

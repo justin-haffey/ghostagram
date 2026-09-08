@@ -1,0 +1,7 @@
+{
+  "capturedAt": "2026-09-07T01:17:50.0221550+00:00",
+  "buildOutputCount": 25,
+  "runtimeOutputCount": 107,
+  "runtimeOutputManifestSha256": "1989d7da302c2f9a02e440b966508284129776d49b501f3cc74eb312b45cb76e",
+  "configurationFinding": "Ghostagram Release; System Core and Graph.Serialization Release; Variable and Graph/Variable/SemanticLinks conformance support Debug per build log"
+}

@@ -1,0 +1,14 @@
+{
+  "approver": "elon-musk",
+  "agent": "/root/elon_bootstrap_diagnosis",
+  "decision": "Accepted",
+  "mode": "auto-approve",
+  "recordedAt": "2026-09-07T10:27:51Z",
+  "cycle": 0,
+  "conditions": [],
+  "reviewedSha256": "2ee9b85021c7c7d850a346ab2fcbb345b3da772de774cb84557e9eae2dab08ae",
+  "artifactId": "DESIGN-EPIC-002-FEATURE-004-GHOSTAGRAM",
+  "revision": "2",
+  "source": "Explicit parent decision relay from thread01a0794b-7e3e-7800-8fca-82afa62d0e28",
+  "scope": "Design2 acceptance only; independent delivery Validation still required"
+}

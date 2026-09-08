@@ -1,0 +1,127 @@
+[
+  {
+    "path": "src/Ghostworx.System/bin/Release/net10.0/Ghostworx.System.dll",
+    "expected": "ef388e0f90f40a830f5d689b6f3a1b3b39c66236691dc0b1e54bc9cc2a4155af",
+    "actual": "ef388e0f90f40a830f5d689b6f3a1b3b39c66236691dc0b1e54bc9cc2a4155af"
+  },
+  {
+    "path": "src/Ghostworx.System.ComponentModel/bin/Release/net10.0/Ghostworx.System.ComponentModel.dll",
+    "expected": "78c18a881619dac65ba82008d8fbbd904af1a52f92fe7ba0d96b90125142fbcf",
+    "actual": "78c18a881619dac65ba82008d8fbbd904af1a52f92fe7ba0d96b90125142fbcf"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition/bin/Release/net10.0/Ghostworx.System.Composition.dll",
+    "expected": "7058e09ac266eb2d0018187f9cb84c641a34cbf430b49810c15192cdfbdb42de",
+    "actual": "7058e09ac266eb2d0018187f9cb84c641a34cbf430b49810c15192cdfbdb42de"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Compiler/bin/Release/net10.0/Ghostworx.System.Composition.Compiler.dll",
+    "expected": "eb8b233310a899732b5f07b748a21bb1021cf28aa266c5ca84f5b724ffe1248c",
+    "actual": "eb8b233310a899732b5f07b748a21bb1021cf28aa266c5ca84f5b724ffe1248c"
+  },
+  {
+    "path": "src/Ghostworx.System.Composition.Exchange/bin/Release/net10.0/Ghostworx.System.Composition.Exchange.dll",
+    "expected": "21f4429756c5d55d325fead6c6b3fa2d9e97745eca4bd9baaea3c50f617da460",
+    "actual": "21f4429756c5d55d325fead6c6b3fa2d9e97745eca4bd9baaea3c50f617da460"
+  },
+  {
+    "path": "src/Ghostworx.System.Core/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+    "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Runtime/bin/Release/net10.0/Ghostworx.System.Graph.Runtime.dll",
+    "expected": "dd8b7f940f8189ab2361faf78127a980431ec5207d930e3eb5af94ad0bc19d6f",
+    "actual": "dd8b7f940f8189ab2361faf78127a980431ec5207d930e3eb5af94ad0bc19d6f"
+  },
+  {
+    "path": "src/Ghostworx.System.Graph.Serialization/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "expected": "02ecc2841c802aa1c05fce691c1b29937d7d9cc041b01d472476bab82a0ad17b",
+    "actual": "02ecc2841c802aa1c05fce691c1b29937d7d9cc041b01d472476bab82a0ad17b"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable/bin/Release/net10.0/Ghostworx.System.Variable.dll",
+    "expected": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231",
+    "actual": "ca34f5e2f844f363db7c22c8faa0ffecc9f1899104db32556ee00c2ca771c231"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Runtime/bin/Release/net10.0/Ghostworx.System.Variable.Runtime.dll",
+    "expected": "dd8b93e332285a78de78daf8f5fb7ccbffaad5df77ba665db55057e71be87d95",
+    "actual": "dd8b93e332285a78de78daf8f5fb7ccbffaad5df77ba665db55057e71be87d95"
+  },
+  {
+    "path": "src/Ghostworx.System.Variable.Serialization/bin/Release/net10.0/Ghostworx.System.Variable.Serialization.dll",
+    "expected": "0e38ac3651fe0eb20593c1340c09a697d9e0307a3d21c97ec78547519bcbf474",
+    "actual": "0e38ac3651fe0eb20593c1340c09a697d9e0307a3d21c97ec78547519bcbf474"
+  },
+  {
+    "path": "tests/Ghostworx.System.Algorithms.Tests/bin/Release/net10.0/Ghostworx.System.Algorithms.Tests.dll",
+    "expected": "a60895beb42fc00422af37b25c5282f3f08fa903cfe020a57070112f2a63e726",
+    "actual": "a60895beb42fc00422af37b25c5282f3f08fa903cfe020a57070112f2a63e726"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance/bin/Release/net10.0/Ghostworx.System.Composition.Conformance.dll",
+    "expected": "cb637b8dca8dd6b5bd6203f5320522f7fe265d111d3a0b9a2224084cef68da95",
+    "actual": "cb637b8dca8dd6b5bd6203f5320522f7fe265d111d3a0b9a2224084cef68da95"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Conformance.Support/bin/Release/net10.0/Ghostworx.System.Composition.Conformance.Support.dll",
+    "expected": "597e94797ce5b02fe681366403340fc5869687616adb7d08229631e3628c9005",
+    "actual": "597e94797ce5b02fe681366403340fc5869687616adb7d08229631e3628c9005"
+  },
+  {
+    "path": "tests/Ghostworx.System.Composition.Tests/bin/Release/net10.0/Ghostworx.System.Composition.Tests.dll",
+    "expected": "4e14745bea99700c737124866d878f552b64aaab5627913f47d559c7068aeb33",
+    "actual": "4e14745bea99700c737124866d878f552b64aaab5627913f47d559c7068aeb33"
+  },
+  {
+    "path": "tests/Ghostworx.System.Core.Tests/bin/Release/net10.0/Ghostworx.System.Core.Tests.dll",
+    "expected": "fd4677c101d8d3b7f4968e51bcd51956a1821fb269b14386d5eb3d8a3a36c67d",
+    "actual": "fd4677c101d8d3b7f4968e51bcd51956a1821fb269b14386d5eb3d8a3a36c67d"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Graph.Conformance.dll",
+    "expected": "b8637202fb0af51015fbd7cc412c5fabd1614eddde2978e56fcaf761503ab850",
+    "actual": "b8637202fb0af51015fbd7cc412c5fabd1614eddde2978e56fcaf761503ab850"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Conformance.Support/bin/Release/net10.0/Ghostworx.System.Graph.Conformance.Support.dll",
+    "expected": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9",
+    "actual": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Scenarios/bin/Release/net10.0/Ghostworx.System.Graph.Scenarios.dll",
+    "expected": "06c248782483eed277188ee5806679cbbdd0cdc3106a072a42c5e160d9a5b563",
+    "actual": "06c248782483eed277188ee5806679cbbdd0cdc3106a072a42c5e160d9a5b563"
+  },
+  {
+    "path": "tests/Ghostworx.System.Graph.Serialization.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.Tests.dll",
+    "expected": "9459d3818c24a66bce46d849a09c777ecc76d3b76969ce6585979a4bd0c94d68",
+    "actual": "9459d3818c24a66bce46d849a09c777ecc76d3b76969ce6585979a4bd0c94d68"
+  },
+  {
+    "path": "tests/Ghostworx.System.SemanticLinks.Conformance/bin/Release/net10.0/Ghostworx.System.SemanticLinks.Conformance.dll",
+    "expected": "48ac187493681f2552c112c1a0a439f5401196e5bd93cb1a751e19ba652ad9da",
+    "actual": "48ac187493681f2552c112c1a0a439f5401196e5bd93cb1a751e19ba652ad9da"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.Conformance.dll",
+    "expected": "b8604e9fa5849afa55e2f58e1cdbc942b6c17e32760d2457b7bfe4e1f137e8fa",
+    "actual": "b8604e9fa5849afa55e2f58e1cdbc942b6c17e32760d2457b7bfe4e1f137e8fa"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Conformance.Support/bin/Release/net10.0/Ghostworx.System.Variable.Conformance.Support.dll",
+    "expected": "febaa55ccb1807e3dca14d99dd81a4fa4c4443ff3910c611ca5121ce3bf0adaa",
+    "actual": "febaa55ccb1807e3dca14d99dd81a4fa4c4443ff3910c611ca5121ce3bf0adaa"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Contracts.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Contracts.Tests.dll",
+    "expected": "b7e3633a70bc534d93b9c2f0d1bbccebc10a696913e340cae9554b624cb8ca82",
+    "actual": "b7e3633a70bc534d93b9c2f0d1bbccebc10a696913e340cae9554b624cb8ca82"
+  },
+  {
+    "path": "tests/Ghostworx.System.Variable.Serialization.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Serialization.Tests.dll",
+    "expected": "7ef712033ef0aa2286bcac4663b2614b624b4aa77bd91ad0cd2afe9de237059b",
+    "actual": "7ef712033ef0aa2286bcac4663b2614b624b4aa77bd91ad0cd2afe9de237059b"
+  }
+]

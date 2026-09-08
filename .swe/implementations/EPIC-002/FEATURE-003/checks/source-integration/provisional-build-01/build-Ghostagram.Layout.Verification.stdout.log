@@ -1,0 +1,9 @@
+C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Layout.Verification\Program.cs(13,1): error CS0161: '<top-level-statements-entry-point>': not all code paths return a value [C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Layout.Verification\Ghostagram.Layout.Verification.csproj]
+
+Build FAILED.
+
+C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Layout.Verification\Program.cs(13,1): error CS0161: '<top-level-statements-entry-point>': not all code paths return a value [C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Layout.Verification\Ghostagram.Layout.Verification.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.07

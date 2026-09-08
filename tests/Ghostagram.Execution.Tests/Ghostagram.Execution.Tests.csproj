@@ -9,5 +9,6 @@
     <ProjectReference Include="..\..\src\Ghostagram.Execution\Ghostagram.Execution.csproj" />
     <ProjectReference Include="..\..\src\Ghostagram.NodeSets.Maf\Ghostagram.NodeSets.Maf.csproj" />
     <ProjectReference Include="..\..\src\Ghostagram.NodeSets.UML\Ghostagram.NodeSets.UML.csproj" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Graph.Runtime\Ghostworx.System.Graph.Runtime.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
   </ItemGroup>
 </Project>

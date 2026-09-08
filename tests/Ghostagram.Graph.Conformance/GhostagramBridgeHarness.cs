@@ -1,3 +1,6 @@
+using Ghostworx.System.Graph.Serialization;
+using Ghostworx.System.Primitives;
+using Ghostworx.System.Graph.Runtime;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Ghostagram.Bridge;
@@ -119,8 +122,8 @@ public static class GhostagramBridgeHarness
             && delta.GraphVersion == authoritative.Version && delta.Operations.Any(),
             "A contiguous Bridge delta was not projected incrementally.");
 
-        var mismatched = new GraphSnapshot(authoritative.GraphId, authoritative.Version + 1,
-            authoritative.Nodes, authoritative.Relationships);
+        var mismatched = new GraphLocalSnapshot(authoritative.GraphId, authoritative.Version + 1,
+            authoritative.Nodes, authoritative.Relationships, authoritative.ValidationProvenance.OriginAuthority, GraphLocalLimits.PersistenceV1);
         var fallback = new GraphDiagramDeltaProjector(state.Projection)
             .Project(batch, initial, mismatched, state.Presentation.Capture());
         Require(fallback.RequiresFullProjection, "A skewed Bridge delta did not request full reprojection.");

@@ -1,0 +1,62 @@
+[
+  {
+    "name": "restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\implementations\\EPIC-002\\FEATURE-003\\checks\\source-integration\\provisional-120942-fixture-build-03\\Ghostagram.LocalChecks.slnx",
+      "--no-dependencies",
+      "--packages",
+      "C:/Users/justin/.nuget/packages",
+      "--source",
+      "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\implementations\\EPIC-002\\FEATURE-003\\checks\\source-integration\\provisional-120942-fixture-build-03\\empty-feed",
+      "-p:NuGetAudit=false",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 3.656,
+    "stdout": "restore.stdout.log",
+    "stderr": "restore.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Bridge.Tests",
+    "command": [
+      "dotnet",
+      "build",
+      "tests\\Ghostagram.Bridge.Tests\\Ghostagram.Bridge.Tests.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 3.359,
+    "stdout": "build-Ghostagram.Bridge.Tests.stdout.log",
+    "stderr": "build-Ghostagram.Bridge.Tests.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Graph.Conformance",
+    "command": [
+      "dotnet",
+      "build",
+      "tests\\Ghostagram.Graph.Conformance\\Ghostagram.Graph.Conformance.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.829,
+    "stdout": "build-Ghostagram.Graph.Conformance.stdout.log",
+    "stderr": "build-Ghostagram.Graph.Conformance.stderr.log"
+  }
+]

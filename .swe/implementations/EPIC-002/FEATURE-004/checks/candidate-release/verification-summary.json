@@ -1,0 +1,86 @@
+{
+  "recordedAt": "2026-09-07T10:14:38.058734+00:00",
+  "sourceFingerprint": "41a988f64d4c7ed22590ef1ddc51c131b85d4675b82f5db6ed45f43a59fb470d",
+  "systemGeneration": "f004-generation-20260907T100038Z",
+  "systemSourceFingerprint": "7d0b1b09c9300ee8305a204531fff730ed148f488097ee50c2bc59fdef135eb1",
+  "systemOwnerOutputsUnchanged": 15,
+  "matchingSystemCopies": 72,
+  "ordinarySuitesPassed": 7,
+  "compositionFoundationPassed": true,
+  "benchmarkPassed": true,
+  "conformanceCommandsPassed": 6,
+  "conformance": [
+    {
+      "profile": "graph",
+      "baselineCaseCount": 47,
+      "currentCaseCount": 47,
+      "caseRecordsEqual": false,
+      "missing": [],
+      "added": [],
+      "differences": [
+        {
+          "id": "federation.mirror-projection-distinct",
+          "changedFields": [
+            "observedFields"
+          ]
+        },
+        {
+          "id": "federation.origin-preserved",
+          "changedFields": [
+            "observedFields"
+          ]
+        },
+        {
+          "id": "identity.address-roundtrip",
+          "changedFields": [
+            "observedFields"
+          ]
+        }
+      ],
+      "summary": {
+        "failed": 0,
+        "missing": 0,
+        "passed": 10,
+        "total": 47,
+        "unsupported": 37
+      },
+      "differenceDisposition": "Three observedFields differences are run-specific newly generated graph GUIDs only; authority, local node identity, revision, seam and all case statuses/outcomes/diagnostics remain unchanged. Raw observations are preserved."
+    },
+    {
+      "profile": "variable",
+      "baselineCaseCount": 12,
+      "currentCaseCount": 12,
+      "caseRecordsEqual": true,
+      "missing": [],
+      "added": [],
+      "differences": [],
+      "summary": {
+        "failed": 0,
+        "passed": 8,
+        "skipped": 0,
+        "total": 12,
+        "unsupported": 4
+      }
+    },
+    {
+      "profile": "links",
+      "baselineCaseCount": 13,
+      "currentCaseCount": 13,
+      "caseRecordsEqual": true,
+      "missing": [],
+      "added": [],
+      "differences": [],
+      "summary": {
+        "failed": 0,
+        "passed": 3,
+        "skipped": 0,
+        "total": 13,
+        "unsupported": 10
+      }
+    }
+  ],
+  "sourceFileCount": 138,
+  "originalBaselineFilesPreserved": 34,
+  "independentValidation": "Not yet authored; implementation evidence does not approve itself",
+  "systemLiveSourceNote": "System may be developing newer unbuilt F001 source; F004 checks bind to archived generation and verified frozen owner DLLs."
+}

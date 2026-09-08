@@ -1,0 +1,18 @@
+{
+  "status": "RepairedBaselineReady",
+  "buildExitCode": 0,
+  "conformanceCommandCount": 6,
+  "passedConformanceCommands": 6,
+  "allBuildOutputsRelease": true,
+  "copiedSystemDllsMatchingReleaseOwners": "30/30",
+  "graph": "47 total:10 passed,37 unsupported,0 failed,0 missing",
+  "variable": "12 total:8 passed,4 unsupported,0 failed,0 skipped; complete case records identical to original",
+  "semanticLinks": "13 total:3 passed,10 unsupported,0 failed,0 skipped; complete case records identical to original",
+  "ordinaryCarriedResults": "Original Core/Bridge/Cutover/Persistence/Server.GraphWorkspace/Layout passes carried with identical child source manifest3df29de493f06dc81c587da67c92822a40ac3cf4d4d6a419f350639786a856bb",
+  "executionFailure": "Known original DiagramNode metadata failure preserved; deliberately not rerun; F004 sidecar implementation must fix before local acceptance",
+  "sourceImplementationChanged": false,
+  "originalBaselineFilesPreserved": 34,
+  "liveOwnedHarnessProcesses": [],
+  "slotReleased": true,
+  "recordedAt": "2026-09-07T01:43:25.0428683+00:00"
+}

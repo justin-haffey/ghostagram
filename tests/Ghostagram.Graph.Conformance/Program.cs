@@ -1,5 +1,9 @@
 using Ghostagram.Graph.Conformance;
 
+if (args.Contains("--local-projections", StringComparer.Ordinal) ||
+    Enumerable.Range(0, Math.Max(0, args.Length - 1)).Any(index => args[index] == "--profile" && args[index + 1] == "composition"))
+    return Ghostagram.Graph.Conformance.Composition.CompositionRunner.Run(args);
+
 var feature = Feature(args);
 return feature switch
 {

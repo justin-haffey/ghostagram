@@ -1,0 +1,242 @@
+[
+  {
+    "copyPath": "src/Ghostagram.Bridge/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "src/Ghostagram.Execution/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "src/Ghostagram.NodeSets.Maf/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "src/Ghostagram.NodeSets.UML/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "src/Ghostagram.Server/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "src/Ghostagram.Server/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Graph.Conformance.Support.dll",
+    "sha256": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\tests\\Ghostworx.System.Graph.Conformance.Support\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Conformance.Support.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+    "sha256": "e79ae1534ef2b352e49069f62b05c54620c99bce918ab11dd3bac948ff7a9976",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\tests\\Ghostworx.System.SemanticLinks.Conformance\\Support\\bin\\Release\\net10.0\\Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "e79ae1534ef2b352e49069f62b05c54620c99bce918ab11dd3bac948ff7a9976",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.Conformance.Support.dll",
+    "sha256": "e54aa8f0e2f73a9aa819a58cda679c7c64711d4c916892289067528a8820d723",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\tests\\Ghostworx.System.Variable.Conformance.Support\\bin\\Release\\net10.0\\Ghostworx.System.Variable.Conformance.Support.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "e54aa8f0e2f73a9aa819a58cda679c7c64711d4c916892289067528a8820d723",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.Contracts.dll",
+    "sha256": "d1c1679c77a2f39479452b6ba99f9aa89a3b6df1a2e61ce242580e0a5d59dc34",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Variable.Contracts\\bin\\Release\\net10.0\\Ghostworx.System.Variable.Contracts.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "d1c1679c77a2f39479452b6ba99f9aa89a3b6df1a2e61ce242580e0a5d59dc34",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.Serialization.dll",
+    "sha256": "4f124592863f1fb0224cddc2d4d396ea6ddec19e57461db8a3878d455e362eb1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Variable.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Variable.Serialization.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "4f124592863f1fb0224cddc2d4d396ea6ddec19e57461db8a3878d455e362eb1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Conformance.Support.dll",
+    "sha256": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\tests\\Ghostworx.System.Graph.Conformance.Support\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Conformance.Support.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+    "sha256": "e79ae1534ef2b352e49069f62b05c54620c99bce918ab11dd3bac948ff7a9976",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\tests\\Ghostworx.System.SemanticLinks.Conformance\\Support\\bin\\Release\\net10.0\\Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "e79ae1534ef2b352e49069f62b05c54620c99bce918ab11dd3bac948ff7a9976",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Conformance.Support.dll",
+    "sha256": "e54aa8f0e2f73a9aa819a58cda679c7c64711d4c916892289067528a8820d723",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\tests\\Ghostworx.System.Variable.Conformance.Support\\bin\\Release\\net10.0\\Ghostworx.System.Variable.Conformance.Support.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "e54aa8f0e2f73a9aa819a58cda679c7c64711d4c916892289067528a8820d723",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Contracts.dll",
+    "sha256": "d1c1679c77a2f39479452b6ba99f9aa89a3b6df1a2e61ce242580e0a5d59dc34",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Variable.Contracts\\bin\\Release\\net10.0\\Ghostworx.System.Variable.Contracts.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "d1c1679c77a2f39479452b6ba99f9aa89a3b6df1a2e61ce242580e0a5d59dc34",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Serialization.dll",
+    "sha256": "4f124592863f1fb0224cddc2d4d396ea6ddec19e57461db8a3878d455e362eb1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Variable.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Variable.Serialization.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "4f124592863f1fb0224cddc2d4d396ea6ddec19e57461db8a3878d455e362eb1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "matchesReleaseOwner": true
+  },
+  {
+    "copyPath": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "ownerPath": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "ownerConfiguration": "Release",
+    "ownerSha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "matchesReleaseOwner": true
+  }
+]

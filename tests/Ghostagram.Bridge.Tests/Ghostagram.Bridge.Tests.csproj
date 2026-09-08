@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Composition.Exchange\Ghostworx.System.Composition.Exchange.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Composition.Compiler\Ghostworx.System.Composition.Compiler.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
     <ProjectReference Include="..\..\src\Ghostagram.Bridge\Ghostagram.Bridge.csproj" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Graph.Runtime\Ghostworx.System.Graph.Runtime.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
   </ItemGroup>
 </Project>

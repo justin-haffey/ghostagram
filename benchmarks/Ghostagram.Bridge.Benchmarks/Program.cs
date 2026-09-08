@@ -1,3 +1,4 @@
+using Ghostworx.System.Graph.Serialization;
 using System.Diagnostics;
 using System.Text.Json;
 using Ghostagram.Bridge;
@@ -16,7 +17,7 @@ foreach (var size in sizes)
     var after = CreateSnapshot(size, renamedIndex: size - 1, version: 2);
     var current = projection.Project(before, presentation);
     var changedId = NodeIdFor(size - 1);
-    var batch = new GraphChangeBatch(1, 2, [new GraphChange(2, GraphChangeKind.NodeRenamed, changedId) { OldValue = $"node-{size - 1}", NewValue = $"node-{size - 1}-renamed" }]);
+    var batch = new GraphLocalChangeBatch(1, 2, [new GraphLocalChange(2, GraphChangeKind.NodeRenamed, changedId) { OldValue = GraphSemanticValue.String($"node-{size - 1}"), NewValue = GraphSemanticValue.String($"node-{size - 1}-renamed") }], after.ValidationProvenance.OriginAuthority, after.GraphId, LimitsFor(size));
 
     _ = projection.Project(after, presentation);
     _ = deltaProjection.Project(batch, current, after, presentation);
@@ -49,19 +50,22 @@ static TimeSpan Measure(int repetitions, Action action)
     return stopwatch.Elapsed;
 }
 
-static GraphSnapshot CreateSnapshot(int size, int? renamedIndex, long version)
+static GraphLocalSnapshot CreateSnapshot(int size, int? renamedIndex, long version)
 {
     var kind = NodeKind.Define("Benchmark", "Node");
-    var nodes = Enumerable.Range(0, size).Select(index => new GraphNodeSnapshot(
+    var nodes = Enumerable.Range(0, size).Select(index => new GraphLocalNodeSnapshot(
         NodeIdFor(index),
         index == 0 ? NodeKind.Graph : kind,
         index == renamedIndex ? $"node-{index}-renamed" : $"node-{index}",
-        new Dictionary<string, object?> { ["ordinal"] = (long)index })).ToArray();
-    var relationships = Enumerable.Range(1, Math.Max(0, size - 1)).Select(index => new GraphRelationshipSnapshot(
-        new GraphEdge(EdgeIdFor(index), NodeIdFor(index - 1), NodeIdFor(index), RelationshipKind.DependsOn, CreatedAtVersion: 1),
-        new Dictionary<string, object?>())).ToArray();
-    return new(NodeIdFor(0), version, nodes, relationships);
+        new Dictionary<string, GraphSemanticValue> { ["ordinal"] = GraphSemanticValue.Int64(index) })).ToArray();
+    var relationships = Enumerable.Range(1, Math.Max(0, size - 1)).Select(index => new GraphLocalRelationshipSnapshot(
+        new GraphLocalRelationship(EdgeIdFor(index), NodeIdFor(index - 1), NodeIdFor(index), RelationshipKind.DependsOn, CreatedAtVersion: 1),
+        new Dictionary<string, GraphSemanticValue>())).ToArray();
+    return new(NodeIdFor(0), version, nodes, relationships,
+        new Ghostworx.System.Primitives.SemanticAuthority("ghostagram.benchmark"), LimitsFor(size));
 }
+
+static GraphLocalLimits LimitsFor(int size) => GraphLocalLimits.PersistenceV1 with { MaximumNodes = size, MaximumRelationships = size };
 
 static NodeId NodeIdFor(int index) => new(DeterministicGuid(index + 1));
 static EdgeId EdgeIdFor(int index) => new(DeterministicGuid(1_000_000 + index));

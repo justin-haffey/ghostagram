@@ -1,0 +1,94 @@
+[
+  {
+    "path": "Ghostagram.slnx",
+    "sha256": "91b9e2630f63d60dd4f12426d1d03327e967f7952416096bb1a4a413ac139f02"
+  },
+  {
+    "path": "README.md",
+    "sha256": "024a255d8de5ccc214ce9101bcb13edba1a304b505f63943f8addcff0c27eba8"
+  },
+  {
+    "path": "benchmarks/Ghostagram.Bridge.Benchmarks/Program.cs",
+    "sha256": "6de37c0cf1f41ff9d61d2b414f0508378df14140cadc5eeb553c944849105baa"
+  },
+  {
+    "path": "src/Ghostagram.Bridge/CommandAdapter.cs",
+    "sha256": "a090512834918441fe57b4dcb9d74cfccedb8c70566e745410c352c3612ed80c"
+  },
+  {
+    "path": "src/Ghostagram.Bridge/Ghostagram.Bridge.csproj",
+    "sha256": "3a87845092d1a8c53de7abe6be756d834ab66e33b571cf3f807bb322bba229a4"
+  },
+  {
+    "path": "src/Ghostagram.Bridge/Projection.cs",
+    "sha256": "fbdf1192f2074441920700b9d30c7ab972f1a368bea0850b48a254c07cdceca4"
+  },
+  {
+    "path": "src/Ghostagram.Execution/ExecutionContracts.cs",
+    "sha256": "121bf433317ffe00a48db498b1185358fbebfb9b8d3f2bc875bbc24ce0cad80d"
+  },
+  {
+    "path": "src/Ghostagram.Execution/Ghostagram.Execution.csproj",
+    "sha256": "f0e13ba5996ac4b3547a0300bcdf9a83128acb219c679c7649a7153ff6a39347"
+  },
+  {
+    "path": "src/Ghostagram.Execution/GraphCompiler.cs",
+    "sha256": "f84700e7e907289d9c1914322b9825b96122e5b41c0ee1b905a572bcb8f1b6d6"
+  },
+  {
+    "path": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "sha256": "3e24e686f9265d3c1d9ec996dfbd168182e0b5c291103f92a95a1f84e43578f2"
+  },
+  {
+    "path": "src/Ghostagram.Server/GraphWorkspaces/GraphWorkspaceService.cs",
+    "sha256": "44d5ae17c69bdd9aac970701ff96b3033b7ffd3e59cc7262cb8cc4e0704291a5"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/Ghostagram.Bridge.Tests.csproj",
+    "sha256": "eee36bb7fa2fdcee37a496b167e091e248c9faeb3fff12cf1ca3513193c6f173"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/Program.cs",
+    "sha256": "cee75049b69ddbfb764439174c42db85ce7661dd4640878d0d4fa6b4344ea82d"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/Ghostagram.Cutover.Tests.csproj",
+    "sha256": "48114e2953735fb17368657a04c7979a5bd0089e0884f518562fed2671a0b02e"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/Program.cs",
+    "sha256": "45297ceda0d9252f825414d1feeacbcb702ce14091186cb655e3d2bf0be7722c"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj",
+    "sha256": "5dbbaa844cdaa31ad36993b96e65f20ce899392bfd384007a6eb27d8ec62aa30"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/Program.cs",
+    "sha256": "6a38168406357c46f31abfca44ac83e650162320a0d28330c1c23180b77949e3"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Feature002BridgeHarness.cs",
+    "sha256": "87ca5ced72eeabf5b49f9b181c0b8b13f78830719fe7bf13e79640244d13d525"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Feature003BridgeHarness.cs",
+    "sha256": "32c9ca3a7c3019937e372ff21a8d2269489520a74f77554fe38a6d76f9072362"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "sha256": "e83aee757d4478c9360b090b3eea99522ce2b02b2c4433da535f4eee15690890"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/GhostagramBridgeHarness.cs",
+    "sha256": "3b9e4ee72967adb49a213ddf39ffa5c7fbc21f6717d24227ebfb1dfe3a854ad2"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/Ghostagram.Server.GraphWorkspace.Tests.csproj",
+    "sha256": "173d72c0cde87886d17d6d4bfb88044c019f542859d1f8b806d48c5c7271cdb2"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/Program.cs",
+    "sha256": "c5413c69393666fa59c425bfbb92f99c91dd63de9465a2fdc13419ea5098f0ca"
+  }
+]

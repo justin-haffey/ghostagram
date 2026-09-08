@@ -1,0 +1,31 @@
+  Ghostworx.System.Core -> C:\Users\justin\Source\ghostworx\repos\ghostworx-system\src\Ghostworx.System.Core\bin\Release\net10.0\Ghostworx.System.Core.dll
+  Ghostagram.Contracts -> C:\Users\justin\Source\ghostworx\repos\ghostagram\src\Ghostagram.Contracts\bin\Release\net10.0\Ghostagram.Contracts.dll
+  Ghostworx.System.Graph.Serialization -> C:\Users\justin\Source\ghostworx\repos\ghostworx-system\src\Ghostworx.System.Graph.Serialization\bin\Release\net10.0\Ghostworx.System.Graph.Serialization.dll
+  Ghostagram.Core -> C:\Users\justin\Source\ghostworx\repos\ghostagram\src\Ghostagram.Core\bin\Release\net10.0\Ghostagram.Core.dll
+  Ghostagram.Execution -> C:\Users\justin\Source\ghostworx\repos\ghostagram\src\Ghostagram.Execution\bin\Release\net10.0\Ghostagram.Execution.dll
+  Ghostagram.Core.Tests -> C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Core.Tests\bin\Release\net10.0\Ghostagram.Core.Tests.dll
+  Ghostagram.NodeSets.UML -> C:\Users\justin\Source\ghostworx\repos\ghostagram\src\Ghostagram.NodeSets.UML\bin\Release\net10.0\Ghostagram.NodeSets.UML.dll
+  Ghostagram.NodeSets.Maf -> C:\Users\justin\Source\ghostworx\repos\ghostagram\src\Ghostagram.NodeSets.Maf\bin\Release\net10.0\Ghostagram.NodeSets.Maf.dll
+  Ghostagram.Bridge -> C:\Users\justin\Source\ghostworx\repos\ghostagram\src\Ghostagram.Bridge\bin\Release\net10.0\Ghostagram.Bridge.dll
+  Ghostworx.System.Variable.Conformance.Support -> C:\Users\justin\Source\ghostworx\repos\ghostworx-system\tests\Ghostworx.System.Variable.Conformance.Support\bin\Debug\net10.0\Ghostworx.System.Variable.Conformance.Support.dll
+  Ghostworx.System.SemanticLinks.Conformance.Support -> C:\Users\justin\Source\ghostworx\repos\ghostworx-system\tests\Ghostworx.System.SemanticLinks.Conformance\Support\bin\Debug\net10.0\Ghostworx.System.SemanticLinks.Conformance.Support.dll
+  Ghostworx.System.Variable.Contracts -> C:\Users\justin\Source\ghostworx\repos\ghostworx-system\src\Ghostworx.System.Variable.Contracts\bin\Debug\net10.0\Ghostworx.System.Variable.Contracts.dll
+  Ghostworx.System.Variable.Serialization -> C:\Users\justin\Source\ghostworx\repos\ghostworx-system\src\Ghostworx.System.Variable.Serialization\bin\Debug\net10.0\Ghostworx.System.Variable.Serialization.dll
+  Ghostworx.System.Graph.Conformance.Support -> C:\Users\justin\Source\ghostworx\repos\ghostworx-system\tests\Ghostworx.System.Graph.Conformance.Support\bin\Debug\net10.0\Ghostworx.System.Graph.Conformance.Support.dll
+  Ghostagram.Cutover.Tests -> C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Cutover.Tests\bin\Release\net10.0\Ghostagram.Cutover.Tests.dll
+  Ghostagram.Bridge.Benchmarks -> C:\Users\justin\Source\ghostworx\repos\ghostagram\benchmarks\Ghostagram.Bridge.Benchmarks\bin\Release\net10.0\Ghostagram.Bridge.Benchmarks.dll
+  Ghostagram.Bridge.Tests -> C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Bridge.Tests\bin\Release\net10.0\Ghostagram.Bridge.Tests.dll
+  Ghostagram.Execution.Tests -> C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Execution.Tests\bin\Release\net10.0\Ghostagram.Execution.Tests.dll
+  Ghostagram.Blazor -> C:\Users\justin\Source\ghostworx\repos\ghostagram\src\Ghostagram.Blazor\bin\Release\net10.0\Ghostagram.Blazor.dll
+  Ghostagram.Graph.Conformance -> C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Graph.Conformance\bin\Release\net10.0\Ghostagram.Graph.Conformance.dll
+  Ghostagram.Graph.Conformance.Tests -> C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Graph.Conformance.Tests\bin\Release\net10.0\Ghostagram.Graph.Conformance.Tests.dll
+  Ghostagram.Server -> C:\Users\justin\Source\ghostworx\repos\ghostagram\src\Ghostagram.Server\bin\Release\net10.0\Ghostagram.Server.dll
+  Ghostagram.Server.GraphWorkspace.Tests -> C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Server.GraphWorkspace.Tests\bin\Release\net10.0\Ghostagram.Server.GraphWorkspace.Tests.dll
+  Ghostagram.Persistence.Tests -> C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Persistence.Tests\bin\Release\net10.0\Ghostagram.Persistence.Tests.dll
+  Ghostagram.Layout.Verification -> C:\Users\justin\Source\ghostworx\repos\ghostagram\tests\Ghostagram.Layout.Verification\bin\Release\net10.0\Ghostagram.Layout.Verification.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:07.37

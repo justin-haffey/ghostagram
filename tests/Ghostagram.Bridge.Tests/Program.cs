@@ -1,3 +1,5 @@
+using Ghostworx.System.Graph.Serialization;
+using Ghostworx.System.Graph.Runtime;
 using System.Collections.Immutable;
 using System.Text.Json;
 using System.Xml.Linq;
@@ -6,6 +8,17 @@ using Ghostagram.Contracts;
 using Ghostagram.Core;
 using Ghostagram.Execution;
 using Ghostworx.System.Graph;
+
+if (args.SequenceEqual(new[] { "--profile", "composition" }))
+{
+    Ghostagram.Bridge.Tests.DeclarativeComposition.ProjectionFoundationTests.Run();
+    Ghostagram.Bridge.Tests.DeclarativeComposition.ProjectionBehaviorTests.Run();
+    Ghostagram.Bridge.Tests.DeclarativeComposition.OwnerDiagnosticProjectionTests.Run();
+    Ghostagram.Bridge.Tests.DeclarativeComposition.ProjectionBoundaryCases.Run();
+    Ghostagram.Bridge.Tests.DeclarativeComposition.ProjectionOutputSizeCases.Run();
+    Console.WriteLine("Composition foundation and projection behavior tests passed.");
+    return;
+}
 
 var kind = NodeKind.Define("Tests", "Task");
 var graph = new GraphStore("bridge-tests", features: null, options: new GraphStoreOptions { NodeRetention = GraphNodeRetentionMode.Strong });
@@ -193,9 +206,9 @@ var proposedChild = authoritativeBefore.Nodes.Single(node => node.Id == child.Id
 };
 var accepted = adapter.Apply(new(graph.Version, presentation.Revision, [DiagramOperations.Upsert(proposedChild)]));
 Assert(accepted.Accepted && accepted.GraphChanges is not null && accepted.AuthoritativeDocument.Nodes.Single(node => node.Id == child.Id.ToString()).Label == "Command rename", "Browser node proposals atomically mutate semantic name/metadata and return authoritative recovery state.");
-Assert(Convert.ToDecimal(graph.CaptureSnapshot().Nodes.Single(node => node.Id == child.Id).Metadata["priority"]) == 7 && presentation.Capture().Nodes[child.Id].Bounds.X == 510, "Accepted command preserves semantic and presentation ownership in their respective stores.");
+Assert(graph.CaptureSnapshot().Nodes.Single(node => node.Id == child.Id).Metadata["priority"].GetScalar<long>() == 7 && presentation.Capture().Nodes[child.Id].Bounds.X == 510, "Accepted command preserves semantic and presentation ownership in their respective stores.");
 var replacedMetadata = graph.CaptureSnapshot().Nodes.Single(node => node.Id == child.Id).Metadata;
-Assert(!replacedMetadata.ContainsKey("obsolete") && replacedMetadata["code"] is string,
+Assert(!replacedMetadata.ContainsKey("obsolete") && replacedMetadata["code"].Kind == GraphSemanticValueKind.String && replacedMetadata["code"].GetScalar<string>() == "2026-08-19T12:30:00Z",
     "Node upsert replaces the full projected metadata set and preserves date-like strings as declared strings.");
 
 var beforeInvalidGraphVersion = graph.Version;
@@ -284,7 +297,7 @@ sealed class TestNode(NodeKind kind, IGraph graph, string name) : GraphNode(kind
 sealed class TestPortProfile(NodeKind kind) : INodePortPresentationProfile
 {
     public NodeKind Kind { get; } = kind;
-    public IReadOnlyList<DiagramPort> Map(GraphNodeSnapshot node, DiagramNode projectedNode) =>
+    public IReadOnlyList<DiagramPort> Map(GraphLocalNodeSnapshot node, DiagramNode projectedNode) =>
     [
         new(GraphDiagramIds.Port(node.Id, "receive"), projectedNode.Id, "target", "profile", Anchor: "left", Label: "Receive"),
         new(GraphDiagramIds.Port(node.Id, "send"), projectedNode.Id, "source", "profile", Anchor: "right", Label: "Send")
@@ -294,7 +307,7 @@ sealed class TestPortProfile(NodeKind kind) : INodePortPresentationProfile
 sealed class TestRelationshipProfile(RelationshipKind kind) : IRelationshipPresentationProfile
 {
     public RelationshipKind Kind { get; } = kind;
-    public DiagramEdge Map(GraphRelationshipSnapshot relationship, GraphPresentationSnapshot presentation,
+    public DiagramEdge Map(GraphLocalRelationshipSnapshot relationship, GraphPresentationSnapshot presentation,
         IReadOnlyList<DiagramPort> sourcePorts, IReadOnlyList<DiagramPort> targetPorts) => new(
         GraphDiagramIds.Edge(relationship.Relationship.Id),
         GraphDiagramIds.Port(relationship.Relationship.Source, "send"),

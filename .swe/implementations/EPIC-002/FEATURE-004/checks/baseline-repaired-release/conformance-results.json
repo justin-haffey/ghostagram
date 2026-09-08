@@ -1,0 +1,122 @@
+[
+  {
+    "name": "graph-tests",
+    "arguments": [
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll"
+    ],
+    "command": "dotnet tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll",
+    "processId": 33096,
+    "startedAt": "2026-09-07T01:40:32.9005313+00:00",
+    "finishedAt": "2026-09-07T01:40:33.5682349+00:00",
+    "exitCode": 0,
+    "termination": null,
+    "stdout": "graph-tests.stdout.log",
+    "stderr": "graph-tests.stderr.log"
+  },
+  {
+    "name": "variable-tests",
+    "arguments": [
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll",
+      "--feature",
+      "feature-002",
+      "--fixtures",
+      "../ghostworx-system/tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1"
+    ],
+    "command": "dotnet tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll --feature feature-002 --fixtures ../ghostworx-system/tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1",
+    "processId": 23924,
+    "startedAt": "2026-09-07T01:40:33.5901887+00:00",
+    "finishedAt": "2026-09-07T01:40:34.2874085+00:00",
+    "exitCode": 0,
+    "termination": null,
+    "stdout": "variable-tests.stdout.log",
+    "stderr": "variable-tests.stderr.log"
+  },
+  {
+    "name": "semantic-links-tests",
+    "arguments": [
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll",
+      "--feature",
+      "feature-003",
+      "--corpus",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1",
+      "--profile",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Profiles/semantic-link-conformance-v1.json"
+    ],
+    "command": "dotnet tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll --feature feature-003 --corpus ../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1 --profile ../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Profiles/semantic-link-conformance-v1.json",
+    "processId": 28052,
+    "startedAt": "2026-09-07T01:40:34.2906908+00:00",
+    "finishedAt": "2026-09-07T01:40:34.7680716+00:00",
+    "exitCode": 0,
+    "termination": null,
+    "stdout": "semantic-links-tests.stdout.log",
+    "stderr": "semantic-links-tests.stderr.log"
+  },
+  {
+    "name": "graph-runner",
+    "arguments": [
+      "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+      "--corpus",
+      "../ghostworx-system/tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1",
+      "--schema",
+      "../ghostworx-system/tests/Ghostworx.System.Graph.Conformance/Schemas/conformance-result.schema.json",
+      "--output",
+      ".swe/implementations/EPIC-002/FEATURE-004/checks/baseline-repaired-release/graph-result.json",
+      "--participant-version",
+      "d3f2542c28acfed7ecf04f9c37a4e47241138f29"
+    ],
+    "command": "dotnet tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll --corpus ../ghostworx-system/tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1 --schema ../ghostworx-system/tests/Ghostworx.System.Graph.Conformance/Schemas/conformance-result.schema.json --output .swe/implementations/EPIC-002/FEATURE-004/checks/baseline-repaired-release/graph-result.json --participant-version d3f2542c28acfed7ecf04f9c37a4e47241138f29",
+    "processId": 9760,
+    "startedAt": "2026-09-07T01:40:34.7694976+00:00",
+    "finishedAt": "2026-09-07T01:40:35.0540783+00:00",
+    "exitCode": 0,
+    "termination": null,
+    "stdout": "graph-runner.stdout.log",
+    "stderr": "graph-runner.stderr.log"
+  },
+  {
+    "name": "variable-runner",
+    "arguments": [
+      "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+      "--feature",
+      "feature-002",
+      "--fixtures",
+      "../ghostworx-system/tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1",
+      "--result",
+      ".swe/implementations/EPIC-002/FEATURE-004/checks/baseline-repaired-release/variable-result.json",
+      "--participant-version",
+      "d3f2542c28acfed7ecf04f9c37a4e47241138f29"
+    ],
+    "command": "dotnet tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll --feature feature-002 --fixtures ../ghostworx-system/tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1 --result .swe/implementations/EPIC-002/FEATURE-004/checks/baseline-repaired-release/variable-result.json --participant-version d3f2542c28acfed7ecf04f9c37a4e47241138f29",
+    "processId": 12188,
+    "startedAt": "2026-09-07T01:40:35.0554971+00:00",
+    "finishedAt": "2026-09-07T01:40:35.3838262+00:00",
+    "exitCode": 0,
+    "termination": null,
+    "stdout": "variable-runner.stdout.log",
+    "stderr": "variable-runner.stderr.log"
+  },
+  {
+    "name": "semantic-links-runner",
+    "arguments": [
+      "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+      "--feature",
+      "feature-003",
+      "--corpus",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1",
+      "--profile",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Profiles/semantic-link-conformance-v1.json",
+      "--result",
+      ".swe/implementations/EPIC-002/FEATURE-004/checks/baseline-repaired-release/semantic-links-result.json",
+      "--participant-version",
+      "d3f2542c28acfed7ecf04f9c37a4e47241138f29"
+    ],
+    "command": "dotnet tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll --feature feature-003 --corpus ../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1 --profile ../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Profiles/semantic-link-conformance-v1.json --result .swe/implementations/EPIC-002/FEATURE-004/checks/baseline-repaired-release/semantic-links-result.json --participant-version d3f2542c28acfed7ecf04f9c37a4e47241138f29",
+    "processId": 6148,
+    "startedAt": "2026-09-07T01:40:35.3855948+00:00",
+    "finishedAt": "2026-09-07T01:40:36.0391391+00:00",
+    "exitCode": 0,
+    "termination": null,
+    "stdout": "semantic-links-runner.stdout.log",
+    "stderr": "semantic-links-runner.stderr.log"
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "profile": "graph",
+    "summary": {
+      "failed": 0,
+      "missing": 0,
+      "passed": 10,
+      "total": 47,
+      "unsupported": 37
+    },
+    "casesMatchOriginal": null,
+    "resultSha256": "0220e13e6c837ee07021b70659a0be5fec6bbf59fddd66284b0258d06c7b1399"
+  },
+  {
+    "profile": "variable",
+    "summary": {
+      "failed": 0,
+      "passed": 8,
+      "skipped": 0,
+      "total": 12,
+      "unsupported": 4
+    },
+    "casesMatchOriginal": true,
+    "resultSha256": "d037344aacb9c6ff43773d44d8df017b9ea86ba15da5b82780e167b2c7fedfdc"
+  },
+  {
+    "profile": "semantic-links",
+    "summary": {
+      "failed": 0,
+      "passed": 3,
+      "skipped": 0,
+      "total": 13,
+      "unsupported": 10
+    },
+    "casesMatchOriginal": true,
+    "resultSha256": "85acc1b8ae86efde18edc25b393a0a24d315bde311a2662e92ca88d119541a6c"
+  }
+]

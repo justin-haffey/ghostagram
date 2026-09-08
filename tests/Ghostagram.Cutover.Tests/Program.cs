@@ -1,3 +1,4 @@
+using Ghostworx.System.Graph.Runtime;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Ghostagram.Bridge;
@@ -107,7 +108,9 @@ var presentationSerializer = new GraphPresentationJsonSerializer();
 var exchange = new GraphExchangeContext(
     graph.Options.Authority,
     new GraphOperationContext(GraphCompatibilityProfile.ConformanceSmall, DateTimeOffset.UtcNow.AddMinutes(1)));
-var persistedResult = serializer.Serialize(graph, exchange);
+var capture = GraphStoreDocumentMapper.Capture(graph, new GraphStoreExportContext(exchange));
+Assert(capture.IsSuccess, capture.Outcome?.Code.Value ?? "Graph capture failed.");
+var persistedResult = serializer.Encode(new(capture.Value, exchange));
 Assert(persistedResult.IsSuccess, persistedResult.Outcome?.Code.Value ?? "Profiled graph serialization failed.");
 var persisted = persistedResult.Value;
 using (var persistedDocument = JsonDocument.Parse(persisted))
@@ -119,13 +122,20 @@ using (var persistedDocument = JsonDocument.Parse(persisted))
         "Graph serialization did not use the accepted schema, contract version, or semantic authority.");
 }
 var persistedPresentation = presentationSerializer.Serialize(beforePresentation);
-var restoredResult = serializer.Deserialize(persisted, exchange);
+var decoded = serializer.Decode(new(persisted, exchange));
+Assert(decoded.IsSuccess, decoded.Outcome?.Code.Value ?? "Pure graph decode failed.");
+var target = new GraphStore(null, null, new GraphStoreOptions { NodeRetention = GraphNodeRetentionMode.Strong, Authority = exchange.OriginAuthority });
+Assert(target.CaptureSnapshot().Nodes.All(node => node.Id == target.CaptureSnapshot().GraphId), "Materialization target is explicitly empty.");
+var restoredResult = GraphStoreMaterializer.Materialize(decoded.Value,
+    new GraphStoreMaterializationContext(exchange, target, static context => new SerializedGraphNode(context)));
 Assert(restoredResult.IsSuccess, restoredResult.Outcome?.Code.Value ?? "Profiled graph deserialization failed.");
 var restoredGraph = restoredResult.Value;
 var restored = restoredGraph.CaptureSnapshot();
 var restoredPresentation = presentationSerializer.Deserialize(persistedPresentation);
-var reserializedResult = serializer.Serialize(restoredGraph, exchange);
-Assert(reserializedResult.IsSuccess && reserializedResult.Value == persisted &&
+var recaptured = GraphStoreDocumentMapper.Capture(restoredGraph, new GraphStoreExportContext(exchange));
+Assert(recaptured.IsSuccess, recaptured.Outcome?.Code.Value ?? "Recapture failed.");
+var reserializedResult = serializer.Encode(new(recaptured.Value, exchange));
+Assert(reserializedResult.IsSuccess && reserializedResult.Value.Span.SequenceEqual(persisted.Span) &&
        restored.GraphId == beforePersistence.GraphId && restored.Version == beforePersistence.Version,
     "Profiled graph round-trip changed canonical schema-v2 bytes, graph identity, or revision.");
 Assert(presentationSerializer.Serialize(restoredPresentation) == persistedPresentation,

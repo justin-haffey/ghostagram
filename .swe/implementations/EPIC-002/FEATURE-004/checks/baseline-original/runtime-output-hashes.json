@@ -1,0 +1,430 @@
+[
+  {
+    "path": "tests/Ghostagram.Core.Tests/bin/Release/net10.0/Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests/Ghostagram.Core.Tests/bin/Release/net10.0/Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests/Ghostagram.Core.Tests/bin/Release/net10.0/Ghostagram.Core.Tests.deps.json",
+    "sha256": "2a1ee268ea897cd59f5200628f56f3701e7a2efe693794b29f8700b754db6d21"
+  },
+  {
+    "path": "tests/Ghostagram.Core.Tests/bin/Release/net10.0/Ghostagram.Core.Tests.dll",
+    "sha256": "bf23e6192171904d406f55bc636e1f670ca7739f8a39fd2fdb50cb0b7df2df5a"
+  },
+  {
+    "path": "tests/Ghostagram.Core.Tests/bin/Release/net10.0/Ghostagram.Core.Tests.runtimeconfig.json",
+    "sha256": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Bridge.dll",
+    "sha256": "600392e2a2753ef4369f4e41ea80a8f606159ab129abb09ea44da54db43b4de4"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Bridge.Tests.deps.json",
+    "sha256": "cc79eab3ed619bb7eb9b1c0d9ca4251d07e609178c610d1d9324ca79efdfec9e"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Bridge.Tests.dll",
+    "sha256": "b6473f398be49e30ee80383a3c9b118d7e721a0528efbb76096f790cc41e1a01"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Bridge.Tests.runtimeconfig.json",
+    "sha256": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Execution.dll",
+    "sha256": "df2770c5a027d57c62819056a7e4e3af8f3161b232daa9a8bf482774e9520045"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Execution.dll",
+    "sha256": "df2770c5a027d57c62819056a7e4e3af8f3161b232daa9a8bf482774e9520045"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Execution.Tests.deps.json",
+    "sha256": "4c2b7186b7a7ada8d16dae0eb4844725cfeeb417218641f36b9b2ec68dae775d"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Execution.Tests.dll",
+    "sha256": "ec8ccdfa9ab749f3701cfa541a558af25bf9460a657b10b47896664eac91ec80"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Execution.Tests.runtimeconfig.json",
+    "sha256": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.NodeSets.Maf.dll",
+    "sha256": "dedb0bc6b62e73e0564cd36b2f7297b7a892e22605db0903c493ea47dc8f09b9"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.NodeSets.UML.dll",
+    "sha256": "3f876e2a1f3cc67d48e8df7810ae6cc6db3a340e48b2c07353eace2f46585d6d"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostagram.Bridge.dll",
+    "sha256": "600392e2a2753ef4369f4e41ea80a8f606159ab129abb09ea44da54db43b4de4"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostagram.Cutover.Tests.deps.json",
+    "sha256": "36f701bad127d8dec3f1cfa2feb84d04e01354bead5c9cf573db902a8a2fe93a"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostagram.Cutover.Tests.dll",
+    "sha256": "68c5b1da4c35228bd8865848773d58344b22064160566c6e1382299da193abb7"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostagram.Cutover.Tests.runtimeconfig.json",
+    "sha256": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostagram.Execution.dll",
+    "sha256": "df2770c5a027d57c62819056a7e4e3af8f3161b232daa9a8bf482774e9520045"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Blazor.dll",
+    "sha256": "9229c219138eeb19e86d101494da7d39d229ed31a2681ccfc358f8079a2a4511"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Bridge.dll",
+    "sha256": "600392e2a2753ef4369f4e41ea80a8f606159ab129abb09ea44da54db43b4de4"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Execution.dll",
+    "sha256": "df2770c5a027d57c62819056a7e4e3af8f3161b232daa9a8bf482774e9520045"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.NodeSets.Maf.dll",
+    "sha256": "dedb0bc6b62e73e0564cd36b2f7297b7a892e22605db0903c493ea47dc8f09b9"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.NodeSets.UML.dll",
+    "sha256": "3f876e2a1f3cc67d48e8df7810ae6cc6db3a340e48b2c07353eace2f46585d6d"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Persistence.Tests.deps.json",
+    "sha256": "dfb98e77594260959a65648dece7bfe34741567ba11566e7aefad48bf5883245"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Persistence.Tests.dll",
+    "sha256": "b3578fbdcdb056967a715533bc1a0a6c413fe500b2e5db4f85be40e8bc9c9639"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Persistence.Tests.runtimeconfig.json",
+    "sha256": "b4aad84277c120c025a443649c4e09ca20b08725acc12ef60940786bfb8c024f"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Server.deps.json",
+    "sha256": "889c4233da09e1bcfc8dc036dfa62ca141b014f11602eec0468ebe9019b61e88"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Server.dll",
+    "sha256": "cd63d2a4c853639b366eafb98111647ab03238dd226597fd34de23653d64b3f6"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostagram.Server.runtimeconfig.json",
+    "sha256": "41442586a8262bc96a1c80f82f4d9384c03bfd465d221cbf01fb3563170f9e65"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Blazor.dll",
+    "sha256": "9229c219138eeb19e86d101494da7d39d229ed31a2681ccfc358f8079a2a4511"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Bridge.dll",
+    "sha256": "600392e2a2753ef4369f4e41ea80a8f606159ab129abb09ea44da54db43b4de4"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Execution.dll",
+    "sha256": "df2770c5a027d57c62819056a7e4e3af8f3161b232daa9a8bf482774e9520045"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.NodeSets.Maf.dll",
+    "sha256": "dedb0bc6b62e73e0564cd36b2f7297b7a892e22605db0903c493ea47dc8f09b9"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.NodeSets.UML.dll",
+    "sha256": "3f876e2a1f3cc67d48e8df7810ae6cc6db3a340e48b2c07353eace2f46585d6d"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.deps.json",
+    "sha256": "889c4233da09e1bcfc8dc036dfa62ca141b014f11602eec0468ebe9019b61e88"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.dll",
+    "sha256": "cd63d2a4c853639b366eafb98111647ab03238dd226597fd34de23653d64b3f6"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.GraphWorkspace.Tests.deps.json",
+    "sha256": "e4d255ad88fc5403b7f21a71ed48eeee2cb1468e54c9d9348ee828ffffab9b68"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.GraphWorkspace.Tests.dll",
+    "sha256": "6f5aaf526c36281229d5b4579539bdf06fca7618bfa2f1e4edd08e7367e12e13"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.GraphWorkspace.Tests.runtimeconfig.json",
+    "sha256": "b4aad84277c120c025a443649c4e09ca20b08725acc12ef60940786bfb8c024f"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.runtimeconfig.json",
+    "sha256": "41442586a8262bc96a1c80f82f4d9384c03bfd465d221cbf01fb3563170f9e65"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Blazor.dll",
+    "sha256": "9229c219138eeb19e86d101494da7d39d229ed31a2681ccfc358f8079a2a4511"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Bridge.dll",
+    "sha256": "600392e2a2753ef4369f4e41ea80a8f606159ab129abb09ea44da54db43b4de4"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Execution.dll",
+    "sha256": "df2770c5a027d57c62819056a7e4e3af8f3161b232daa9a8bf482774e9520045"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Layout.Verification.deps.json",
+    "sha256": "5bef1e3e4b827e5ce2cb5859fdbdf512a91ff6fae14cf6ff87eed466efe9e77a"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Layout.Verification.dll",
+    "sha256": "a419aafc2df7b0df60a730a7f3fd0f99921a7c2d7a839693f911602114bf5514"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Layout.Verification.runtimeconfig.json",
+    "sha256": "b4aad84277c120c025a443649c4e09ca20b08725acc12ef60940786bfb8c024f"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.NodeSets.Maf.dll",
+    "sha256": "dedb0bc6b62e73e0564cd36b2f7297b7a892e22605db0903c493ea47dc8f09b9"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.NodeSets.UML.dll",
+    "sha256": "3f876e2a1f3cc67d48e8df7810ae6cc6db3a340e48b2c07353eace2f46585d6d"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Server.deps.json",
+    "sha256": "889c4233da09e1bcfc8dc036dfa62ca141b014f11602eec0468ebe9019b61e88"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Server.dll",
+    "sha256": "cd63d2a4c853639b366eafb98111647ab03238dd226597fd34de23653d64b3f6"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostagram.Server.runtimeconfig.json",
+    "sha256": "41442586a8262bc96a1c80f82f4d9384c03bfd465d221cbf01fb3563170f9e65"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Bridge.dll",
+    "sha256": "600392e2a2753ef4369f4e41ea80a8f606159ab129abb09ea44da54db43b4de4"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Execution.dll",
+    "sha256": "df2770c5a027d57c62819056a7e4e3af8f3161b232daa9a8bf482774e9520045"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.deps.json",
+    "sha256": "a63943ab7e3146bd18321fe046a8544966df64d17ffde341439b26301cbee395"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+    "sha256": "fdeb131210a8ccf8a95014bd5d58867db653327c1441c682f62ed70857b496b5"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.runtimeconfig.json",
+    "sha256": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.deps.json",
+    "sha256": "439ed527bcc7a66cf68702792f115f5597f850e372e9a2c76b5142ef617f727f"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll",
+    "sha256": "7d6a7397423c084fbb80e6881036f3dab38220a1043c79fe942d963606191b72"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.runtimeconfig.json",
+    "sha256": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Conformance.Support.dll",
+    "sha256": "0fa7a4c5cbfb9c44ac0e7c43767f7357aede16bc325406de232296f226cd1d27"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+    "sha256": "51ae34649bbbf8e620839deebec9e7a566a8f9b86198d8346508eb6ac6d8099e"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Conformance.Support.dll",
+    "sha256": "bccafeb5c953a6984a73d0cf83fe6419cf7f653451cbb9cdce066e97c06445b4"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Contracts.dll",
+    "sha256": "efbf9b44518d01ce7353fa8977df091672b64eb373fb0279a9c7e892cba66765"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostworx.System.Variable.Serialization.dll",
+    "sha256": "5032e31f8370bff0ef480364718375cbcf54bfc0a52e3d8ac15029f0bf4a4cd9"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Bridge.dll",
+    "sha256": "600392e2a2753ef4369f4e41ea80a8f606159ab129abb09ea44da54db43b4de4"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Execution.dll",
+    "sha256": "df2770c5a027d57c62819056a7e4e3af8f3161b232daa9a8bf482774e9520045"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.deps.json",
+    "sha256": "a63943ab7e3146bd18321fe046a8544966df64d17ffde341439b26301cbee395"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+    "sha256": "fdeb131210a8ccf8a95014bd5d58867db653327c1441c682f62ed70857b496b5"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.runtimeconfig.json",
+    "sha256": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Graph.Conformance.Support.dll",
+    "sha256": "0fa7a4c5cbfb9c44ac0e7c43767f7357aede16bc325406de232296f226cd1d27"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+    "sha256": "51ae34649bbbf8e620839deebec9e7a566a8f9b86198d8346508eb6ac6d8099e"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.Conformance.Support.dll",
+    "sha256": "bccafeb5c953a6984a73d0cf83fe6419cf7f653451cbb9cdce066e97c06445b4"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.Contracts.dll",
+    "sha256": "efbf9b44518d01ce7353fa8977df091672b64eb373fb0279a9c7e892cba66765"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostworx.System.Variable.Serialization.dll",
+    "sha256": "5032e31f8370bff0ef480364718375cbcf54bfc0a52e3d8ac15029f0bf4a4cd9"
+  }
+]

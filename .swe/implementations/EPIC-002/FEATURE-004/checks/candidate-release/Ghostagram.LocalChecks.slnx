@@ -1,0 +1,26 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="../../../../../../src/Ghostagram.Blazor/Ghostagram.Blazor.csproj" />
+    <Project Path="../../../../../../src/Ghostagram.Bridge/Ghostagram.Bridge.csproj" />
+    <Project Path="../../../../../../src/Ghostagram.Contracts/Ghostagram.Contracts.csproj" />
+    <Project Path="../../../../../../src/Ghostagram.Core/Ghostagram.Core.csproj" />
+    <Project Path="../../../../../../src/Ghostagram.Execution/Ghostagram.Execution.csproj" />
+    <Project Path="../../../../../../src/Ghostagram.NodeSets.Maf/Ghostagram.NodeSets.Maf.csproj" />
+    <Project Path="../../../../../../src/Ghostagram.NodeSets.UML/Ghostagram.NodeSets.UML.csproj" />
+    <Project Path="../../../../../../src/Ghostagram.Server/Ghostagram.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="../../../../../../tests/Ghostagram.Core.Tests/Ghostagram.Core.Tests.csproj" />
+    <Project Path="../../../../../../tests/Ghostagram.Bridge.Tests/Ghostagram.Bridge.Tests.csproj" />
+    <Project Path="../../../../../../tests/Ghostagram.Persistence.Tests/Ghostagram.Persistence.Tests.csproj" />
+    <Project Path="../../../../../../tests/Ghostagram.Layout.Verification/Ghostagram.Layout.Verification.csproj" />
+    <Project Path="../../../../../../tests/Ghostagram.Server.GraphWorkspace.Tests/Ghostagram.Server.GraphWorkspace.Tests.csproj" />
+    <Project Path="../../../../../../tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj" />
+    <Project Path="../../../../../../tests/Ghostagram.Cutover.Tests/Ghostagram.Cutover.Tests.csproj" />
+    <Project Path="../../../../../../tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj" />
+    <Project Path="../../../../../../tests/Ghostagram.Graph.Conformance.Tests/Ghostagram.Graph.Conformance.Tests.csproj" />
+  </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="../../../../../../benchmarks/Ghostagram.Bridge.Benchmarks/Ghostagram.Bridge.Benchmarks.csproj" />
+  </Folder>
+</Solution>

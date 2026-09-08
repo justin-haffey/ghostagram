@@ -11,12 +11,23 @@ upstream:
   artifact_id: "ARCH-PLATFORM-GHOSTWORX"
   path: "architecture/PLATFORM-ARCHITECTURE.md"
   revision: "None"
+traceability:
+  graph_contract:
+    repository: "ghostworx"
+    artifact_id: "CONTRACT-SEMANTIC-GRAPH-FEDERATION"
+    path: "architecture/contracts/SEMANTIC-GRAPH-AND-FEDERATION.md"
+    revision: "3"
+  system_design:
+    repository: "ghostworx-system"
+    artifact_id: "DESIGN-EPIC-002-FEATURE-004-GHOSTWORX-SYSTEM"
+    path: ".swe/implementations/EPIC-002/FEATURE-004/DESIGN.md"
+    revision: "3"
 owners:
   - "dennis-ritchie (delegated Ghostagram solution architect)"
   - "solution-architect (epic002_ghostagram_solution_architecture)"
 created: "2026-08-28"
-updated: "2026-09-06"
-revision: "2"
+updated: "2026-09-07"
+revision: "3"
 template_version: "2.0.0"
 ---
 
@@ -25,7 +36,7 @@ template_version: "2.0.0"
 
 # Ghostagram Solution Architecture
 
-> Revision 2 is the current Target amendment. The [layered foundation reconciliation](#epic-002-layered-foundation-reconciliation) below replaces the historical P50 Feature/Plan-Pending and delivery sequencing statements. Earlier approval records apply only to their named baseline; revision 2 requires its own independent approval. No implementation or promotion is claimed.
+> Revision 3 is the current Target candidate. The [legacy-local boundary reconciliation](#epic-002-legacy-local-boundary-reconciliation) supersedes only the earlier F004 statements identified below. [Revision 2](SOLUTION-ARCHITECTURE-REVISION-002.md) is preserved byte-exact (SHA256 `c748ab83defec7f7453168f75a90458dd22c48cc700f5e0dff69e1da06dce1cc`). Prior approvals apply to their historical revisions; revision 3 awaits independent approval and remains Target.
 
 ## 1. Decision and Status
 
@@ -658,4 +669,64 @@ Architecture approval keeps lifecycle Target. Source, tests, Evidence, Validatio
 | Decision | Accepted |
 | Recorded | 2026-09-06T22:51:12+00:00 |
 | Evidence | [Independent @elon-musk review](../../../architecture/reviews/EPIC-002-LAYERED-PLANNING-REVIEW.md#consumer-solution-targets-revision-2). Identity-keyed local sidecars remove CLR presentation objects from portable snapshots while preserving existing behavior. F004 refactor, F003 projection and Design/delivery gates remain separate. No conditions; lifecycle remains Target. |
+| Bypass reason | None |
+
+## EPIC-002 Legacy Local Boundary Reconciliation
+
+Revision 3 implementation evidence also fixes the existing host mutation seam: Bridge-created nodes use System `GraphNode` with deferred transaction registration and initial metadata, so System owns rollback rather than a Bridge-owned mutable-node substitute. The named General policy and explicit compilation handle apply the receiving compiler's finite limits. Schema-1 null governance fields and empty vocabulary/reference arrays retain their historical shape. These observed changes are backtracked in Ghostagram F004 Design revision 2 and its Evidence; this Target revision is independently Accepted; lifecycle remains Target.
+
+
+### Authority, evidence and scope
+
+This revision consumes Accepted [CONTRACT-SEMANTIC-GRAPH-FEDERATION revision 3](../../../architecture/contracts/SEMANTIC-GRAPH-AND-FEDERATION.md#revision-3-legacy-local-persistence-boundary), repository `ghostworx`, path `architecture/contracts/SEMANTIC-GRAPH-AND-FEDERATION.md`, SHA256 `19a94d39d14d7c48cd6c3460ed039e9606a9e09436bf40686ab0a4f628701760`. It also consumes Accepted [DESIGN-EPIC-002-FEATURE-004-GHOSTWORX-SYSTEM revision 3](../../ghostworx-system/.swe/implementations/EPIC-002/FEATURE-004/DESIGN.md#revision-3-repair-cycle-1-separate-local-candidates-from-governed-records), repository `ghostworx-system`, path `.swe/implementations/EPIC-002/FEATURE-004/DESIGN.md`, accepted by independent `elon-musk` at `2026-09-07T09:26:45Z` after repair cycle 1, reviewed SHA256 `95460aa9b61b2eb825ed62757e86a4989f40ce8845aac99e29dd5ba4b7813c50`. Final accepted file SHA256 is `563711439a2e5f15810d72b622bfb82cd8c0cc1f5f7a241ec7235180a1d69432` after status-only transcription. Its six accepted System Target successors remain authoritative for System ownership.
+
+The local [boundary findings](../.swe/implementations/EPIC-002/FEATURE-004/checks/source-ready/persistence-boundary-findings.md) compare actual baseline System source and Ghostagram host calls. The old host saved schema 1, retained custom-kind equality and extensions, included complete available history, and tolerated only unavailable retained history. A schema-2 conformance profile cannot preserve those facts. Existing diagnostic baselines and implementation source are evidence inputs, not approval or completed delivery.
+
+This amendment refines only existing F004 AC-007/AC-009 consumers. It supersedes revision 2's broad statements that every existing graph projection/compiler/runtime snapshot is an admitted portable record and that host persistence necessarily uses the governed codec. It does not alter F003 composition input authority, semantics, module allocation, or delivery gates. The existing accepted Epic/Concept/impact assessment, ADR-009 and Feature/Plan revision-1 locators above continue to govern the assignment.
+
+### Representation and dependency boundary
+
+- System D0-D3 governed records retain full destination admission. A GraphLocal candidate cannot be wrapped, cast, subclassed, reprofiled or exposed through a governed snapshot/history accessor to imply admission.
+- The existing local graph projection, delta, command and compilation paths consume the separate immutable Graph.Serialization `GraphLocalSnapshot`, local node/relationship and local change/history families. They share scalar IDs/kinds and `GraphSemanticValue` data, not governed aggregate admission. Projection functions remain free of live-store calls; an outward immutable structural DTO is not a runtime store.
+- Already governed input may enter local inspection through the owner's explicit one-way conversion, which loses admission status. Any reverse use requires `GraphDestinationAdmission` and complete destination checks, including origin, qualified vocabulary, revisions/history, values, extensions and bounds. Ghostagram does not supply an identity alias or infer trust from namespace text.
+- Existing command/host wiring references Graph.Runtime for local stores, transactions, guarded capture and explicit materialization. Local projection reads the immutable candidate only. Runtime metadata ingress keeps its separately owned normalization policy; the pure projection path does not normalize arbitrary CLR values.
+- Execution uses System's local structural algorithms and a private Ghostagram sidecar keyed by node/edge IDs. An explicit immutable `GraphCompilationInput` carries the local snapshot and frozen sidecar together. Direct and two-step diagram compilation retain fingerprint, nodes/properties/types, port endpoints, diagnostics and inferred-guard parity. Source and previous-output mutation cannot change captured input. No hidden cache or diagram object enters System metadata.
+
+### Local persistence and finite capacity
+
+The host selects `IGraphLocalDocumentCodec` on the existing `GraphJsonSerializer` engine and explicit `GraphLocalExchangeContext`. Capture uses `CaptureLocal` with complete history and `AllowUnavailableSnapshotFallback`; only unavailable retained history permits snapshot-only output. `MaterializeLocal` uses a fresh explicitly supplied empty strong-retention target and factory, with atomic unchanged-state failure. Local validation/provenance is not semantic authority. The caller chooses limits, origin and local mode independently of input bytes. Future/schema-2 input is not silently downgraded.
+
+Schema-1 bytes, absent authority/profile fields, existing custom and already-qualified kind identities, graph IDs/revisions, metadata, opaque extensions and supported v0-to-v1 migration retain their historical meaning. There is no host migration to a new wire profile. `GraphLocalLimits.PersistenceV1` preserves the existing codec defaults: 4 MiB input, 100,000 nodes, 250,000 relationships, 100,000 history batches, 1,024 metadata entries/extensions and existing nested-value/parse rules. These maxima do not promise that every combination fits a single document. Typed runtime CLR ingress remains governed by its prior independent value limits.
+
+For in-memory diagram authoring, revision 3 proposes an explicit finite **general local structural capacity** of 100,000 nodes and 250,000 relationships, supplied through the owner's `GraphLocalLimits` value and exposed by the local compiler API with a named General default. This is a new reviewed finite policy where the old diagram adapter had no graph-count ceiling; it is not a claim of unbounded parity. It preserves practical behavior above 256 nodes/1,024 edges and permits caller-supplied finite structural limits. It is not `ConformanceSmall`, a negotiated compatibility profile or a vocabulary grant. Other local structural/value bounds must be named truthfully in Design revision 2, derived from their actual owners rather than silently imported from a small semantic profile. A failed capacity check returns no partial snapshot, sidecar or compilation.
+
+### Verification and phase gates
+
+Retain all existing passing observations and the original diagnostic baseline. Add source-grounded checks for schema-1 exact/absent-field shape, custom-kind descriptor save/reload/edit, node/document extensions, complete history and history-unavailable-only fallback, unchanged governed v2/profile behavior, invalid origin/vocabulary admission without partial output, and source/provenance preservation. Capacity tests assert exact General defaults, exercise a real default input above 256 nodes and 1,024 edges, and use reachable exact/plus-one/invalid smaller caller limits; Design identifies any default-only implementation branch requiring additional coverage. Preserve the existing handle parity and nested immutability tests.
+
+Independent approval accepts this Target only. Review Solution before Package; the F003 Module's governing-input and exclusion rules remain unchanged. Ghostagram F004 Design revision 2 requires these applicable accepted successors and the accepted System revision-3 seam before affected implementation. Source/tests are frozen while authoring/reviewing these artifacts; builds additionally require the parent's shared slot. Complete Evidence and independent local Validation still precede portfolio acceptance or architecture promotion.
+
+```mermaid
+flowchart LR
+  Host["Existing Ghostagram host"] --> Runtime["Explicit local capture / materialization"]
+  Host --> Codec["Existing codec: local schema-1 methods"]
+  Runtime --> Local["Separate local structural candidates"]
+  Codec --> Local
+  Local --> Projection["Local Bridge / structural compiler"]
+  Projection --> Sidecar["Private Ghostagram presentation context"]
+  Governed["Governed input"] -->|"explicit inspection; loses admission"| Local
+  Local -.->|"explicit complete destination admission"| Gate["System destination admission"]
+  Gate --> Governed
+```
+
+### Revision 3 Approval Record
+
+| Field | Value |
+|---|---|
+| Mode | auto-approve |
+| Author | ghostagram_bridge (delegated child author) |
+| Approver | elon-musk (`/root/elon_bootstrap_diagnosis`) |
+| Decision | Accepted; cycle 0, no conditions |
+| Recorded | 2026-09-07T10:23:15Z |
+| Evidence | [Independent decision transcription](../.swe/implementations/EPIC-002/FEATURE-004/checks/candidate-release/target-review-decision.json); reviewed SHA-256 `6edcde8945e63d6c16821c7007bad72af98a66dc1c84903f6c528bbdedd64d8b`. Architecture acceptance only; no delivery Validation or lifecycle promotion. |
 | Bypass reason | None |

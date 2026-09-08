@@ -1,0 +1,7 @@
+PASS Bridge services resolve through Ghostagram.Server DI
+PASS graph workspace snapshots project GraphStore plus presentation sidecar state
+PASS authoritative edge recovery browser-temp-edge -> 4290a48c9121488989e0db08de792e6d
+PASS stale proposals return authoritative recovery state
+PASS bounded workspace lifecycle and API routes
+PASS durable graph and presentation restart round trip
+Ghostagram.Server graph workspace integration tests passed.

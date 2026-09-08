@@ -1,0 +1,17 @@
+[
+  {
+    "name": "composition",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Bridge.Tests.dll",
+      "--profile",
+      "composition"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 2.516,
+    "stdout": "composition.stdout.log",
+    "stderr": "composition.stderr.log"
+  }
+]

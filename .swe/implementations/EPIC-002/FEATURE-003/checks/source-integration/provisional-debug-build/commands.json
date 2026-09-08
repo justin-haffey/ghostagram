@@ -1,0 +1,36 @@
+[
+  {
+    "name": "build-Ghostagram.Bridge.Tests",
+    "command": [
+      "dotnet",
+      "build",
+      "tests\\Ghostagram.Bridge.Tests\\Ghostagram.Bridge.Tests.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 3.735,
+    "stdout": "build-Ghostagram.Bridge.Tests.stdout.log",
+    "stderr": "build-Ghostagram.Bridge.Tests.stderr.log"
+  },
+  {
+    "name": "composition",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Bridge.Tests.dll",
+      "--profile",
+      "composition"
+    ],
+    "exitCode": null,
+    "ownedProcessExitCode": 1,
+    "forcedTermination": "owned-unhandled-exception-hang",
+    "seconds": 6.859,
+    "stdout": "composition.stdout.log",
+    "stderr": "composition.stderr.log"
+  }
+]

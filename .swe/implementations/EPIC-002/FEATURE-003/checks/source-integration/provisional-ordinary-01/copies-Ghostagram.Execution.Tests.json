@@ -1,0 +1,17 @@
+[
+  {
+    "path": "tests\\Ghostagram.Execution.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "expected": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71",
+    "actual": "9c1fef9caacbcb0daeb66f7524bbed51b306a7e836077a8ea181264493843c71"
+  },
+  {
+    "path": "tests\\Ghostagram.Execution.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Runtime.dll",
+    "expected": "9e1c3bbbfb4d4ccc48a6cf46271354ec69297de9bbb9137df997ca195c364073",
+    "actual": "9e1c3bbbfb4d4ccc48a6cf46271354ec69297de9bbb9137df997ca195c364073"
+  },
+  {
+    "path": "tests\\Ghostagram.Execution.Tests\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "expected": "939e0654943a2c094186a960d037675f48e2f7dcad1870894d63fdcadde3b5ce",
+    "actual": "939e0654943a2c094186a960d037675f48e2f7dcad1870894d63fdcadde3b5ce"
+  }
+]

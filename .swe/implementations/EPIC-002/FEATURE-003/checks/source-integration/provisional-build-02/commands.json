@@ -1,0 +1,59 @@
+[
+  {
+    "name": "build-Ghostagram.Layout.Verification",
+    "command": [
+      "dotnet",
+      "build",
+      "tests\\Ghostagram.Layout.Verification\\Ghostagram.Layout.Verification.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 2.829,
+    "stdout": "build-Ghostagram.Layout.Verification.stdout.log",
+    "stderr": "build-Ghostagram.Layout.Verification.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Persistence.Tests",
+    "command": [
+      "dotnet",
+      "build",
+      "tests\\Ghostagram.Persistence.Tests\\Ghostagram.Persistence.Tests.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 2.406,
+    "stdout": "build-Ghostagram.Persistence.Tests.stdout.log",
+    "stderr": "build-Ghostagram.Persistence.Tests.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Server.GraphWorkspace.Tests",
+    "command": [
+      "dotnet",
+      "build",
+      "tests\\Ghostagram.Server.GraphWorkspace.Tests\\Ghostagram.Server.GraphWorkspace.Tests.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 2.953,
+    "stdout": "build-Ghostagram.Server.GraphWorkspace.Tests.stdout.log",
+    "stderr": "build-Ghostagram.Server.GraphWorkspace.Tests.stderr.log"
+  }
+]

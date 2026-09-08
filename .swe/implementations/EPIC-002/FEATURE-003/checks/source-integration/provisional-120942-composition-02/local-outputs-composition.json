@@ -1,0 +1,22 @@
+[
+  {
+    "path": "tests\\Ghostagram.Bridge.Tests\\bin\\Release\\net10.0\\Ghostagram.Bridge.dll",
+    "sha256": "d337c226d25aab775c7033c162f7214fac02a1c14f3951909b4ceff648c17194"
+  },
+  {
+    "path": "tests\\Ghostagram.Bridge.Tests\\bin\\Release\\net10.0\\Ghostagram.Bridge.Tests.dll",
+    "sha256": "903e18221ddb237f74e403a3c4ba67de5ebaac36eca5ad955bb1de5cca736b53"
+  },
+  {
+    "path": "tests\\Ghostagram.Bridge.Tests\\bin\\Release\\net10.0\\Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests\\Ghostagram.Bridge.Tests\\bin\\Release\\net10.0\\Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests\\Ghostagram.Bridge.Tests\\bin\\Release\\net10.0\\Ghostagram.Execution.dll",
+    "sha256": "7efb6f6ede10013ab17aedef408c9bede65435bc1824927a216edbb0b355651f"
+  }
+]

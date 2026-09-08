@@ -1,0 +1,1 @@
+The first archive comparison attempt exited 1 before writing a result because it assumed every envelope exposed top-level `cases`. Graph does; Variable and Semantic Link envelopes expose `record.cases`. No execution evidence or envelope was changed. The comparison reader was corrected to support both owner formats before the second attempt.

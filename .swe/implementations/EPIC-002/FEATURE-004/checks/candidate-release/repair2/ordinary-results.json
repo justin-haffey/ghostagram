@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Ghostagram.Bridge.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Bridge.Tests/bin/Release/net10.0/Ghostagram.Bridge.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.469,
+    "stdout": "Ghostagram.Bridge.Tests.stdout.log",
+    "stderr": "Ghostagram.Bridge.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Cutover.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Cutover.Tests/bin/Release/net10.0/Ghostagram.Cutover.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.156,
+    "stdout": "Ghostagram.Cutover.Tests.stdout.log",
+    "stderr": "Ghostagram.Cutover.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Server.GraphWorkspace.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.GraphWorkspace.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.032,
+    "stdout": "Ghostagram.Server.GraphWorkspace.Tests.stdout.log",
+    "stderr": "Ghostagram.Server.GraphWorkspace.Tests.stderr.log"
+  }
+]

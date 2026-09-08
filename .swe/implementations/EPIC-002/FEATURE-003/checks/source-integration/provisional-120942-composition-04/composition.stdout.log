@@ -1,0 +1,6 @@
+PASS composition foundation: immutable sidecars, exact bounds, cancellation, identity and freshness
+PASS composition projection: real public hierarchy, inert surfaces, typed metadata, refresh and failure containment
+PASS actual Encode/Migrate/Inspect/Negotiate diagnostic projection and explicit verified Encode path
+PASS composition boundaries: 157 actual admission and no-partial-output cases
+PASS projection serialized bytes: exact 1048576; +1 rejected; 16 real compiler invocations
+Composition foundation and projection behavior tests passed.

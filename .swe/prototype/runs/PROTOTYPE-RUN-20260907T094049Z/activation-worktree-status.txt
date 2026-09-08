@@ -1,0 +1,28 @@
+ M Ghostagram.slnx
+ M README.md
+ M architecture/SOLUTION-ARCHITECTURE.md
+ M architecture/packages/Ghostagram.Bridge/PACKAGE-ARCHITECTURE.md
+ M benchmarks/Ghostagram.Bridge.Benchmarks/Program.cs
+ M src/Ghostagram.Bridge/CommandAdapter.cs
+ M src/Ghostagram.Bridge/Ghostagram.Bridge.csproj
+ M src/Ghostagram.Bridge/Projection.cs
+ M src/Ghostagram.Execution/ExecutionContracts.cs
+ M src/Ghostagram.Execution/Ghostagram.Execution.csproj
+ M src/Ghostagram.Execution/GraphCompiler.cs
+ M src/Ghostagram.Server/Ghostagram.Server.csproj
+ M src/Ghostagram.Server/GraphWorkspaces/GraphWorkspaceService.cs
+ M tests/Ghostagram.Bridge.Tests/Ghostagram.Bridge.Tests.csproj
+ M tests/Ghostagram.Bridge.Tests/Program.cs
+ M tests/Ghostagram.Cutover.Tests/Ghostagram.Cutover.Tests.csproj
+ M tests/Ghostagram.Cutover.Tests/Program.cs
+ M tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj
+ M tests/Ghostagram.Execution.Tests/Program.cs
+ M tests/Ghostagram.Graph.Conformance/Feature002BridgeHarness.cs
+ M tests/Ghostagram.Graph.Conformance/Feature003BridgeHarness.cs
+ M tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj
+ M tests/Ghostagram.Graph.Conformance/GhostagramBridgeHarness.cs
+ M tests/Ghostagram.Server.GraphWorkspace.Tests/Ghostagram.Server.GraphWorkspace.Tests.csproj
+ M tests/Ghostagram.Server.GraphWorkspace.Tests/Program.cs
+?? .swe/implementations/EPIC-002/FEATURE-004/checks/
+?? architecture/SOLUTION-ARCHITECTURE-REVISION-002.md
+?? architecture/packages/Ghostagram.Bridge/PACKAGE-ARCHITECTURE-REVISION-002.md

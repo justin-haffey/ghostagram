@@ -1,3 +1,5 @@
+using Ghostworx.System.Variable.Runtime;
+using Ghostworx.System.Graph.Runtime;
 using System.Text;
 using System.Text.Json;
 using Ghostagram.Bridge;
@@ -254,7 +256,7 @@ public static class Feature002BridgeHarness
             "definition-replaced",
             null,
             null);
-        var publicBytes = new VariableJsonSerializer().Serialize(fact);
+        var publicBytes = new RuntimeVariableJsonSerializer().Serialize(fact);
         state.Node.Set("variableInvalidation", Encoding.UTF8.GetString(publicBytes));
         var authoritative = state.Graph.CaptureSnapshot();
         var batch = state.Graph.ReadChangesSince(baseVersion).Single();

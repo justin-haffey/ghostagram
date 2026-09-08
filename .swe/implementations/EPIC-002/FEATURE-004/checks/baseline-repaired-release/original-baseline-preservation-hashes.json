@@ -1,0 +1,138 @@
+[
+  {
+    "path": "baseline-receipt.json",
+    "sha256": "9f5fada82aaec43a743dd4751bbb7be674e989a8fbafb106b2136d93c69f8d07"
+  },
+  {
+    "path": "build-output-hashes.json",
+    "sha256": "626982954fc63129b57fb7c2160398c4770feb5a8ed55d768d1b57dd82f2e0cb"
+  },
+  {
+    "path": "build-result.json",
+    "sha256": "a07a5a6119527ec95af57d92e9c3517c8d1e84b916c297eafc45d4ae6fb46f14"
+  },
+  {
+    "path": "build.log",
+    "sha256": "7b10f45c31c3757f908aba5186c8b5887916061d087533c0a07d043b4f31e1eb"
+  },
+  {
+    "path": "conformance-results.json",
+    "sha256": "c8623530b5222a6e5596814d3fbc164ee98bcd275e0a3eac56b7a639cc565faf"
+  },
+  {
+    "path": "context.json",
+    "sha256": "30129d1ba41a25694603d02e2388f9014cac658219f7452bdbabeba30b5b2b7c"
+  },
+  {
+    "path": "Execution-process-termination.json",
+    "sha256": "dda069a9a8555392f49b152be99b8949529a86dca15ec0570b06b35bd9ec63a8"
+  },
+  {
+    "path": "ghostagram-source-hashes.json",
+    "sha256": "0f4a0644678608c014361c859889b41927f2159302c6b84772ce7e766f7e5b19"
+  },
+  {
+    "path": "Ghostagram.Bridge.Tests.log",
+    "sha256": "4ce943d00be22e8961297932245319e437b4420b04786ec64083a8175e88fe00"
+  },
+  {
+    "path": "Ghostagram.Core.Tests.log",
+    "sha256": "33ac73af8b75e300947aebd3ffbc0f15bd1ca459261fabf939d29d8de246dde3"
+  },
+  {
+    "path": "Ghostagram.Cutover.Tests.log",
+    "sha256": "c7c25c30ebffac02f58a24f20f87d1e11c4354844059c99cc887aed9c87eb38f"
+  },
+  {
+    "path": "Ghostagram.Execution.Tests.log",
+    "sha256": "dc391e469c8eac9f8761244c1c8a0041077d467fc0f7c2e73ab7a5fe1ef37d59"
+  },
+  {
+    "path": "Ghostagram.Layout.Verification.log",
+    "sha256": "5bdb16f3e046602efdb4a3cf5bb64c8444e9120897dc998b50d5c7509e5b181f"
+  },
+  {
+    "path": "Ghostagram.Persistence.Tests.log",
+    "sha256": "59fdb0c60e8bb1c4649d8f44ba3bb29764e4cc0336c25eef1ce3ddb3f4a363b0"
+  },
+  {
+    "path": "Ghostagram.Server.GraphWorkspace.Tests.log",
+    "sha256": "fbb020ff3608dbcd91a40d9c274220cedb04a949aef3cdd5bda04de8c33dd99e"
+  },
+  {
+    "path": "ghostworx-system-source-hashes.json",
+    "sha256": "fc4e4a89647351cc19cc468b6aa592d43f0baeb3270f65c6bd29ea5ccd198f8f"
+  },
+  {
+    "path": "graph-runner.stderr.log",
+    "sha256": "4209691b1afe90fd78e3818c1f11a6f87ef4c2c0a5d4e4ed7db23834c75ad8af"
+  },
+  {
+    "path": "graph-runner.stdout.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "graph-tests.stderr.log",
+    "sha256": "d6462d87a073d9b801cef6888ec75248fc866beda311944ec085e4ab7fa7de94"
+  },
+  {
+    "path": "graph-tests.stdout.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "ordinary-harness-results.json",
+    "sha256": "e9c869abe915762c4a4b561fa5f896253adcbe410d0b1b4b46d1c9e886e2d131"
+  },
+  {
+    "path": "output-fingerprint.json",
+    "sha256": "ee39cef59b226a9dd96d85248cd99fde4849ae290e99223252062757bc8d99a4"
+  },
+  {
+    "path": "runtime-output-hashes.json",
+    "sha256": "bd9652da03582ebadd184e6dd2bda7cee9574f4474514d5e58c5feb86348d17f"
+  },
+  {
+    "path": "semantic-links-result.json",
+    "sha256": "d16f3eb3e5f56ce13a7da3ec1d28815e8f2f4fd224816b7101a4eb44b4e194d9"
+  },
+  {
+    "path": "semantic-links-runner.stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "semantic-links-runner.stdout.log",
+    "sha256": "ce883632541afc1e13c401bcb97b98105b90bfebba01cbf646ae0e48605830ef"
+  },
+  {
+    "path": "semantic-links-tests.stderr.log",
+    "sha256": "a3f97e2cb1351efcdf30c28776e0ea785895e4ab10feefc35192f376a587eb86"
+  },
+  {
+    "path": "semantic-links-tests.stdout.log",
+    "sha256": "e4d60459217b4bc8e557fa14950e2d29f8f1ddf7e15fff7e4411376964f171dd"
+  },
+  {
+    "path": "source-fingerprints.json",
+    "sha256": "91e1fff2edcba711e2f21e52dc06350c3aaf5935b08d308c31ecda5beef0e376"
+  },
+  {
+    "path": "variable-result.json",
+    "sha256": "f03f6e38fb2321a9a7923cc5fa459e799b9ac32918e1cdf838a296276e1013d3"
+  },
+  {
+    "path": "variable-runner.stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "variable-runner.stdout.log",
+    "sha256": "5b7ad3c8f34bd3bc0c0fab068300c7264e1dbedc0079be5340a246e18b3f11cb"
+  },
+  {
+    "path": "variable-tests.stderr.log",
+    "sha256": "d7605ce27059c6336f65a15fafe939a997472feb612ed5185ace0261dc129776"
+  },
+  {
+    "path": "variable-tests.stdout.log",
+    "sha256": "066a9cda21c9afb241efbd78180adf902e5554b82163abdcc88996c27bd823ab"
+  }
+]

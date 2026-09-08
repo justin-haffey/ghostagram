@@ -1,0 +1,8 @@
+{
+  "processId": 23432,
+  "parentProcessId": 26200,
+  "command": "dotnet tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Execution.Tests.dll",
+  "observedFailure": "Unhandled ArgumentException: CLR type Ghostagram.Core.DiagramNode is not a semantic value",
+  "terminationReason": "Failed process remained live after emitting the full unhandled exception; exact command and parent PID verified by Win32_Process",
+  "recordedAt": "2026-09-07T01:15:34.4514487+00:00"
+}

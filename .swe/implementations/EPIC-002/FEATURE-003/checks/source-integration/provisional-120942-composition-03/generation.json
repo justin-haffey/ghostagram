@@ -1,0 +1,7 @@
+{
+  "path": "../ghostworx-system/.swe/implementations/EPIC-002/FEATURE-001/checks/provisional-20260907T120942Z",
+  "manifestSha256": "d716b81b89c9cc5152e4a3b577ee5381056f52f3b88981b8ceacc236b92bb273",
+  "sourceFingerprint": "5a70b636b93f11b5a85eea82ffccf1900e3292fc26ce260f690634b159e657da",
+  "childSourceFingerprint": "bd0b20de57f05a1fbf76b8da49599ec93bc911e0a632809308c04a621e764ac2",
+  "scope": "provisional child integration; not acceptance"
+}

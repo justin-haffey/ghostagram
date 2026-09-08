@@ -1,11 +1,12 @@
+using LocalGraph = Ghostworx.System.Graph.Serialization;
 using System.Text.Json;
 using System.Reflection;
 using Ghostagram.Core;
 using Ghostagram.Execution;
 using Ghostagram.NodeSets.Maf;
 using Ghostagram.NodeSets.UML;
-using Ghostworx.System.Graph.Features;
-using Ghostworx.System.Graph.Validation;
+using Ghostworx.System.Graph.Runtime.Features;
+using Ghostworx.System.Graph.Runtime.Validation;
 using SystemGraph = Ghostworx.System.Graph;
 
 #pragma warning disable CS0618 // This suite intentionally proves compatibility-adapter parity and obsolescence.
@@ -118,6 +119,9 @@ var legacyCompileMethod = typeof(IGraphCompiler).GetMethod(nameof(IGraphCompiler
 var engineSnapshotCompileMethod = typeof(IGraphExecutionEngine).GetMethod(nameof(IGraphExecutionEngine.Compile), [typeof(SystemGraph.GraphSnapshot), typeof(GraphCompileOptions)]);
 var engineLegacyCompileMethod = typeof(IGraphExecutionEngine).GetMethod(nameof(IGraphExecutionEngine.Compile), [typeof(DiagramDocument), typeof(GraphCompileOptions)]);
 Assert(snapshotCompileMethod is not null && engineSnapshotCompileMethod is not null, "Execution contracts expose GraphSnapshot compilation as the graph-native call surface.");
+Assert(typeof(IGraphSnapshotCompiler).GetMethod(nameof(IGraphSnapshotCompiler.Compile), [typeof(LocalGraph.GraphLocalSnapshot), typeof(GraphCompileOptions)]) is not null &&
+       typeof(IGraphExecutionEngine).GetMethod(nameof(IGraphExecutionEngine.Compile), [typeof(LocalGraph.GraphLocalSnapshot), typeof(GraphCompileOptions)]) is not null,
+    "Execution contracts expose a distinct local structural input alongside the governed snapshot boundary.");
 Assert(legacyCompileMethod?.GetCustomAttribute<ObsoleteAttribute>() is not null && engineLegacyCompileMethod?.GetCustomAttribute<ObsoleteAttribute>() is not null,
     "Every DiagramDocument compilation contract is explicitly marked as a compatibility adapter.");
 Assert(typeof(GraphExecutionEngine).GetConstructors().Single().GetParameters()[0].ParameterType == typeof(IGraphSnapshotCompiler),
@@ -139,7 +143,7 @@ Assert(dagResult.Graph.Stages.Count == 2, "Ready components are grouped into det
 Assert(dagResult.Graph.Stages.Where(stage => stage.Order == 1).SelectMany(stage => stage.NodeIds).SequenceEqual(["b", "c"]), "Independent successors share the same concurrent stage order.");
 var dagProjection = compiler.ProjectSnapshot(dag);
 Assert(dagProjection.Succeeded, "A valid diagram projects to an immutable graph snapshot.");
-var graphNativeDag = snapshotCompiler.Compile(dagProjection.Snapshot!, new(GraphCompileProfile.DagOnly));
+var graphNativeDag = snapshotCompiler.Compile(dagProjection.Input!, new(GraphCompileProfile.DagOnly));
 Assert(graphNativeDag.Succeeded, "The graph-native compiler accepts the projected DAG.");
 Assert(StageSignature(graphNativeDag) == StageSignature(dagResult), "Diagram and graph-native DAG compilation produce identical stages.");
 Assert(graphNativeDag.Graph!.PlanFingerprint == dagResult.Graph.PlanFingerprint, "Diagram and graph-native DAG compilation produce identical fingerprints.");
@@ -150,40 +154,41 @@ var nativeKind = SystemGraph.NodeKind.Define("Ghostagram.Execution.Tests", "Nati
 var nativeRelationshipKind = SystemGraph.RelationshipKind.Define("Ghostagram.Execution.Tests", "Dependency");
 var nativeNodes = new[]
 {
-    new SystemGraph.GraphNodeSnapshot(nativeA, nativeKind, "A", new Dictionary<string, object?> { [GraphExecutionMetadata.LoopController] = true }),
-    new SystemGraph.GraphNodeSnapshot(nativeB, nativeKind, "B", new Dictionary<string, object?>())
+    new LocalGraph.GraphLocalNodeSnapshot(nativeA, nativeKind, "A", new Dictionary<string, SystemGraph.GraphSemanticValue> { [GraphExecutionMetadata.LoopController] = SystemGraph.GraphSemanticValue.Boolean(true) }),
+    new LocalGraph.GraphLocalNodeSnapshot(nativeB, nativeKind, "B", new Dictionary<string, SystemGraph.GraphSemanticValue>())
 };
-var nativeForward = new SystemGraph.GraphRelationshipSnapshot(
+var nativeForward = new LocalGraph.GraphLocalRelationshipSnapshot(
     new(new SystemGraph.EdgeId(Guid.Parse("20000000-0000-0000-0000-000000000001")), nativeA, nativeB, nativeRelationshipKind),
-    new Dictionary<string, object?>());
-var nativeSnapshot = new SystemGraph.GraphSnapshot(
-    new(Guid.Parse("30000000-0000-0000-0000-000000000001")), 1, nativeNodes, [nativeForward]);
+    new Dictionary<string, SystemGraph.GraphSemanticValue>());
+var nativeGraphId = new SystemGraph.NodeId(Guid.Parse("30000000-0000-0000-0000-000000000001"));
+var nativeAuthority = new Ghostworx.System.Primitives.SemanticAuthority("ghostagram.execution.tests");
+var nativeSnapshot = new LocalGraph.GraphLocalSnapshot(nativeGraphId, 1, nativeNodes, [nativeForward], nativeAuthority, LocalGraph.GraphLocalLimits.PersistenceV1);
 var directNativeDag = snapshotCompiler.Compile(nativeSnapshot, new(GraphCompileProfile.DagOnly));
 Assert(directNativeDag.Succeeded && directNativeDag.Graph!.Stages.Count == 2, "The graph-native compiler accepts snapshots without diagram adapter metadata.");
-var nativeReverse = new SystemGraph.GraphRelationshipSnapshot(
+var nativeReverse = new LocalGraph.GraphLocalRelationshipSnapshot(
     new(new SystemGraph.EdgeId(Guid.Parse("20000000-0000-0000-0000-000000000002")), nativeB, nativeA, nativeRelationshipKind),
-    new Dictionary<string, object?>());
+    new Dictionary<string, SystemGraph.GraphSemanticValue>());
 var directNativeCycle = snapshotCompiler.Compile(
-    new SystemGraph.GraphSnapshot(nativeSnapshot.GraphId, 2, nativeNodes, [nativeForward, nativeReverse]),
+    new LocalGraph.GraphLocalSnapshot(nativeSnapshot.GraphId, 2, nativeNodes, [nativeForward, nativeReverse], nativeAuthority, LocalGraph.GraphLocalLimits.PersistenceV1),
     new(GraphCompileProfile.BoundedCycles, [new(nativeA.ToString(), 4)]));
 Assert(directNativeCycle.Succeeded && directNativeCycle.Graph!.Stages.Single().LoopGuards!.Single() == new LoopGuard(nativeA.ToString(), 4), "A native snapshot expresses its explicit bounded-cycle guard with the stable node ID.");
 var unmarkedNativeNodes = nativeNodes.Select(node => node.Id == nativeA
-    ? new SystemGraph.GraphNodeSnapshot(node.Id, node.Kind, node.NodeName, new Dictionary<string, object?>()) : node).ToArray();
+    ? new LocalGraph.GraphLocalNodeSnapshot(node.Id, node.Kind, node.NodeName, new Dictionary<string, SystemGraph.GraphSemanticValue>()) : node).ToArray();
 var unmarkedNativeCycle = snapshotCompiler.Compile(
-    new SystemGraph.GraphSnapshot(nativeSnapshot.GraphId, 2, unmarkedNativeNodes, [nativeForward, nativeReverse]),
+    new LocalGraph.GraphLocalSnapshot(nativeSnapshot.GraphId, 2, unmarkedNativeNodes, [nativeForward, nativeReverse], nativeAuthority, LocalGraph.GraphLocalLimits.PersistenceV1),
     new(GraphCompileProfile.BoundedCycles, [new(nativeA.ToString(), 4)]));
 Assert(unmarkedNativeCycle.Diagnostics.Any(diagnostic => diagnostic.Code == GraphDiagnosticCodes.CycleGuardInvalid),
     "Native bounded-cycle guards require the explicit semantic loop-controller marker.");
 var unsupportedNativeMetadata = nativeNodes.Select(node => node.Id == nativeB
-    ? new SystemGraph.GraphNodeSnapshot(node.Id, node.Kind, node.NodeName, new Dictionary<string, object?> { ["unsafe"] = new UnsupportedFingerprintMetadata() }) : node).ToArray();
+    ? new LocalGraph.GraphLocalNodeSnapshot(node.Id, node.Kind, node.NodeName, new Dictionary<string, SystemGraph.GraphSemanticValue> { ["unsafe"] = SystemGraph.GraphSemanticValue.Bytes(new byte[] { 1 }) }) : node).ToArray();
 var unsupportedNative = snapshotCompiler.Compile(
-    new SystemGraph.GraphSnapshot(nativeSnapshot.GraphId, 1, unsupportedNativeMetadata, [nativeForward]),
+    new LocalGraph.GraphLocalSnapshot(nativeSnapshot.GraphId, 1, unsupportedNativeMetadata, [nativeForward], nativeAuthority, LocalGraph.GraphLocalLimits.PersistenceV1),
     new(GraphCompileProfile.DagOnly));
 Assert(unsupportedNative.Diagnostics.Single().Code == GraphDiagnosticCodes.UnsupportedMetadata,
-    "Graph-native compilation rejects metadata without an explicit canonical fingerprint representation.");
+    "Graph-native compilation rejects typed metadata without an explicit canonical fingerprint representation.");
 var weightedNative = snapshotCompiler.Compile(
-    new SystemGraph.GraphSnapshot(nativeSnapshot.GraphId, 1, nativeNodes,
-        [new SystemGraph.GraphRelationshipSnapshot(nativeForward.Relationship, new Dictionary<string, object?> { ["weight"] = 2m })]),
+    new LocalGraph.GraphLocalSnapshot(nativeSnapshot.GraphId, 1, nativeNodes,
+        [new LocalGraph.GraphLocalRelationshipSnapshot(nativeForward.Relationship, new Dictionary<string, SystemGraph.GraphSemanticValue> { ["weight"] = SystemGraph.GraphSemanticValue.Decimal(2m) })], nativeAuthority, LocalGraph.GraphLocalLimits.PersistenceV1),
     new(GraphCompileProfile.DagOnly));
 Assert(weightedNative.Succeeded && weightedNative.Graph!.PlanFingerprint != directNativeDag.Graph!.PlanFingerprint,
     "Durable relationship metadata participates in graph-native plan fingerprints.");
@@ -195,7 +200,7 @@ Assert(rejectedCycle.Diagnostics.Single().Code == GraphDiagnosticCodes.CycleNotA
 Assert(rejectedCycle.Diagnostics.Single().Message == "DAG compilation does not allow a cycle involving: a, b.", "Cycle diagnostics contain deterministic System SCC members.");
 var cycleProjection = compiler.ProjectSnapshot(cycle);
 Assert(cycleProjection.Succeeded, "A structurally valid cyclic diagram projects before policy validation.");
-var graphNativeRejectedCycle = snapshotCompiler.Compile(cycleProjection.Snapshot!, new(GraphCompileProfile.DagOnly));
+var graphNativeRejectedCycle = snapshotCompiler.Compile(cycleProjection.Input!, new(GraphCompileProfile.DagOnly));
 Assert(DiagnosticSignature(graphNativeRejectedCycle) == DiagnosticSignature(rejectedCycle), "Diagram and graph-native cycle rejection produce identical diagnostics.");
 
 var unguarded = compiler.Compile(cycle, new(GraphCompileProfile.BoundedCycles));
@@ -212,7 +217,7 @@ var controlledCycle = cycle with
 var guarded = compiler.Compile(controlledCycle, new(GraphCompileProfile.BoundedCycles, [new("a", 5)]));
 Assert(guarded.Succeeded && guarded.Graph!.Stages.Single().LoopGuards!.Single() == new LoopGuard("a", 5), "A registered positive loop guard compiles with its SCC.");
 var controlledProjection = compiler.ProjectSnapshot(controlledCycle);
-var graphNativeGuarded = snapshotCompiler.Compile(controlledProjection.Snapshot!, new(GraphCompileProfile.BoundedCycles, [new("a", 5)]));
+var graphNativeGuarded = snapshotCompiler.Compile(controlledProjection.Input!, new(GraphCompileProfile.BoundedCycles, [new("a", 5)]));
 Assert(graphNativeGuarded.Succeeded, "The graph-native compiler accepts an explicitly guarded cycle.");
 Assert(StageSignature(graphNativeGuarded) == StageSignature(guarded), "Diagram and graph-native bounded-cycle compilation produce identical stages and guards.");
 Assert(graphNativeGuarded.Graph!.PlanFingerprint == guarded.Graph!.PlanFingerprint, "Diagram and graph-native bounded-cycle compilation produce identical fingerprints.");
@@ -222,7 +227,7 @@ var inferredGuard = compiler.Compile(controlledCycle, new(GraphCompileProfile.Bo
 Assert(inferredGuard.Succeeded && inferredGuard.Graph!.Stages.Single().LoopGuards!.Single() == new LoopGuard("a", 3), "Persisted loop-guard nodes compile without a duplicate hidden option.");
 var native = compiler.Compile(cycle, new(GraphCompileProfile.AdapterNative));
 Assert(native.Succeeded, "Adapter-native compilation permits agentic loops.");
-var graphNativeAdapter = snapshotCompiler.Compile(cycleProjection.Snapshot!, new(GraphCompileProfile.AdapterNative));
+var graphNativeAdapter = snapshotCompiler.Compile(cycleProjection.Input!, new(GraphCompileProfile.AdapterNative));
 Assert(graphNativeAdapter.Succeeded && StageSignature(graphNativeAdapter) == StageSignature(native), "Diagram and graph-native adapter compilation produce identical cyclic stages.");
 Assert(graphNativeAdapter.Graph!.PlanFingerprint == native.Graph!.PlanFingerprint, "Diagram and graph-native adapter compilation produce identical fingerprints.");
 
@@ -230,7 +235,92 @@ var propertyChanged = dag with { Nodes = dag.Nodes.Select(node => node.Id == "a"
 var changedFingerprint = compiler.Compile(propertyChanged, new(GraphCompileProfile.DagOnly)).Graph!.PlanFingerprint;
 Assert(changedFingerprint != dagResult.Graph.PlanFingerprint, "Execution property changes invalidate plan fingerprints and stale checkpoints.");
 var changedProjection = compiler.ProjectSnapshot(propertyChanged);
-Assert(snapshotCompiler.Compile(changedProjection.Snapshot!, new(GraphCompileProfile.DagOnly)).Graph!.PlanFingerprint == changedFingerprint, "Graph-native compilation preserves property-sensitive fingerprint parity.");
+Assert(snapshotCompiler.Compile(changedProjection.Input!, new(GraphCompileProfile.DagOnly)).Graph!.PlanFingerprint == changedFingerprint, "Graph-native compilation preserves property-sensitive fingerprint parity.");
+
+// Lossless context is carried explicitly; pure snapshots contain semantic values only.
+Assert(dagProjection.Input is not null && ReferenceEquals(dagProjection.Input.Snapshot, dagProjection.Snapshot), "A projection binds its context to exactly one portable snapshot.");
+Assert(dagProjection.Snapshot!.Nodes.All(node => node.Metadata.Values.All(value => value.Kind is SystemGraph.GraphSemanticValueKind.String or SystemGraph.GraphSemanticValueKind.Boolean)) &&
+       dagProjection.Snapshot.Relationships.All(edge => edge.Metadata.Values.All(value => value.Kind is SystemGraph.GraphSemanticValueKind.String or SystemGraph.GraphSemanticValueKind.Null)),
+    "Diagram objects and ports never enter typed System metadata.");
+var secondCompiler = new GraphCompiler(registry);
+Assert(JsonSerializer.Serialize(secondCompiler.Compile(changedProjection.Input!, new(GraphCompileProfile.DagOnly))) ==
+       JsonSerializer.Serialize(compiler.Compile(propertyChanged, new(GraphCompileProfile.DagOnly))),
+    "An independent compiler consumes the complete explicit context, preserving nodes, properties and port endpoints.");
+var inferredFromContext = secondCompiler.Compile(controlledProjection.Input!, new(GraphCompileProfile.BoundedCycles));
+Assert(JsonSerializer.Serialize(inferredFromContext) == JsonSerializer.Serialize(inferredGuard), "The context preserves inferred guards and node types.");
+var cloneProjection = secondCompiler.ProjectSnapshot(JsonSerializer.Deserialize<DiagramDocument>(JsonSerializer.Serialize(propertyChanged))!);
+Assert(secondCompiler.Compile(cloneProjection.Input!, new(GraphCompileProfile.DagOnly)).Graph!.PlanFingerprint == changedFingerprint,
+    "Equivalent document clones produce identical context fingerprints.");
+var mutableProperties = new List<DiagramNodeProperty> { new("value", "Value", DiagramPropertyTypes.Integer, Json("1")) };
+var mutableNodes = propertyChanged.Nodes.Select(node => node.Id == "a" ? node with { Properties = mutableProperties } : node).ToArray();
+var frozenInput = compiler.ProjectSnapshot(propertyChanged with { Nodes = mutableNodes }).Input!;
+var frozenResult = JsonSerializer.Serialize(secondCompiler.Compile(frozenInput, new(GraphCompileProfile.DagOnly)));
+mutableProperties[0] = mutableProperties[0] with { Value = Json("99") };
+mutableNodes[0] = mutableNodes[0] with { Label = "Changed after projection" };
+_ = secondCompiler.Compile(dagProjection.Input!, new(GraphCompileProfile.DagOnly));
+Assert(JsonSerializer.Serialize(compiler.Compile(frozenInput, new(GraphCompileProfile.DagOnly))) == frozenResult,
+    "Captured context survives source mutation and interleaved inputs without compiler-local cached state.");
+var pureFromProjection = snapshotCompiler.Compile(dagProjection.Snapshot, new(GraphCompileProfile.DagOnly));
+Assert(pureFromProjection.Succeeded && StageSignature(pureFromProjection) == StageSignature(dagResult),
+    "Snapshot-only compilation remains deterministic over supplied semantic facts.");
+
+var sectionExtensions = new Dictionary<string, JsonElement> { ["value"] = Json("1") };
+var styleExtensions = new Dictionary<string, JsonElement> { ["value"] = Json("1") };
+var editorExtensions = new Dictionary<string, JsonElement> { ["value"] = Json("1") };
+var sections = new List<DiagramNodeSection> { new("main", "Main") { ExtensionData = sectionExtensions } };
+var collapsedSections = new List<string> { "main" };
+var decoratedInput = compiler.ProjectSnapshot(propertyChanged with
+{
+    Nodes = propertyChanged.Nodes.Select(node => node.Id == "a" ? node with
+    {
+        Style = new DiagramNodeStyle { ExtensionData = styleExtensions },
+        Sections = sections,
+        Presentation = new(CollapsedSectionIds: collapsedSections),
+        Properties = node.Properties.Select(property => property with { Editor = new DiagramPropertyEditor { ExtensionData = editorExtensions } }).ToArray()
+    } : node).ToArray()
+}).Input!;
+var decoratedResult = compiler.Compile(decoratedInput, new(GraphCompileProfile.DagOnly));
+var decoratedBefore = JsonSerializer.Serialize(decoratedResult);
+sectionExtensions["value"] = styleExtensions["value"] = editorExtensions["value"] = Json("2");
+sections.Clear(); collapsedSections.Clear();
+decoratedResult.Graph!.Nodes.Single(node => node.Id == "a").Style!.ExtensionData!["value"] = Json("3");
+Assert(JsonSerializer.Serialize(secondCompiler.Compile(decoratedInput, new(GraphCompileProfile.DagOnly))) == decoratedBefore,
+    "Nested presentation collections and previously returned output cannot mutate the captured compilation context.");
+
+var duplicateInput = compiler.ProjectSnapshot(dag with { Nodes = dag.Nodes.Concat([dag.Nodes[0]]).ToArray() });
+Assert(!duplicateInput.Succeeded && duplicateInput.Input is null && duplicateInput.Snapshot is null && duplicateInput.Diagnostics.Any(item => item.Code == GraphDiagnosticCodes.DuplicateNode),
+    "Duplicate diagram identities return no partial snapshot or sidecar.");
+var duplicateEdgeProjection = compiler.ProjectSnapshot(dag with { Edges = dag.Edges.Concat([dag.Edges[0]]).ToArray() });
+Assert(!duplicateEdgeProjection.Succeeded && duplicateEdgeProjection.Input is null && duplicateEdgeProjection.Diagnostics.Any(item => item.Code == GraphDiagnosticCodes.DuplicateEdge),
+    "Duplicate edge identities return no partial sidecar.");
+var aboveSmall = Document(Enumerable.Range(0, 258).Select(index => $"bounded-{index}").ToArray(),
+    Enumerable.Range(0, 1025).Select(index => ($"edge-{index}", $"bounded-{index % 257}", "bounded-257")).ToArray());
+Assert(compiler.Compile(aboveSmall, new(GraphCompileProfile.DagOnly)).Succeeded,
+    "The General local policy admits ordinary diagrams above 256 nodes and 1024 relationships.");
+var smallLocalLimits = GraphCompilationLimits.General with { MaximumNodes = 3, MaximumRelationships = 2 };
+var boundedCompiler = new GraphCompiler(registry, smallLocalLimits);
+Assert(boundedCompiler.ProjectSnapshot(dag).Succeeded, "Local capacity admits exact node and relationship limits.");
+Assert(!boundedCompiler.Compile(compiler.ProjectSnapshot(aboveSmall).Snapshot!, new(GraphCompileProfile.DagOnly)).Succeeded,
+    "Direct local snapshot compilation applies the caller-selected local capacity as well.");
+Assert(!boundedCompiler.Compile(compiler.ProjectSnapshot(aboveSmall).Input!, new(GraphCompileProfile.DagOnly)).Succeeded,
+    "An explicit context handle does not bypass the receiving compiler's local capacity.");
+foreach (var boundedDocument in new[] {
+    Document(["a", "b", "c", "d"], []),
+    Document(["a", "b", "c"], [("ab", "a", "b"), ("ac", "a", "c"), ("bc", "b", "c")]) })
+{
+    var rejectedAdmission = boundedCompiler.ProjectSnapshot(boundedDocument);
+    Assert(!rejectedAdmission.Succeeded && rejectedAdmission.Input is null && rejectedAdmission.Snapshot is null &&
+        rejectedAdmission.Diagnostics.Single().Code == GraphDiagnosticCodes.AdmissionRejected,
+        "Limit-plus-one rejects without a partial local candidate or sidecar.");
+}
+foreach (var invalidLimits in new[] {
+    smallLocalLimits with { MaximumNodes = 0 }, smallLocalLimits with { MaximumRelationships = -1 },
+    smallLocalLimits with { MaximumMetadataEntries = int.MaxValue } })
+{
+    var invalid = new GraphCompiler(registry, invalidLimits).ProjectSnapshot(dag);
+    Assert(!invalid.Succeeded && invalid.Input is null && invalid.Snapshot is null,
+        "Invalid and effectively unbounded local policies fail closed.");
+}
 
 var duplicatePropertyNode = new DiagramNode("bad", 0, 0, Properties: [new("x", "X"), new("x", "X again")]);
 var duplicateProperty = compiler.Compile(new DiagramDocument("bad", [duplicatePropertyNode], [], []), new(GraphCompileProfile.DagOnly));
@@ -289,9 +379,12 @@ Assert(data.TryGet<int>(scopedKey, out var counter, out var counterVersion) && c
 
 var adapter = new FakeAdapter();
 var engine = new GraphExecutionEngine(compiler, [adapter]);
-var engineNativeCompilation = engine.Compile(dagProjection.Snapshot!, new(GraphCompileProfile.DagOnly));
+var engineNativeCompilation = engine.Compile(dagProjection.Input!, new(GraphCompileProfile.DagOnly));
 Assert(engineNativeCompilation.Succeeded && engineNativeCompilation.Graph!.PlanFingerprint == graphNativeDag.Graph!.PlanFingerprint,
-    "The production execution engine compiles GraphSnapshot through its primary path.");
+    "The production execution engine preserves the explicit lossless compilation input.");
+var engineSemanticCompilation = engine.Compile(dagProjection.Snapshot!, new(GraphCompileProfile.DagOnly));
+Assert(engineSemanticCompilation.Succeeded && engineSemanticCompilation.Graph!.PlanFingerprint == pureFromProjection.Graph!.PlanFingerprint,
+    "The engine retains an independent semantic-only local snapshot path.");
 var engineCompatibilityCompilation = engine.Compile(dag, new(GraphCompileProfile.DagOnly));
 Assert(engineCompatibilityCompilation.Succeeded && engineCompatibilityCompilation.Graph!.PlanFingerprint == engineNativeCompilation.Graph!.PlanFingerprint,
     "The obsolete DiagramDocument execution adapter remains parity-compatible.");

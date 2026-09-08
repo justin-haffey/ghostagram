@@ -1,0 +1,116 @@
+[
+  {
+    "name": "graph-conformance-tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.828,
+    "stdout": "graph-conformance-tests.stdout.log",
+    "stderr": "graph-conformance-tests.stderr.log"
+  },
+  {
+    "name": "variable-conformance-tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll",
+      "--feature",
+      "feature-002",
+      "--fixtures",
+      "../ghostworx-system/tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.765,
+    "stdout": "variable-conformance-tests.stdout.log",
+    "stderr": "variable-conformance-tests.stderr.log"
+  },
+  {
+    "name": "links-conformance-tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll",
+      "--feature",
+      "feature-003",
+      "--corpus",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1",
+      "--profile",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Profiles/semantic-link-conformance-v1.json"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.719,
+    "stdout": "links-conformance-tests.stdout.log",
+    "stderr": "links-conformance-tests.stderr.log"
+  },
+  {
+    "name": "graph-envelope",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+      "--corpus",
+      "../ghostworx-system/tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1",
+      "--schema",
+      "../ghostworx-system/tests/Ghostworx.System.Graph.Conformance/Schemas/conformance-result.schema.json",
+      "--output",
+      "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\implementations\\EPIC-002\\FEATURE-004\\checks\\candidate-release\\conformance\\graph-result.json",
+      "--participant-version",
+      "d3f2542c28acfed7ecf04f9c37a4e47241138f29+f004.41a988f64d4c7ed2"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.281,
+    "stdout": "graph-envelope.stdout.log",
+    "stderr": "graph-envelope.stderr.log"
+  },
+  {
+    "name": "variable-envelope",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+      "--feature",
+      "feature-002",
+      "--fixtures",
+      "../ghostworx-system/tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1",
+      "--result",
+      "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\implementations\\EPIC-002\\FEATURE-004\\checks\\candidate-release\\conformance\\variable-result.json",
+      "--participant-version",
+      "d3f2542c28acfed7ecf04f9c37a4e47241138f29+f004.41a988f64d4c7ed2"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.063,
+    "stdout": "variable-envelope.stdout.log",
+    "stderr": "variable-envelope.stderr.log"
+  },
+  {
+    "name": "links-envelope",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+      "--feature",
+      "feature-003",
+      "--corpus",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1",
+      "--profile",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Profiles/semantic-link-conformance-v1.json",
+      "--result",
+      "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\implementations\\EPIC-002\\FEATURE-004\\checks\\candidate-release\\conformance\\links-result.json",
+      "--participant-version",
+      "d3f2542c28acfed7ecf04f9c37a4e47241138f29+f004.41a988f64d4c7ed2"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.187,
+    "stdout": "links-envelope.stdout.log",
+    "stderr": "links-envelope.stderr.log"
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "command": "dotnet build Ghostagram.slnx -c Release --no-restore",
+  "startedAt": "2026-09-07T01:11:36.6145578+00:00",
+  "finishedAt": "2026-09-07T01:11:44.1870199+00:00",
+  "exitCode": 0
+}

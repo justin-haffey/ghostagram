@@ -1,0 +1,8 @@
+{
+  "path": ".swe\\implementations\\EPIC-002\\FEATURE-001\\checks\\provisional-20260907T134751Z",
+  "manifestSha256": "5305b582b82e42e60a24a3a09c12dae0bfbff10a8af9c28ac6199ce96b60c74a",
+  "sourceFingerprint": "af02aa2e45d08a1e5b47338b47b296747d12545887471b05b5ab2882bb5f9156",
+  "childSourceFingerprint": "f1452d23053a8e7b725a3e1ccd6303083b58d2bbc23d530ca3128fbb8f9fbfcf",
+  "ownerOutputSupplementSha256": null,
+  "scope": "provisional child integration; not acceptance"
+}

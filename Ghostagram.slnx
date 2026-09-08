@@ -26,5 +26,6 @@
   <Folder Name="/external/ghostworx-system/">
     <Project Path="../ghostworx-system/src/Ghostworx.System.Core/Ghostworx.System.Core.csproj" />
     <Project Path="../ghostworx-system/src/Ghostworx.System.Graph.Serialization/Ghostworx.System.Graph.Serialization.csproj" />
+    <Project Path="../ghostworx-system/src/Ghostworx.System.Graph.Runtime/Ghostworx.System.Graph.Runtime.csproj" />
   </Folder>
 </Solution>

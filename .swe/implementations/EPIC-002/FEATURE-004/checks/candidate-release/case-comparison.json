@@ -1,0 +1,70 @@
+[
+  {
+    "profile": "graph",
+    "baselineCaseCount": 47,
+    "currentCaseCount": 47,
+    "caseRecordsEqual": false,
+    "missing": [],
+    "added": [],
+    "differences": [
+      {
+        "id": "federation.mirror-projection-distinct",
+        "changedFields": [
+          "observedFields"
+        ]
+      },
+      {
+        "id": "federation.origin-preserved",
+        "changedFields": [
+          "observedFields"
+        ]
+      },
+      {
+        "id": "identity.address-roundtrip",
+        "changedFields": [
+          "observedFields"
+        ]
+      }
+    ],
+    "summary": {
+      "failed": 0,
+      "missing": 0,
+      "passed": 10,
+      "total": 47,
+      "unsupported": 37
+    },
+    "differenceDisposition": "Three observedFields differences are run-specific newly generated graph GUIDs only; authority, local node identity, revision, seam and all case statuses/outcomes/diagnostics remain unchanged. Raw observations are preserved."
+  },
+  {
+    "profile": "variable",
+    "baselineCaseCount": 12,
+    "currentCaseCount": 12,
+    "caseRecordsEqual": true,
+    "missing": [],
+    "added": [],
+    "differences": [],
+    "summary": {
+      "failed": 0,
+      "passed": 8,
+      "skipped": 0,
+      "total": 12,
+      "unsupported": 4
+    }
+  },
+  {
+    "profile": "links",
+    "baselineCaseCount": 13,
+    "currentCaseCount": 13,
+    "caseRecordsEqual": true,
+    "missing": [],
+    "added": [],
+    "differences": [],
+    "summary": {
+      "failed": 0,
+      "passed": 3,
+      "skipped": 0,
+      "total": 13,
+      "unsupported": 10
+    }
+  }
+]

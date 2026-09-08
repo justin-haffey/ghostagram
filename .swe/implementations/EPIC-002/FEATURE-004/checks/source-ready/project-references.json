@@ -1,0 +1,252 @@
+[
+  {
+    "project": "src/Ghostagram.Blazor/Ghostagram.Blazor.csproj",
+    "reference": "..\\Ghostagram.Core\\Ghostagram.Core.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Bridge/Ghostagram.Bridge.csproj",
+    "reference": "..\\Ghostagram.Contracts\\Ghostagram.Contracts.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Bridge/Ghostagram.Bridge.csproj",
+    "reference": "..\\Ghostagram.Core\\Ghostagram.Core.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Bridge/Ghostagram.Bridge.csproj",
+    "reference": "..\\Ghostagram.Execution\\Ghostagram.Execution.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Bridge/Ghostagram.Bridge.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Core\\Ghostworx.System.Core.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Bridge/Ghostagram.Bridge.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Runtime\\Ghostworx.System.Graph.Runtime.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Core/Ghostagram.Core.csproj",
+    "reference": "..\\Ghostagram.Contracts\\Ghostagram.Contracts.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Execution/Ghostagram.Execution.csproj",
+    "reference": "..\\Ghostagram.Core\\Ghostagram.Core.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Execution/Ghostagram.Execution.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Core\\Ghostworx.System.Core.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Execution/Ghostagram.Execution.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Runtime\\Ghostworx.System.Graph.Runtime.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.NodeSets.Maf/Ghostagram.NodeSets.Maf.csproj",
+    "reference": "..\\Ghostagram.Execution\\Ghostagram.Execution.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.NodeSets.UML/Ghostagram.NodeSets.UML.csproj",
+    "reference": "..\\Ghostagram.Execution\\Ghostagram.Execution.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "reference": "..\\Ghostagram.Blazor\\Ghostagram.Blazor.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "reference": "..\\Ghostagram.Bridge\\Ghostagram.Bridge.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "reference": "..\\Ghostagram.Contracts\\Ghostagram.Contracts.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "reference": "..\\Ghostagram.Core\\Ghostagram.Core.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "reference": "..\\Ghostagram.Execution\\Ghostagram.Execution.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "reference": "..\\Ghostagram.NodeSets.Maf\\Ghostagram.NodeSets.Maf.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "reference": "..\\Ghostagram.NodeSets.UML\\Ghostagram.NodeSets.UML.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\Ghostworx.System.Graph.Serialization.csproj",
+    "exists": true
+  },
+  {
+    "project": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Runtime\\Ghostworx.System.Graph.Runtime.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Bridge.Tests/Ghostagram.Bridge.Tests.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Bridge\\Ghostagram.Bridge.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Bridge.Tests/Ghostagram.Bridge.Tests.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Runtime\\Ghostworx.System.Graph.Runtime.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Core.Tests/Ghostagram.Core.Tests.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Core\\Ghostagram.Core.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Cutover.Tests/Ghostagram.Cutover.Tests.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Bridge\\Ghostagram.Bridge.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Cutover.Tests/Ghostagram.Cutover.Tests.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Execution\\Ghostagram.Execution.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Cutover.Tests/Ghostagram.Cutover.Tests.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\Ghostworx.System.Graph.Serialization.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Cutover.Tests/Ghostagram.Cutover.Tests.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Runtime\\Ghostworx.System.Graph.Runtime.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Execution\\Ghostagram.Execution.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj",
+    "reference": "..\\..\\src\\Ghostagram.NodeSets.Maf\\Ghostagram.NodeSets.Maf.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj",
+    "reference": "..\\..\\src\\Ghostagram.NodeSets.UML\\Ghostagram.NodeSets.UML.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Runtime\\Ghostworx.System.Graph.Runtime.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Bridge\\Ghostagram.Bridge.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\tests\\Ghostworx.System.Graph.Conformance.Support\\Ghostworx.System.Graph.Conformance.Support.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\tests\\Ghostworx.System.Variable.Conformance.Support\\Ghostworx.System.Variable.Conformance.Support.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\tests\\Ghostworx.System.SemanticLinks.Conformance\\Support\\Ghostworx.System.SemanticLinks.Conformance.Support.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Core\\Ghostworx.System.Core.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\Ghostworx.System.Graph.Serialization.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Variable\\Ghostworx.System.Variable.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Variable.Serialization\\Ghostworx.System.Variable.Serialization.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Runtime\\Ghostworx.System.Graph.Runtime.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Variable.Runtime\\Ghostworx.System.Variable.Runtime.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Graph.Conformance.Tests/Ghostagram.Graph.Conformance.Tests.csproj",
+    "reference": "..\\Ghostagram.Graph.Conformance\\Ghostagram.Graph.Conformance.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Layout.Verification/Ghostagram.Layout.Verification.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Contracts\\Ghostagram.Contracts.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Layout.Verification/Ghostagram.Layout.Verification.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Server\\Ghostagram.Server.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Persistence.Tests/Ghostagram.Persistence.Tests.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Server\\Ghostagram.Server.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Server.GraphWorkspace.Tests/Ghostagram.Server.GraphWorkspace.Tests.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Server\\Ghostagram.Server.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Server.GraphWorkspace.Tests/Ghostagram.Server.GraphWorkspace.Tests.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\Ghostworx.System.Graph.Serialization.csproj",
+    "exists": true
+  },
+  {
+    "project": "tests/Ghostagram.Server.GraphWorkspace.Tests/Ghostagram.Server.GraphWorkspace.Tests.csproj",
+    "reference": "..\\..\\..\\ghostworx-system\\src\\Ghostworx.System.Graph.Runtime\\Ghostworx.System.Graph.Runtime.csproj",
+    "exists": true
+  },
+  {
+    "project": "benchmarks/Ghostagram.Bridge.Benchmarks/Ghostagram.Bridge.Benchmarks.csproj",
+    "reference": "..\\..\\src\\Ghostagram.Bridge\\Ghostagram.Bridge.csproj",
+    "exists": true
+  }
+]

@@ -1,3 +1,4 @@
+using Ghostworx.System.Graph.Serialization;
 using System.Collections.ObjectModel;
 using System.Collections.Immutable;
 using System.Text.Json;
@@ -70,7 +71,7 @@ public interface IGraphPresentationStore
     long Revision { get; }
     GraphPresentationSnapshot Capture();
     PresentationStoreCommit<T> Execute<T>(long expectedRevision, Func<GraphPresentationEditor, T> action);
-    OrphanReconciliationResult Reconcile(GraphSnapshot snapshot, OrphanHandling handling, long expectedRevision);
+    OrphanReconciliationResult Reconcile(GraphLocalSnapshot snapshot, OrphanHandling handling, long expectedRevision);
 }
 
 public sealed class GraphPresentationEditor
@@ -124,7 +125,7 @@ public sealed class GraphPresentationStore : IGraphPresentationStore
         }
     }
 
-    public OrphanReconciliationResult Reconcile(GraphSnapshot snapshot, OrphanHandling handling, long expectedRevision)
+    public OrphanReconciliationResult Reconcile(GraphLocalSnapshot snapshot, OrphanHandling handling, long expectedRevision)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         lock (_gate)
@@ -188,7 +189,7 @@ public interface INodeKindDescriptorRegistry
 public interface INodePortPresentationProfile
 {
     NodeKind Kind { get; }
-    IReadOnlyList<DiagramPort> Map(GraphNodeSnapshot node, DiagramNode projectedNode);
+    IReadOnlyList<DiagramPort> Map(GraphLocalNodeSnapshot node, DiagramNode projectedNode);
 }
 
 public interface INodePortPresentationProfileRegistry
@@ -201,7 +202,7 @@ public interface IRelationshipPresentationProfile
 {
     RelationshipKind Kind { get; }
     DiagramEdge Map(
-        GraphRelationshipSnapshot relationship,
+        GraphLocalRelationshipSnapshot relationship,
         GraphPresentationSnapshot presentation,
         IReadOnlyList<DiagramPort> sourcePorts,
         IReadOnlyList<DiagramPort> targetPorts);
@@ -212,17 +213,17 @@ public interface IRelationshipPresentationProfileRegistry
     bool TryGet(RelationshipKind kind, out IRelationshipPresentationProfile profile);
 }
 
-public interface INodePresentationMapper { NodeDiagramProjection Map(GraphNodeSnapshot node, GraphPresentationSnapshot presentation, int ordinal); }
+public interface INodePresentationMapper { NodeDiagramProjection Map(GraphLocalNodeSnapshot node, GraphPresentationSnapshot presentation, int ordinal); }
 public interface IRelationshipPresentationMapper
 {
     DiagramEdge Map(
-        GraphRelationshipSnapshot relationship,
+        GraphLocalRelationshipSnapshot relationship,
         GraphPresentationSnapshot presentation,
         IReadOnlyList<DiagramPort> sourcePorts,
         IReadOnlyList<DiagramPort> targetPorts);
 }
-public interface IHierarchyPresentationMapper { HierarchyDiagramProjection Map(GraphSnapshot snapshot, IReadOnlyDictionary<NodeId, DiagramNode> nodes, GraphPresentationSnapshot presentation); }
-public interface IGraphDiagramProjection { DiagramDocument Project(GraphSnapshot snapshot, GraphPresentationSnapshot presentation); }
+public interface IHierarchyPresentationMapper { HierarchyDiagramProjection Map(GraphLocalSnapshot snapshot, IReadOnlyDictionary<NodeId, DiagramNode> nodes, GraphPresentationSnapshot presentation); }
+public interface IGraphDiagramProjection { DiagramDocument Project(GraphLocalSnapshot snapshot, GraphPresentationSnapshot presentation); }
 
 public sealed record GraphProjectionDiagnostic(string Code, string NodeId, string MetadataKey, string Message);
 
@@ -232,8 +233,8 @@ public sealed record GraphDiagramOperationBatch(
     ImmutableArray<GhostagramOperation> Operations,
     bool RequiresFullProjection = false,
     IReadOnlyDictionary<string, JsonElement>? Metadata = null);
-public interface IGraphDiagramDeltaProjector { GraphDiagramOperationBatch Project(GraphChangeBatch batch, DiagramDocument currentDocument, GraphSnapshot authoritativeSnapshot, GraphPresentationSnapshot presentation); }
+public interface IGraphDiagramDeltaProjector { GraphDiagramOperationBatch Project(GraphLocalChangeBatch batch, DiagramDocument currentDocument, GraphLocalSnapshot authoritativeSnapshot, GraphPresentationSnapshot presentation); }
 
 public sealed record GraphDiagramCommand(long ExpectedGraphVersion, long ExpectedDiagramRevision, ImmutableArray<GhostagramOperation> Operations);
-public sealed record GraphDiagramCommandResult(bool Accepted, string Code, string Message, long GraphVersion, long DiagramRevision, DiagramDocument AuthoritativeDocument, GraphChangeBatch? GraphChanges = null);
+public sealed record GraphDiagramCommandResult(bool Accepted, string Code, string Message, long GraphVersion, long DiagramRevision, DiagramDocument AuthoritativeDocument, GraphLocalChangeBatch? GraphChanges = null);
 public interface IGraphDiagramCommandAdapter { GraphDiagramCommandResult Apply(GraphDiagramCommand command); }

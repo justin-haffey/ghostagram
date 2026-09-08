@@ -1,0 +1,28 @@
+{
+  "capturedAt": "2026-09-07T01:39:35.6035837+00:00",
+  "repository": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram",
+  "head": "d3f2542c28acfed7ecf04f9c37a4e47241138f29",
+  "status": [
+    "?? .swe/implementations/EPIC-002/FEATURE-004/checks/"
+  ],
+  "systemHead": "b498a215db63f9dbd85a110c23203f1e55f8f87d",
+  "systemStatus": [
+    " M tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/boundaries.json",
+    " M tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/exchange-migration.json",
+    " M tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/federation.json",
+    " M tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/identity-vocabulary.json",
+    " M tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/manifest.json",
+    " M tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/mutation-history.json",
+    " M tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/profile.json",
+    " M tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/skew-redaction.json",
+    " M tests/Ghostworx.System.Variable.Conformance/Schemas/conformance-manifest-v1.schema.json",
+    " M tests/Ghostworx.System.Variable.Conformance/Schemas/conformance-result-v1.schema.json",
+    " M tests/Ghostworx.System.Variable.Conformance/Schemas/variable-protected-binding-v1.schema.json",
+    " M tests/Ghostworx.System.Variable.Conformance/Schemas/variable-public-v1.schema.json",
+    "?? .gitattributes",
+    "?? .swe/implementations/EPIC-002/FEATURE-001/results/f004-pre-refactor-baseline-20260907T005532945Z.json",
+    "?? .swe/implementations/EPIC-002/FEATURE-004/checks/"
+  ],
+  "originalBaseline": "../baseline-original",
+  "purpose": "Repaired exact-index fixture bytes and uniform Release configuration; source implementation not started"
+}

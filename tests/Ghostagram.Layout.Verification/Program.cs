@@ -10,6 +10,9 @@ using Ghostagram.Server.Layout;
 using Ghostagram.Server.Mcp;
 using Ghostagram.Server.Sessions;
 
+if (args.Contains("--composition-preview", StringComparer.Ordinal))
+    return Ghostagram.Layout.Verification.CompositionPreview.Run(args);
+
 var checks = new List<(string Name, Action Check)>
 {
     ("deterministic output", VerifyDeterminism),
@@ -39,6 +42,7 @@ foreach (var (name, check) in checks)
     check();
     Console.WriteLine($"PASS {name} ({timer.Elapsed.TotalMilliseconds:F1} ms)");
 }
+return 0;
 
 static void VerifyDeterminism()
 {

@@ -1,0 +1,116 @@
+{
+  "recordedAt": "2026-09-07T09:55:05.112233+00:00",
+  "run": "PROTOTYPE-RUN-20260907T094049Z",
+  "status": "UnbuiltSourceCandidate",
+  "buildTestRestoreIssuedDuringSourcePhase": false,
+  "sharedBuildSlot": "Held by System; explicit parent release required",
+  "projectReferencesChecked": 53,
+  "missingProjectReferences": [],
+  "changedTrackedFiles": [
+    {
+      "path": "Ghostagram.slnx",
+      "sha256": "91b9e2630f63d60dd4f12426d1d03327e967f7952416096bb1a4a413ac139f02"
+    },
+    {
+      "path": "README.md",
+      "sha256": "b37756bdc9d7899e9f1700b260fe042cce7bd531da763afaa9a2d51c606f082c"
+    },
+    {
+      "path": "architecture/SOLUTION-ARCHITECTURE.md",
+      "sha256": "143d1651a99a868c86f2ad26ceaa3d16776b2a8f49c632fee751f5616421492e"
+    },
+    {
+      "path": "architecture/packages/Ghostagram.Bridge/PACKAGE-ARCHITECTURE.md",
+      "sha256": "81565faee8c410a21c8379ad48ce30d5e2a6615f918f73b48c2808d2164cc754"
+    },
+    {
+      "path": "benchmarks/Ghostagram.Bridge.Benchmarks/Program.cs",
+      "sha256": "b2c1c43b69fe35692ecf3c02a79497fc9f05e641718ca9ac836d0d5703c69b32"
+    },
+    {
+      "path": "src/Ghostagram.Bridge/BridgeContracts.cs",
+      "sha256": "8d6b76daf9540879376ed1c97640882c596eff0dfde1c47a84af4d1a2359b6bb"
+    },
+    {
+      "path": "src/Ghostagram.Bridge/CommandAdapter.cs",
+      "sha256": "b1425e79d95a1e1d7ad5a9ec06bea3bcc0c45be1592716e4709e66331422e77a"
+    },
+    {
+      "path": "src/Ghostagram.Bridge/Ghostagram.Bridge.csproj",
+      "sha256": "fa7ceebb805e7e6fa7fa44942517f60e752fa1eea55f25a7e11d22002f45f185"
+    },
+    {
+      "path": "src/Ghostagram.Bridge/Projection.cs",
+      "sha256": "dcde14798ae9156e5a3cd539ff1a332467255542ca1334bba4feb0083e791f62"
+    },
+    {
+      "path": "src/Ghostagram.Execution/ExecutionContracts.cs",
+      "sha256": "0b82f822c742a02f923dac4d143881d7912fe1c8dd8c270d94854482111db177"
+    },
+    {
+      "path": "src/Ghostagram.Execution/Ghostagram.Execution.csproj",
+      "sha256": "850df746b7a1f3598e707139c2388cb4d21424d9ba8d14bd82c311bef404fab8"
+    },
+    {
+      "path": "src/Ghostagram.Execution/GraphCompiler.cs",
+      "sha256": "c061536445a258ea3d6eeb6d2cbccd29109bac6b94cc4a1e1cce46d34a790ced"
+    },
+    {
+      "path": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+      "sha256": "3e24e686f9265d3c1d9ec996dfbd168182e0b5c291103f92a95a1f84e43578f2"
+    },
+    {
+      "path": "src/Ghostagram.Server/GraphWorkspaces/GraphWorkspaceService.cs",
+      "sha256": "74883a9aac5eaafcf7fa113fbbe836fb6ba7720294a817f57d1d034cc1011f91"
+    },
+    {
+      "path": "tests/Ghostagram.Bridge.Tests/Ghostagram.Bridge.Tests.csproj",
+      "sha256": "eee36bb7fa2fdcee37a496b167e091e248c9faeb3fff12cf1ca3513193c6f173"
+    },
+    {
+      "path": "tests/Ghostagram.Bridge.Tests/Program.cs",
+      "sha256": "70e061bba6e79b43b565c7aed7bcc00c0cf000c3005708baa7b04431258c5194"
+    },
+    {
+      "path": "tests/Ghostagram.Cutover.Tests/Ghostagram.Cutover.Tests.csproj",
+      "sha256": "48114e2953735fb17368657a04c7979a5bd0089e0884f518562fed2671a0b02e"
+    },
+    {
+      "path": "tests/Ghostagram.Cutover.Tests/Program.cs",
+      "sha256": "45297ceda0d9252f825414d1feeacbcb702ce14091186cb655e3d2bf0be7722c"
+    },
+    {
+      "path": "tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj",
+      "sha256": "5dbbaa844cdaa31ad36993b96e65f20ce899392bfd384007a6eb27d8ec62aa30"
+    },
+    {
+      "path": "tests/Ghostagram.Execution.Tests/Program.cs",
+      "sha256": "681e3e50d989cda0b03f77e5bd106e22bfbae2cbda3767e360304fdf89dbeb2a"
+    },
+    {
+      "path": "tests/Ghostagram.Graph.Conformance/Feature002BridgeHarness.cs",
+      "sha256": "87ca5ced72eeabf5b49f9b181c0b8b13f78830719fe7bf13e79640244d13d525"
+    },
+    {
+      "path": "tests/Ghostagram.Graph.Conformance/Feature003BridgeHarness.cs",
+      "sha256": "32c9ca3a7c3019937e372ff21a8d2269489520a74f77554fe38a6d76f9072362"
+    },
+    {
+      "path": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+      "sha256": "e83aee757d4478c9360b090b3eea99522ce2b02b2c4433da535f4eee15690890"
+    },
+    {
+      "path": "tests/Ghostagram.Graph.Conformance/GhostagramBridgeHarness.cs",
+      "sha256": "0ec0779a30dd5531d38fec2b1c21632d06fd8391864e1181ec1628e7b70e9072"
+    },
+    {
+      "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/Ghostagram.Server.GraphWorkspace.Tests.csproj",
+      "sha256": "173d72c0cde87886d17d6d4bfb88044c019f542859d1f8b806d48c5c7271cdb2"
+    },
+    {
+      "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/Program.cs",
+      "sha256": "d76cbc6ddd30b72820048bea47817d51067919c5b0ac5ea99eb4e6ce2af61149"
+    }
+  ],
+  "scope": "Ghostagram F004; F003 source under concurrent bounded construction"
+}

@@ -13,5 +13,6 @@
     <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Graph.Serialization\Ghostworx.System.Graph.Serialization.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.4.1" />
     <PackageReference Include="MudBlazor" Version="9.8.0" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Graph.Runtime\Ghostworx.System.Graph.Runtime.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
   </ItemGroup>
 </Project>

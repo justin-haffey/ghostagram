@@ -1,0 +1,79 @@
+[
+  {
+    "repository": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram",
+    "head": "d3f2542c28acfed7ecf04f9c37a4e47241138f29",
+    "fileCount": 91,
+    "manifestSha256": "3df29de493f06dc81c587da67c92822a40ac3cf4d4d6a419f350639786a856bb",
+    "changedFromOriginal": [],
+    "changedCodeOrProjectCount": 0
+  },
+  {
+    "repository": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system",
+    "head": "b498a215db63f9dbd85a110c23203f1e55f8f87d",
+    "fileCount": 295,
+    "manifestSha256": "9121d183ac791b48251a7188e8d3c476733ec72f8ea5e0a91c3483900c9fed35",
+    "changedFromOriginal": [
+      {
+        "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/boundaries.json",
+        "before": "6e24eeea39d4cf51c9e515bae4da4456839a5b77e6e25b3b36ecc3404d91f7cd",
+        "after": "3a731907f7435a2a0e1225c85465bfe8f14146e44f0241c026e363bbae1e97b2"
+      },
+      {
+        "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/exchange-migration.json",
+        "before": "6094dcde7b4fb2e20e72b44de77e057588535f9a8e51687894a0ebcfc9752acf",
+        "after": "66c7ade3cb4bfd846150a53d21d04bee2ad6fed3e0053a45f6ee36fda8ecc037"
+      },
+      {
+        "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/federation.json",
+        "before": "fbcf461f64f7827315544aacc3ec5986e0a4dffd34533b8ec535156e05f948ce",
+        "after": "d7da2e99924ae272b9e97e19db3674793be61f1c91f9c4247e41c1784a4f518f"
+      },
+      {
+        "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/identity-vocabulary.json",
+        "before": "bfaae4c30fc2a5ca39e802d152f8d9be4e5d178dd972d540eae401bbe8dc5d79",
+        "after": "73109bca2e9b0b7dca004567c487a5a6b373a1a748ec1a9a9a80c40471ba7fdd"
+      },
+      {
+        "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/manifest.json",
+        "before": "2fe219994fa220c1bc60bc411fdbe38691c79d200b59d815f52f45ff60583005",
+        "after": "7690d24cad6e8bff13b29c302a1eacaed8cde77c86c3e6a2e27457a116deb5ee"
+      },
+      {
+        "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/mutation-history.json",
+        "before": "c92807ac879405492c3e027dbe5cdefb6bba5f320864c86ae1580e94bf7b44cc",
+        "after": "7fc9081bfbc3303740d33a7c2c665be788dfff3ada546bf04aaaf07d1e07300a"
+      },
+      {
+        "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/profile.json",
+        "before": "f1805bae5ea62918ba0da2658e0aac17653c290dc3d312cdbe37a97ad3c55ff9",
+        "after": "21bc4f88eb87a9ab3bc6e43d7af001f9bfd48db34588b05d7b324c4e1dba6351"
+      },
+      {
+        "path": "tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1/skew-redaction.json",
+        "before": "5c395bf251f81dc421da4610f31267d28208adf3eff81af72e9488997c1029aa",
+        "after": "ad5c2f200363bc14411c6805cef8d59b94ffa08cd3d6b142cafb14c173294db4"
+      },
+      {
+        "path": "tests/Ghostworx.System.Variable.Conformance/Schemas/conformance-manifest-v1.schema.json",
+        "before": "fa3a4a43be9450e033aca7b8db52a12be450436d943790d87bb698c757af6921",
+        "after": "bb1772f961f63adba172030e9cf01728252fb583675e36b1a0c81ee4602e4f29"
+      },
+      {
+        "path": "tests/Ghostworx.System.Variable.Conformance/Schemas/conformance-result-v1.schema.json",
+        "before": "ba4c6c438ee3c46315502049a7f04e0647ff41c866feba31afcdc52b2e88edf5",
+        "after": "6dab2db333c535e67eb4843e9640fffa58b39776cea0b02f71ca7188bc12d7a5"
+      },
+      {
+        "path": "tests/Ghostworx.System.Variable.Conformance/Schemas/variable-protected-binding-v1.schema.json",
+        "before": "e0c9def1881d1acf291a978db2f48273f2ddece8d829b8aed17c44c9fc661b03",
+        "after": "eea48b7010bc922b48b231af35c729dbaa38a2196e8793938c17f0f31956a364"
+      },
+      {
+        "path": "tests/Ghostworx.System.Variable.Conformance/Schemas/variable-public-v1.schema.json",
+        "before": "c4aa783dd849e0af704c10b6a3843016b9f7cf54075141375b63e9853c470294",
+        "after": "aa8c81b165b6ba16e2349c5221125c3cdcbb1b578e500b0ff28e2f934d068a47"
+      }
+    ],
+    "changedCodeOrProjectCount": 0
+  }
+]

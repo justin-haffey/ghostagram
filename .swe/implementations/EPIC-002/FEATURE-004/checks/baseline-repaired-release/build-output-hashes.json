@@ -1,0 +1,152 @@
+[
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Core\\bin\\Release\\net10.0\\Ghostworx.System.Core.dll",
+    "name": "Ghostworx.System.Core.dll",
+    "sha256": "9eca3f19da02d10faa6d7f58d7e1379636d1f99e0b0a3a1037fcb6e0b27f2bf1",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\src\\Ghostagram.Contracts\\bin\\Release\\net10.0\\Ghostagram.Contracts.dll",
+    "name": "Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Graph.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Serialization.dll",
+    "name": "Ghostworx.System.Graph.Serialization.dll",
+    "sha256": "652e96dc00ed04c7207160ce9877ddc88a7ffcf1ff223565b7426a19e34816ec",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\src\\Ghostagram.Core\\bin\\Release\\net10.0\\Ghostagram.Core.dll",
+    "name": "Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\src\\Ghostagram.Execution\\bin\\Release\\net10.0\\Ghostagram.Execution.dll",
+    "name": "Ghostagram.Execution.dll",
+    "sha256": "df2770c5a027d57c62819056a7e4e3af8f3161b232daa9a8bf482774e9520045",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\src\\Ghostagram.NodeSets.Maf\\bin\\Release\\net10.0\\Ghostagram.NodeSets.Maf.dll",
+    "name": "Ghostagram.NodeSets.Maf.dll",
+    "sha256": "dedb0bc6b62e73e0564cd36b2f7297b7a892e22605db0903c493ea47dc8f09b9",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\src\\Ghostagram.NodeSets.UML\\bin\\Release\\net10.0\\Ghostagram.NodeSets.UML.dll",
+    "name": "Ghostagram.NodeSets.UML.dll",
+    "sha256": "3f876e2a1f3cc67d48e8df7810ae6cc6db3a340e48b2c07353eace2f46585d6d",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\src\\Ghostagram.Bridge\\bin\\Release\\net10.0\\Ghostagram.Bridge.dll",
+    "name": "Ghostagram.Bridge.dll",
+    "sha256": "600392e2a2753ef4369f4e41ea80a8f606159ab129abb09ea44da54db43b4de4",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\tests\\Ghostagram.Core.Tests\\bin\\Release\\net10.0\\Ghostagram.Core.Tests.dll",
+    "name": "Ghostagram.Core.Tests.dll",
+    "sha256": "bf23e6192171904d406f55bc636e1f670ca7739f8a39fd2fdb50cb0b7df2df5a",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\tests\\Ghostagram.Bridge.Tests\\bin\\Release\\net10.0\\Ghostagram.Bridge.Tests.dll",
+    "name": "Ghostagram.Bridge.Tests.dll",
+    "sha256": "b6473f398be49e30ee80383a3c9b118d7e721a0528efbb76096f790cc41e1a01",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\tests\\Ghostworx.System.Graph.Conformance.Support\\bin\\Release\\net10.0\\Ghostworx.System.Graph.Conformance.Support.dll",
+    "name": "Ghostworx.System.Graph.Conformance.Support.dll",
+    "sha256": "59b48e3c2d025d8611b69e58a5ed00b5a27347e539e2b23d7e7540aa2702cbd9",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Variable.Contracts\\bin\\Release\\net10.0\\Ghostworx.System.Variable.Contracts.dll",
+    "name": "Ghostworx.System.Variable.Contracts.dll",
+    "sha256": "d1c1679c77a2f39479452b6ba99f9aa89a3b6df1a2e61ce242580e0a5d59dc34",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\src\\Ghostagram.Blazor\\bin\\Release\\net10.0\\Ghostagram.Blazor.dll",
+    "name": "Ghostagram.Blazor.dll",
+    "sha256": "9229c219138eeb19e86d101494da7d39d229ed31a2681ccfc358f8079a2a4511",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\tests\\Ghostworx.System.Variable.Conformance.Support\\bin\\Release\\net10.0\\Ghostworx.System.Variable.Conformance.Support.dll",
+    "name": "Ghostworx.System.Variable.Conformance.Support.dll",
+    "sha256": "e54aa8f0e2f73a9aa819a58cda679c7c64711d4c916892289067528a8820d723",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\tests\\Ghostworx.System.SemanticLinks.Conformance\\Support\\bin\\Release\\net10.0\\Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+    "name": "Ghostworx.System.SemanticLinks.Conformance.Support.dll",
+    "sha256": "e79ae1534ef2b352e49069f62b05c54620c99bce918ab11dd3bac948ff7a9976",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostworx-system\\src\\Ghostworx.System.Variable.Serialization\\bin\\Release\\net10.0\\Ghostworx.System.Variable.Serialization.dll",
+    "name": "Ghostworx.System.Variable.Serialization.dll",
+    "sha256": "4f124592863f1fb0224cddc2d4d396ea6ddec19e57461db8a3878d455e362eb1",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\tests\\Ghostagram.Execution.Tests\\bin\\Release\\net10.0\\Ghostagram.Execution.Tests.dll",
+    "name": "Ghostagram.Execution.Tests.dll",
+    "sha256": "ec8ccdfa9ab749f3701cfa541a558af25bf9460a657b10b47896664eac91ec80",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\benchmarks\\Ghostagram.Bridge.Benchmarks\\bin\\Release\\net10.0\\Ghostagram.Bridge.Benchmarks.dll",
+    "name": "Ghostagram.Bridge.Benchmarks.dll",
+    "sha256": "4f318faa733291bfed5d32b5f9e78d1fe38cc091697fc96897f9a46170740a02",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\tests\\Ghostagram.Cutover.Tests\\bin\\Release\\net10.0\\Ghostagram.Cutover.Tests.dll",
+    "name": "Ghostagram.Cutover.Tests.dll",
+    "sha256": "68c5b1da4c35228bd8865848773d58344b22064160566c6e1382299da193abb7",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\src\\Ghostagram.Server\\bin\\Release\\net10.0\\Ghostagram.Server.dll",
+    "name": "Ghostagram.Server.dll",
+    "sha256": "cd63d2a4c853639b366eafb98111647ab03238dd226597fd34de23653d64b3f6",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostagram.Server.GraphWorkspace.Tests.dll",
+    "name": "Ghostagram.Server.GraphWorkspace.Tests.dll",
+    "sha256": "6f5aaf526c36281229d5b4579539bdf06fca7618bfa2f1e4edd08e7367e12e13",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\tests\\Ghostagram.Persistence.Tests\\bin\\Release\\net10.0\\Ghostagram.Persistence.Tests.dll",
+    "name": "Ghostagram.Persistence.Tests.dll",
+    "sha256": "b3578fbdcdb056967a715533bc1a0a6c413fe500b2e5db4f85be40e8bc9c9639",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\tests\\Ghostagram.Layout.Verification\\bin\\Release\\net10.0\\Ghostagram.Layout.Verification.dll",
+    "name": "Ghostagram.Layout.Verification.dll",
+    "sha256": "a419aafc2df7b0df60a730a7f3fd0f99921a7c2d7a839693f911602114bf5514",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\tests\\Ghostagram.Graph.Conformance\\bin\\Release\\net10.0\\Ghostagram.Graph.Conformance.dll",
+    "name": "Ghostagram.Graph.Conformance.dll",
+    "sha256": "4c3f3daa80a63375d2ccc52cd64396cd1cf31a62d6f971d048594a9638ab227e",
+    "configuration": "Release"
+  },
+  {
+    "path": "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\tests\\Ghostagram.Graph.Conformance.Tests\\bin\\Release\\net10.0\\Ghostagram.Graph.Conformance.Tests.dll",
+    "name": "Ghostagram.Graph.Conformance.Tests.dll",
+    "sha256": "9b9d380c6a4e23d249b9bef307e62ba1d66240e776afb294b97ca0f4600d12d9",
+    "configuration": "Release"
+  }
+]

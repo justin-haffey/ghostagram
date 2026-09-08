@@ -1,0 +1,32 @@
+{
+  "status": "ReadyForIndependentTargetReview",
+  "reviewOrder": [
+    "ARCH-SOLUTION-GHOSTAGRAM",
+    "ARCH-PACKAGE-GHOSTAGRAM-BRIDGE"
+  ],
+  "artifacts": [
+    {
+      "path": "architecture/SOLUTION-ARCHITECTURE.md",
+      "sha256": "143d1651a99a868c86f2ad26ceaa3d16776b2a8f49c632fee751f5616421492e",
+      "revision": "3",
+      "approval": "Pending",
+      "preservedRevision2": "architecture/SOLUTION-ARCHITECTURE-REVISION-002.md",
+      "revision2Sha256": "c748ab83defec7f7453168f75a90458dd22c48cc700f5e0dff69e1da06dce1cc",
+      "newLinksChecked": 3
+    },
+    {
+      "path": "architecture/packages/Ghostagram.Bridge/PACKAGE-ARCHITECTURE.md",
+      "sha256": "81565faee8c410a21c8379ad48ce30d5e2a6615f918f73b48c2808d2164cc754",
+      "revision": "3",
+      "approval": "Pending",
+      "preservedRevision2": "architecture/packages/Ghostagram.Bridge/PACKAGE-ARCHITECTURE-REVISION-002.md",
+      "revision2Sha256": "2b12cdd6bc848bd219fc3a54d2db83c60d8a6ab6278e5deadfd269b060b7c0c6",
+      "newLinksChecked": 4
+    }
+  ],
+  "module": "DeclarativeCompositionProjection revision2 unchanged; governed-only input and exclusion rules preserved",
+  "yamlValidation": "Static header/identity/locator checks; YAML parser unavailable",
+  "fencesAndLinks": "Passed for new amendment sections",
+  "productSourceChangedDuringAuthoring": false,
+  "buildsRun": false
+}

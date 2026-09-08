@@ -35,31 +35,41 @@ traceability:
   foundation_design:
     repository: "ghostagram"
     artifact_id: "DESIGN-EPIC-002-FEATURE-004-GHOSTAGRAM"
-    path: ".swe/implementations/EPIC-002/FEATURE-004/DESIGN.md"
+    path: ".swe/implementations/EPIC-002/FEATURE-004/DESIGN-REVISION-001.md"
     revision: "1"
 owners:
-  - "consumer_planning"
+  - "ghostagram child implementation coordinator"
 created: "2026-09-06"
-updated: "2026-09-06"
-revision: "1"
+updated: "2026-09-07"
+revision: "2"
 template_version: "2.0.0"
 ---
 
 # Read-Only Composition Projection — ghostagram Design
 
+## Revision 2 Prototype Backtracking
+
+This Accepted successor records the concrete F003 source interface and applicability clarification authorized by the portfolio coordinator for `PROTOTYPE-RUN-20260907T094049Z`. [Accepted revision 1](DESIGN-REVISION-001.md) is preserved byte-for-byte; its approval applies only to that historical revision. Revision 2 was independently Accepted by the user-named `elon-musk` at 2026-09-07T12:01:36Z, cycle 0 with no conditions. The exact reviewed bytes and independent decision are preserved in the review packet. Feature and Implementation Plan revision 2 intent and criteria remain authoritative.
+
+The delivered-source work is in progress. Provisional checks do not establish final owner generation compatibility. Portfolio coordination reports independent final FEATURE-004 owner repair rejection with the automatic repair budget exhausted; integrated delivery is blocked pending human disposition. No additional Graph repair or consumer workaround is authorized by this Design. The frozen local F004 Validation is unchanged and does not accept a corrected or current owner generation.
+
 ## Assignment, Current State and Accepted Inputs
 
-[FEATURE-003 revision 2](../../../../../../.swe/epics/002-declarative-composition-model/features/003-ghostagram-composition-projection/FEATURE.md) and its [Implementation Plan revision 2](../../../../../../.swe/epics/002-declarative-composition-model/features/003-ghostagram-composition-projection/IMPLEMENTATION-PLAN.md) are Accepted under [EPIC-002 revision 2](../../../../../../.swe/epics/002-declarative-composition-model/EPIC.md). Applicable [Solution Target](../../../../architecture/SOLUTION-ARCHITECTURE.md#epic-002-layered-foundation-reconciliation), [Ghostagram.Bridge Package Target](../../../../architecture/packages/Ghostagram.Bridge/PACKAGE-ARCHITECTURE.md#epic-002-layered-foundation-reconciliation) and [DeclarativeCompositionProjection Module Target](../../../../architecture/packages/Ghostagram.Bridge/modules/DeclarativeCompositionProjection/MODULE-ARCHITECTURE.md#epic-002-layered-foundation-reconciliation) revision 2 are independently Accepted.
+[FEATURE-003 revision 2](../../../../../../.swe/epics/002-declarative-composition-model/features/003-ghostagram-composition-projection/FEATURE.md) and its [Implementation Plan revision 2](../../../../../../.swe/epics/002-declarative-composition-model/features/003-ghostagram-composition-projection/IMPLEMENTATION-PLAN.md) are Accepted under [EPIC-002 revision 2](../../../../../../.swe/epics/002-declarative-composition-model/EPIC.md). Applicable [Solution Target](../../../../architecture/SOLUTION-ARCHITECTURE.md#epic-002-layered-foundation-reconciliation), [Ghostagram.Bridge Package Target](../../../../architecture/packages/Ghostagram.Bridge/PACKAGE-ARCHITECTURE.md#epic-002-layered-foundation-reconciliation) and [DeclarativeCompositionProjection Module Target](../../../../architecture/packages/Ghostagram.Bridge/modules/DeclarativeCompositionProjection/MODULE-ARCHITECTURE.md#epic-002-layered-foundation-reconciliation) revision 2 were the independently Accepted planning inputs. Current frozen F004 Solution and Bridge Target successors are revision 3; the composition Module remains revision 2.
 
-The local [F004 Design revision 1](../FEATURE-004/DESIGN.md), [System F004 Design revision 2](../../../../../ghostworx-system/.swe/implementations/EPIC-002/FEATURE-004/DESIGN.md) and [System F001 Design revision 4](../../../../../ghostworx-system/.swe/implementations/EPIC-002/FEATURE-001/DESIGN.md) are Accepted. The latter freezes the exact portable operation/profile/schema target, lossless raw compile request, compiler-produced hierarchical PublicView, and distinct System-owned consumer-envelope schema/admission. [Independent decisions](../../../../../../architecture/reviews/EPIC-002-LAYERED-PLANNING-REVIEW.md) provide the approval evidence.
+The historical local [F004 Design revision 1](../FEATURE-004/DESIGN-REVISION-001.md), [historical System F004 Design revision 2](../../../../../ghostworx-system/.swe/implementations/EPIC-002/FEATURE-004/DESIGN-REVISION-002.md) and [System F001 Design revision 4](../../../../../ghostworx-system/.swe/implementations/EPIC-002/FEATURE-001/DESIGN.md) are Accepted. The latter freezes the exact portable operation/profile/schema target, lossless raw compile request, compiler-produced hierarchical PublicView, and distinct System-owned consumer-envelope schema/admission. [Independent decisions](../../../../../../architecture/reviews/EPIC-002-LAYERED-PLANNING-REVIEW.md) provide the approval evidence.
 
-Current source has existing EPIC-001 consumer capabilities and the old physical references, but this composition consumer does not yet exist. The paths and APIs below are planned additions, not an implementation claim. All planning entry gates are closed; F004 and F001 delivery/evidence gates remain separate.
+Frozen local F004 Design revision 2 and its independent local Validation are preserved separately. F001 source evolution is not accepted merely because historical Design revision 4 was accepted. Current source contains the composition projection module and test tooling described below, with source-only replay integration still in progress. Earlier provisional checks are retained under checks/source-integration; they do not validate the current complete source. Prototype entry sequencing was explicitly deferred; ordinary delivery/evidence gates and independent backtracking review remain open.
 
 ## Proposed Design and Public Boundary
 
 Implement `DeclarativeCompositionProjector` and its immutable request/result records inside `Ghostagram.Bridge/DeclarativeCompositionProjection`. The Module depends only on D3 Composition, canonical D2/Core records and Bridge/Core presentation abstractions. It has no type/call dependency on Execution, palette/catalog, Server, Blazor, runtime ComponentModel, stores, resolver/provider, transport or control ports. Test/tooling may reference rendering or System implementation assemblies separately.
 
-The input is an explicit System compilation result or verified exchange result, raw System profile/context declarations, a typed immutable presentation sidecar and optional previous projection. Accepted inputs supply `CompositionIr.PublicView`; a Definition is inspected through that same view from accepted compilation or verified IR. The Module never traverses raw/private aggregates, compiles implicitly, recomputes compatibility or accepts a visibility predicate. Rejected System results retain their exact source diagnostic category and are projected as failure/status information without an accepted diagram.
+The public-view input is an explicit System compilation result or verified exchange result, raw System profile/context declarations, a typed immutable presentation sidecar and optional previous projection. Accepted inputs supply `CompositionIr.PublicView`; a Definition is inspected through that same view from accepted compilation or verified IR. The Module never traverses raw/private aggregates, compiles implicitly, recomputes compatibility or accepts a visibility predicate. Rejected System results retain their exact source diagnostic category and are projected as failure/status information without an accepted diagram.
+
+Six additional typed `Project` overloads accept actual System `CompositionDecodeResult`, `CompositionEncodeResult`, `CompositionMigrationResult`, `CompatibilityInspectionResult`, `CompatibilitySelectionResult`, and `DefinitionReferenceResult` for diagnostic-only projection of rejected outcomes. Each preserves the exact source diagnostic collection through the same admitted projection invocation, with no fabricated compilation/verification result, IR identity or fresh diagram. A successful no-view input accidentally passed to one of these overloads returns local `GRAM-COMP-SOURCE-KIND` Unsupported while retaining successful source diagnostics; this defensive result is not a source rejection or a conformance pass.
+
+The test runner separately executes any explicitly required successful Decode/Encode/Migrate output verification through the actual owner Verify port before Project. Successful Inspect, Negotiate or GetExact, and successfully verified non-IR records without PublicView, are semantic successes that are not projectable. Their exact operation, fixture/result evidence and reason are recorded as semantic inapplicability, separately from tooling. Their rejected variants remain required projection cases. Missing decoder variants, unmet prerequisites, absent owner observed-field contracts, unreached scheduled checkpoints or replay/producer mismatches remain failed/unavailable required cases; they cannot justify exclusion.
 
 The projector receives System `ICompositionProfileAdmission` and `ICompositionOperationContextAdmission` ports plus a BCL `TimeProvider`. It admits profile/context once for its own projection invocation and uses the same admitted context throughout local traversal, sidecar merge and final publication. It delegates semantic admission/skew meaning and performs only local presentation bounds/freshness checks.
 
@@ -67,7 +77,7 @@ The projector receives System `ICompositionProfileAdmission` and `ICompositionOp
 |---|---|
 | `Project(source, profile, context, sidecar)` | Full read-only projection of an accepted System public view or explicit non-success; no source/sidecar mutation |
 | `Refresh(previous, source, profile, context, sidecar)` | Same exact source anchor permits presentation-only delta; any semantic anchor discontinuity returns Stale with FullReprojectionRequired |
-| `CompositionProjectionSourceAnchor` | Root Definition identity/revision, enclosing IR Content Identity, exact contract/compiler/profile/canonicalization/extension tuple and provenance/lineage anchors |
+| `CompositionProjectionSourceAnchor` | Root Definition identity/revision, enclosing IR Content Identity, exact contract/compiler/profile/canonicalization/extension tuple and provenance/lineage anchors, including copied ordered actual IR ReferenceProvenance |
 | `CompositionProjectionResult` | Closed Fresh, Stale, Unsupported, Skewed or Failed union; immutable anchor/presentation revision and distinctly attributed diagnostics; only Fresh carries a newly accepted complete diagram |
 | `CompositionPresentationSidecar` | Immutable canonical-identity-keyed layout/waypoint/selection/viewport/display hints and its own revision |
 | `CompositionProjectionDiagnostic` | Bounded public local code/path/message, separate from unchanged System diagnostics; never protected details or exception internals |
@@ -82,7 +92,7 @@ Keep nested Composite boundaries as nested groups/opaque nodes with their origin
 
 Use deterministic canonical child order and a simple nested layout with finite spacing/padding; derive node height from the displayed row count, and group bounds from children. Compatible sidecar geometry may override defaults after finite-coordinate and identity checks. Count raw sidecar entries before filtering; obsolete/orphan presentation entries are deterministically ignored and may produce one bounded summary diagnostic, never new source elements. This permits independent exact/max-plus-one sidecar-count tests without requiring nonexistent semantic elements. Unsupported custom renderer keys, callback-like metadata or private source keys are rejected, not loaded. Sidecar state never enters System identity or records.
 
-Fresh requires exact source anchor plus the result's presentation revision. Refresh with the same anchor rebuilds complete proposed output first, then diffs only geometry/display/selection/viewport fields; its delta cannot alter semantic labels, identities, source descriptors or hierarchy. A change to source revision, content identity, profile, export/visibility or lineage returns Stale and requires a separate full Project call. Last-known output may be retained only as explicitly stale; failure never relabels it Fresh.
+Fresh requires exact source anchor plus the result's presentation revision. Refresh with the same anchor rebuilds complete proposed output first, then diffs only geometry/display/selection/viewport fields; its delta cannot alter semantic labels, identities, source descriptors or hierarchy. A change to source revision, content identity, profile, export/visibility, ordered ReferenceProvenance or lineage returns Stale and requires a separate full Project call. Last-known output may be retained only as explicitly stale; failure never relabels it Fresh.
 
 ## Bounds, Failure, Security and State
 
@@ -108,7 +118,9 @@ System Unsupported/Incompatible results map only to Unsupported/Skewed while pre
 
 Use the distinct System-owned ConsumerCaseManifest/ConsumerResultEnvelope schema and `IConsumerEnvelopeAdmission` from existing Composition Conformance Support. The runner first admits exact producer corpus/manifest and producer envelope. It executes actual Project/Refresh calls, never labels compiler, exchange, corpus admission or producer-run output as Ghostagram execution.
 
-Materialize a concrete manifest before running. For every admitted producer fixture exposing an accepted public view or an explicit rejected public result, create `GRAM:{producerCaseId}:PROJECT` with originating IDs/digests and required public fields; producer tooling-only fixtures lacking such a source are explicitly inapplicable, never silently counted as passes. Add exact consumer entries `GRAM-NESTED-OPAQUE`, `GRAM-PUBLIC-EXPORTS`, `GRAM-DIAGNOSTICS`, `GRAM-IR-ANCHOR`, `GRAM-INERT-SURFACES`, `GRAM-SAME-SOURCE-DELTA`, `GRAM-SOURCE-STALE`, `GRAM-UNSUPPORTED`, `GRAM-SKEWED`, `GRAM-COLLISION`, `GRAM-PRIVATE-LEAK`, `GRAM-CANCEL`, `GRAM-DEADLINE`, `GRAM-NONMUTATION`, and `GRAM-NO-RELABEL`. Add named exact/max-plus-one/invalid cases for each applicable local dimension and System profile/context admission; realize all fixture data rather than shipping patterns alone.
+Prepare source operations explicitly, then materialize the concrete manifest before any consumer Project/Refresh case execution. The test-only System CompositionFixtureExecutionDriver constructs actual owner ports and applies the exact raw fixture profile/context and real owner checkpoint schedule. The portable module has no dependency on this driver. Replay explicit Compile/Decode prerequisites with exact fixture/output anchors, bounded dependency traversal and cycle rejection; bind actual accepted records through the owner prerequisite APIs. Do not infer operations from case names or substitute a normal profile/context, entry cancellation or alternate operation for declared controls. Retain ordered owner operations, prerequisite receipts and observed checkpoints separately from consumer calls.
+
+Materialize a concrete manifest before running. For every admitted producer fixture exposing an accepted public view or an explicit rejected public result, create `GRAM:{producerCaseId}:PROJECT` with originating IDs/digests and required public fields; producer tooling-only fixtures lacking such a source are explicitly inapplicable. Separately record actual matching semantic successes without a PublicView as non-projectable, with exact owner result evidence. Neither category counts as a consumer pass. A rejection, incomplete owner observation, mismatch, unavailable variant or unreached checkpoint remains required and cannot be filtered out. Add exact consumer entries `GRAM-NESTED-OPAQUE`, `GRAM-PUBLIC-EXPORTS`, `GRAM-DIAGNOSTICS`, `GRAM-IR-ANCHOR`, `GRAM-INERT-SURFACES`, `GRAM-SAME-SOURCE-DELTA`, `GRAM-SOURCE-STALE`, `GRAM-UNSUPPORTED`, `GRAM-SKEWED`, `GRAM-COLLISION`, `GRAM-PRIVATE-LEAK`, `GRAM-CANCEL`, `GRAM-DEADLINE`, `GRAM-NONMUTATION`, and `GRAM-NO-RELABEL`. Add named exact/max-plus-one/invalid cases for each applicable local dimension and System profile/context admission; realize all fixture data rather than shipping patterns alone.
 
 Evidence and independent Validation freeze the concrete manifest digest outside the runner. `ConsumerEnvelopeAdmissionRequest` binds it to admitted producer inputs and the raw consumer candidate. System admission validates full disjoint passed/failed/missing/unsupported coverage and exact producer/compiler/profile/schema/fixture anchors. Publish only an admitted envelope; invalid/missing/failed/unsupported cases fail conformance. No child schema or approval claim enters the output.
 
@@ -136,16 +148,18 @@ Use the accepted v1 contract/compiler/profile and predecessor exchange support s
 
 ## Risks and Remaining Delivery Duties
 
-No known Design divergence from the accepted scope remains. The producer artifacts do not yet prove delivered behavior; implementation must use the accepted delivered fingerprints, realize every concrete fixture/case-manifest entry, exercise real consumer operations, and produce independent local Validation before portfolio acceptance. Any unimplemented verification, failed case, missing output or unavailable visible check remains explicit and cannot be reported as passed.
+The typed diagnostic-only input and result-based applicability clarification above received independent revision 2 acceptance; implementation and delivery validation remain separate. The producer artifacts do not yet prove delivered behavior; implementation must use the accepted delivered fingerprints, realize every concrete fixture/case-manifest entry, exercise real consumer operations, and produce independent local Validation before portfolio acceptance. Any unimplemented verification, failed case, missing output or unavailable visible check remains explicit and cannot be reported as passed.
 
 ## Approval Record
 
 | Field | Value |
 |---|---|
-| Mode | auto-approve |
-| Author | consumer_planning |
-| Approver | elon-musk (`/root/elon_musk_approval`) |
-| Decision | Accepted |
-| Recorded | 2026-09-07T00:04:42+00:00 |
-| Evidence | [Independent @elon-musk review](../../../../../../architecture/reviews/EPIC-002-LAYERED-PLANNING-REVIEW.md#final-consumer-designs-revision-1). Accepted Target, local F004 and System F001 revision 4 inputs verified. Seven criteria use canonical filtered PublicView, opaque hierarchy, separate freshness/presentation state, bounded local work, and actual renderer export with visible inspection; future interactive UI proof is not claimed. Concrete producer/manifest anchors and System-owned consumer admission preserve authority. Actual F004/F001 delivery acceptance, Evidence and Validation still gate implementation. No conditions. |
-| Bypass reason | None |
+| Mode | auto-approve, user-named independent approver |
+| Author | Ghostagram child implementation coordinator |
+| Approver | elon-musk (`/root/elon_bootstrap_diagnosis`) |
+| Decision | Accepted; APPROVED, cycle 0, no conditions |
+| Recorded | 2026-09-07T12:01:36Z |
+| Evidence | [Exact independently authored decision](checks/design-revision-002-review/DECISION.json), [reviewed Design bytes](checks/design-revision-002-review/DESIGN-REVIEWED.md), [review packet](checks/design-revision-002-review/REVIEW-PACKET.md) and its [13-path manifest](checks/design-revision-002-review/candidate-files.json). Reviewed SHA256 1ad10b97765cf6647e8027e3dfdc8cb6cadb7641c4e5dc63214755fa4331b683. Implementation and all seven delivery criteria remain unvalidated. No architecture promotion or F004 review effect. |
+| Bypass reason | None for this decision; prototype entry deferral remains separately recorded. |
+
+The prior submission timestamp and Pending record remain byte-exact in DESIGN-REVIEWED.md. The independent decision was transcribed mechanically from the portfolio coordinator's reviewer-authored record; it is not the implementation author's approval.

@@ -1,0 +1,366 @@
+[
+  {
+    "path": "Directory.Build.props",
+    "sha256": "0751bf74fb80cf8141ec81da3c87c24d6117d97db4ca03a40087436b97cf4c01"
+  },
+  {
+    "path": "Ghostagram.slnx",
+    "sha256": "298f658945cb239b388148c331775183008b576f0ab3fc74b684b8963e9ec645"
+  },
+  {
+    "path": "src/Ghostagram.Blazor/DiagramCompositionContext.cs",
+    "sha256": "b57b7b08c85758804a69f220928c851f64be83e17bc0a0ed56c5035c38eb82d5"
+  },
+  {
+    "path": "src/Ghostagram.Blazor/Ghostagram.Blazor.csproj",
+    "sha256": "1b2ea06524c90f3ff050219fbed25054308c63d3ab2cf13a637a6b5978fff91a"
+  },
+  {
+    "path": "src/Ghostagram.Blazor/GhostDiagram.razor.cs",
+    "sha256": "6b47d8c9a79deb47b3794343bfd64eeb73cae8852f507ba838ed0237005a52fd"
+  },
+  {
+    "path": "src/Ghostagram.Blazor/GhostDiagramOptions.cs",
+    "sha256": "635db07d237d003642ccc0e8aed4d9c3de5feba9f68c7cd31302e7c199b2e7ce"
+  },
+  {
+    "path": "src/Ghostagram.Blazor/GhostPalette.razor.cs",
+    "sha256": "d9920ce45d26ef6f654c4abaed9572f294cabe78174833608589f9aaf934288f"
+  },
+  {
+    "path": "src/Ghostagram.Blazor/GhostPaletteModels.cs",
+    "sha256": "48a3992c7f83a9eba9e474769f4b2ac601780d7049856e92dd6e6336d61c66cc"
+  },
+  {
+    "path": "src/Ghostagram.Bridge/BridgeContracts.cs",
+    "sha256": "37de2520535744f70a3ee2f1a1552813626f0401c697e17aa2e6580177c3f5d7"
+  },
+  {
+    "path": "src/Ghostagram.Bridge/CommandAdapter.cs",
+    "sha256": "410f131f647ddd96f95fe911997cca500f2f15bf2e2f5cd7df0d6b0735180119"
+  },
+  {
+    "path": "src/Ghostagram.Bridge/Ghostagram.Bridge.csproj",
+    "sha256": "397e6d2aeef78ecd64c73d4c629b4e7fef97d0a35ec31837f584d92052bd5ee0"
+  },
+  {
+    "path": "src/Ghostagram.Bridge/GraphPresentationJsonSerializer.cs",
+    "sha256": "e46c305246ee1274c47f25bbfd1f7c048b3dce174b49a1fd9faf26535f0c5edb"
+  },
+  {
+    "path": "src/Ghostagram.Bridge/PresentationProfiles.cs",
+    "sha256": "b8ddcd3fe4fba6fda4d33c5b94a07464a14a5279a187d4e6c1f600a877954874"
+  },
+  {
+    "path": "src/Ghostagram.Bridge/Projection.cs",
+    "sha256": "1b670a8abb5da7be1f400fe4f3ced69abb26a58c3378ee1c4dee13f59cf746c4"
+  },
+  {
+    "path": "src/Ghostagram.Contracts/DiagramContracts.cs",
+    "sha256": "c3b388a588e4931c5e2f8b31c89355d6a0ab65799a0247855bb00620151adab5"
+  },
+  {
+    "path": "src/Ghostagram.Contracts/Ghostagram.Contracts.csproj",
+    "sha256": "b64afdb5c795410d480b88ce7a0765bdd6f93ecf0f66421e3c5c2d2403e92528"
+  },
+  {
+    "path": "src/Ghostagram.Contracts/GhostagramAuthoringSchema.cs",
+    "sha256": "42f7b037fba3e2297ada1767772f6360845e116bc262ac548f76e320e52d32dd"
+  },
+  {
+    "path": "src/Ghostagram.Contracts/Schemas/ghostagram-authoring.v1.schema.json",
+    "sha256": "0e3fb623a69b549e0e44f05cfc87fa95f8f7f6b71a72b8b9d8069aab332507eb"
+  },
+  {
+    "path": "src/Ghostagram.Core/DiagramModel.cs",
+    "sha256": "225e64e4b1c31e8b57bd52cceead480f5d814ff7c8abed6c33a36ae96e626ff0"
+  },
+  {
+    "path": "src/Ghostagram.Core/Ghostagram.Core.csproj",
+    "sha256": "1f5b848b1127a5ed1d27b24217873ec9cd579240ce521605c922c1ef84d44ac9"
+  },
+  {
+    "path": "src/Ghostagram.Execution/ExecutionContracts.cs",
+    "sha256": "f2074a6c50d3c7fc3e874f3a62579127d06223483fe7f812c2e846249ecfdcde"
+  },
+  {
+    "path": "src/Ghostagram.Execution/Ghostagram.Execution.csproj",
+    "sha256": "90af799f104b5598faa51903387e74af4ac58155d3fd263c599a0054a448dd6f"
+  },
+  {
+    "path": "src/Ghostagram.Execution/GraphCompiler.cs",
+    "sha256": "ae29ddcf56a2ac27a5fdbf8eec9d43269cedd2a9dacb1a849da6ed2688d589aa"
+  },
+  {
+    "path": "src/Ghostagram.Execution/GraphExecutionSession.cs",
+    "sha256": "6c4ecf0f1910395a950bc0dd91d27177549d69183da6ea2d6dbc1eaa99d6dce3"
+  },
+  {
+    "path": "src/Ghostagram.Execution/NodeCatalog.cs",
+    "sha256": "1873966db1d83575c56c024f0c379cccaeaa2314be047215bd722e83fb63a3d2"
+  },
+  {
+    "path": "src/Ghostagram.Execution/NodeFactory.cs",
+    "sha256": "a91a199c3c5083f2aa0836aaba7df27c060557c7930ed9ea562fa06f51744ca9"
+  },
+  {
+    "path": "src/Ghostagram.Execution/PropertyValueRules.cs",
+    "sha256": "849197efb75a942b521aded6c14f0298b8bd1ac4fd4e9d20ebb14bdfbd7da787"
+  },
+  {
+    "path": "src/Ghostagram.NodeSets.Maf/Ghostagram.NodeSets.Maf.csproj",
+    "sha256": "0aa69890a1657d76b2405829509332325f0db9518bf6c672d2300acf3c3c2c49"
+  },
+  {
+    "path": "src/Ghostagram.NodeSets.Maf/MafOrchestrationNodeSet.cs",
+    "sha256": "cefb7e4628456e6be8fca94e3c4619e7e6c58c65fd62ad93df7b675fc02d54b1"
+  },
+  {
+    "path": "src/Ghostagram.NodeSets.UML/Ghostagram.NodeSets.UML.csproj",
+    "sha256": "0aa69890a1657d76b2405829509332325f0db9518bf6c672d2300acf3c3c2c49"
+  },
+  {
+    "path": "src/Ghostagram.NodeSets.UML/UmlNodeSet.cs",
+    "sha256": "c0c7c07083358a3758defe4c481df24e027d9ba31cc8b683b2648b284bc6d902"
+  },
+  {
+    "path": "src/Ghostagram.Server/Components/Pages/Home.razor.cs",
+    "sha256": "b2a0303ce331447c1854fb8067e271e3b06e77557b91da8c6f08ee063dee50b2"
+  },
+  {
+    "path": "src/Ghostagram.Server/DiagramHub.cs",
+    "sha256": "3dcc79ca56892afad20a558b65f7f78b8057959093775c71510e7c9dfcb92037"
+  },
+  {
+    "path": "src/Ghostagram.Server/DocumentCatalog.cs",
+    "sha256": "0ea9fa8220a85469cff969180b5ae03931cccce1f2dc9d1934b7913335f15d2b"
+  },
+  {
+    "path": "src/Ghostagram.Server/DocumentCommandService.cs",
+    "sha256": "349b0e6ddd8fd5b37d3a7b779555db1d15a58dac6c5c2a648878d2f6368ca6a9"
+  },
+  {
+    "path": "src/Ghostagram.Server/Export/IDiagramExporter.cs",
+    "sha256": "cd6a41b357ff54ae485cf855e8214a905493d03965af8e5cfa3712a5c7b2bc20"
+  },
+  {
+    "path": "src/Ghostagram.Server/Export/NodeSvgRendering.cs",
+    "sha256": "c10f52f33438a997a699f87d73853e17ff0c97822caf1b4207f00ff75af62a79"
+  },
+  {
+    "path": "src/Ghostagram.Server/Export/SvgDiagramExporter.cs",
+    "sha256": "a82bca1cdfebdb20ee075de62ef2cf2166fd962b42f634e4514d1ca0799432f7"
+  },
+  {
+    "path": "src/Ghostagram.Server/FileDocumentStore.cs",
+    "sha256": "ef5e749024076eef057af4e155df0418abf84721c3764745e82a74acca632f94"
+  },
+  {
+    "path": "src/Ghostagram.Server/Ghostagram.Server.csproj",
+    "sha256": "a95ef7c054263ef975910a1da330de5ccafb08199d12031f763b67cc8a816891"
+  },
+  {
+    "path": "src/Ghostagram.Server/GhostagramDocumentReducer.cs",
+    "sha256": "7ef56b9e6424427d7ba4c3be401abf46f82f3b0f577b28248b5a2b8adf721a7b"
+  },
+  {
+    "path": "src/Ghostagram.Server/GraphWorkspaces/GraphWorkspaceEndpoints.cs",
+    "sha256": "17e3459ed5db5abc6156c5702c1f285fb0c79727d1655654571f2e2952f88125"
+  },
+  {
+    "path": "src/Ghostagram.Server/GraphWorkspaces/GraphWorkspaceRepository.cs",
+    "sha256": "fcf9d6af8fca2cc8dc920ac5d58eefbf7685c82cf96e55a74053dc3746020d17"
+  },
+  {
+    "path": "src/Ghostagram.Server/GraphWorkspaces/GraphWorkspaceService.cs",
+    "sha256": "854f958949faddcb0cc8dbd79d1b761c935acd462a01bda0d6f2ec2966c46ac5"
+  },
+  {
+    "path": "src/Ghostagram.Server/GroupDuplication.cs",
+    "sha256": "5ad92fb4222fa78f126b571f4669e965ccfa37c518263cd7dc455d29ffddef73"
+  },
+  {
+    "path": "src/Ghostagram.Server/LaboratoryCircuitState.cs",
+    "sha256": "b5b9ab9bd0c44e4c355dd779fd67c5b372ad96a2e16c76ca8eebcf94ebf0ac02"
+  },
+  {
+    "path": "src/Ghostagram.Server/Layout/DiagramLayoutService.cs",
+    "sha256": "16152f7aacc95e23902df3aca817b50e1d8616c4e651df32c2d177f15397cc7b"
+  },
+  {
+    "path": "src/Ghostagram.Server/Layout/GhostLayeredLayoutStrategy.cs",
+    "sha256": "a848430823def45ef27edb7fefbb9fbeeb652b921c6c48347301623d1c3d6175"
+  },
+  {
+    "path": "src/Ghostagram.Server/Layout/IDiagramLayoutStrategy.cs",
+    "sha256": "a13c1ba1512336d033f559705f0c9e40bd342099495c45c0f3bb09bf1de2eff6"
+  },
+  {
+    "path": "src/Ghostagram.Server/Mcp/GhostagramCapabilityCatalog.cs",
+    "sha256": "b223d7fd530bc98d5b370cc1d31dd9d9a01a42cb5f12b18ac211c7835b507409"
+  },
+  {
+    "path": "src/Ghostagram.Server/Mcp/GhostagramMcpTools.cs",
+    "sha256": "b69dd515cec5957fabb496f63a9a5723f7d8522e5bcb79b0112a4f28792fe5f6"
+  },
+  {
+    "path": "src/Ghostagram.Server/NodeDuplication.cs",
+    "sha256": "1aef12ae77036e6743ac6b4e79171c40d7511d09ee706b58b9a9f2a78ec37bc5"
+  },
+  {
+    "path": "src/Ghostagram.Server/Persistence/FilePaletteCatalogRepository.cs",
+    "sha256": "6e206ed7b81c963bf6f41a60a0f6389713b7b739261da1e2f41e5babcc0a5be2"
+  },
+  {
+    "path": "src/Ghostagram.Server/Persistence/IPaletteCatalogRepository.cs",
+    "sha256": "eae403aaad6c5f2ce67f705118a6a336bbf0fca001a4c0634d47c6d278a4b166"
+  },
+  {
+    "path": "src/Ghostagram.Server/Persistence/LaboratoryWorkspaceStore.cs",
+    "sha256": "eae4e30948fec6b2d39c3ea3cb08b32018cc3fd5860438e1b0ca9a50f738fe7b"
+  },
+  {
+    "path": "src/Ghostagram.Server/Persistence/PaletteCatalogModels.cs",
+    "sha256": "c3ad525818efbfe97977130923b5cff9d6e2271f32804e8f3df4e5572df4b8ec"
+  },
+  {
+    "path": "src/Ghostagram.Server/Persistence/PaletteNodeDefinitionCapture.cs",
+    "sha256": "ceb8812d21951ba63eca1c1a25a0c8a27937c54065c05a0563c3af6417848065"
+  },
+  {
+    "path": "src/Ghostagram.Server/Program.cs",
+    "sha256": "9e537ee14d3a18294e71a3388e3b2c5a67c9d74c3bac23bd301c1782a371d3e9"
+  },
+  {
+    "path": "src/Ghostagram.Server/Properties/launchSettings.json",
+    "sha256": "47b04513237ca03c2043d731d12aaa66824d514026a72a8efe81209acac17036"
+  },
+  {
+    "path": "src/Ghostagram.Server/Sessions/DiagramSessionService.cs",
+    "sha256": "a430050e696e9c466af68ede7194604cf5dec49cfa194d3e64ccb0ed60e0b419"
+  },
+  {
+    "path": "src/Ghostagram/package.json",
+    "sha256": "c3ee02ca244233cdd6ee4a9cbba7d9feb7d1d00ab87aeae828b4c50292aac64f"
+  },
+  {
+    "path": "tests/fixtures/custom-renderer-svg-parity.v1.json",
+    "sha256": "bdfb19b55d536a87b9eec57e6263df50f2d9eb3df74a53a69bed2a4c5c3bebde"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/Ghostagram.Bridge.Tests.csproj",
+    "sha256": "1836c59e12c474de3837e2251e22540c2a78d54def6066afd983a5ac961af020"
+  },
+  {
+    "path": "tests/Ghostagram.Bridge.Tests/Program.cs",
+    "sha256": "b06211dec3b0e09ec98eccaab3fcfda83cb0cc237d13a4678d46db48d41594eb"
+  },
+  {
+    "path": "tests/Ghostagram.Core.Tests/Ghostagram.Core.Tests.csproj",
+    "sha256": "61f62dd373e7dbe69a0f78886117d97820af01c2d3791433d0e3f2ad3f5cc40e"
+  },
+  {
+    "path": "tests/Ghostagram.Core.Tests/Program.cs",
+    "sha256": "075b7fc16a60bd8fc07aa1a74e854a12b30256bd7862aa806963331eef0132e5"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/Ghostagram.Cutover.Tests.csproj",
+    "sha256": "f728f6daef7dde9847597c9b666dd45a77c87aabf6800b27fd8f1ad95cd33c28"
+  },
+  {
+    "path": "tests/Ghostagram.Cutover.Tests/Program.cs",
+    "sha256": "6f45447f449479f6f951c1754c9adab57688250f51f14017dd2919d52178985d"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/Ghostagram.Execution.Tests.csproj",
+    "sha256": "d1260e2004f59efcffe1ff88c2d893952cdee5444e0b1e378fd2f3f0b710e6cc"
+  },
+  {
+    "path": "tests/Ghostagram.Execution.Tests/Program.cs",
+    "sha256": "34a2bec726e91fa9b6f4c34ed751d091522404a93023f55009682595a534f647"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/Feature002Tests.cs",
+    "sha256": "a68638a67413f4ca7f4bf27a0f17dae155497d972ff9eb5f500f4d0753308f5b"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/Feature003Tests.cs",
+    "sha256": "46f41f19bf26f5423181bff293735d55d3afa1ecaa655d78255d12c0d6d6b7be"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/Ghostagram.Graph.Conformance.Tests.csproj",
+    "sha256": "e76e5923844388836331ce8809f6bc9df0feeb7d2371323607336227d38ca0bf"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance.Tests/Program.cs",
+    "sha256": "c2350dbc8dcf6cd57f23cd5cbf50c6d073748316bb04be3e1931b98ba5f048c5"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Feature001CaseAdapter.cs",
+    "sha256": "823b19bbae0a2bea11b7489fcda5a3ee7ffa245886ade2d7d83e46817e4d8bdb"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Feature002BridgeHarness.cs",
+    "sha256": "0308b4cd8a24f8000d56f85bd518a0cd914c426b5ddda8c2a3d94024ac93dd8f"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Feature002CaseAdapter.cs",
+    "sha256": "9850589b070d7cd138406be0d14909d31f41ea4b7a6364ed2c5ef2ab8e931320"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Feature002ConformanceRunner.cs",
+    "sha256": "e93e554c3e5d42c7180d5e73b153776bc4bb1ae119753328342b7baf47760cfb"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Feature003BridgeHarness.cs",
+    "sha256": "b70453d1e209b3b15c47857ef72e58dfa0ad528b7ec6e5a0d6de40235ca69ae5"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Feature003CaseAdapter.cs",
+    "sha256": "039bf2e0d6d372f4481e96764334488a3076abc700df01de4f84aecda5f570ff"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Feature003ConformanceRunner.cs",
+    "sha256": "63ab56ef5e663c0b49f8d06765cb3c2d2d34f714b6b0638f5283dfb5c36f4ca3"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Ghostagram.Graph.Conformance.csproj",
+    "sha256": "137d9ee34d2720689d8b4e1650309c0ae486d354b5b9889590e0f72525012f9c"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/GhostagramBridgeHarness.cs",
+    "sha256": "54608d5b67a968f9e24d241256ad716a6b3a607e85ab3c51b73cdd00185d6367"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/GhostagramConformanceRunner.cs",
+    "sha256": "dc737b9ee1e568a756eeff46c1547f991391f090b8cc62fa0731cbec87c5be4f"
+  },
+  {
+    "path": "tests/Ghostagram.Graph.Conformance/Program.cs",
+    "sha256": "5d479609288745c05b1485cf9d962246a5dae25b93ea5fc3c7ca7dd2e68c4129"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/Ghostagram.Layout.Verification.csproj",
+    "sha256": "f19623a9607075b4cb0d7a36e974e90adae91ed404349989566673d4f521028b"
+  },
+  {
+    "path": "tests/Ghostagram.Layout.Verification/Program.cs",
+    "sha256": "a2de3ba6ef4d103fee55779ba8fe9f1ea8478b8d4843ab66e71ea6c684366c5a"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/Ghostagram.Persistence.Tests.csproj",
+    "sha256": "fea0e5461017242df532edb0798a47b71b78b98420f45798ac0c7f94e7a8d46b"
+  },
+  {
+    "path": "tests/Ghostagram.Persistence.Tests/Program.cs",
+    "sha256": "88b186a3c8379ba2161cf6147a243d7071c230884e4b6ee903a1ea009fd2c57a"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/Ghostagram.Server.GraphWorkspace.Tests.csproj",
+    "sha256": "a8078401c508542d1bfd4ed161fd3f183278a710ff7100876ca958ba85a570b8"
+  },
+  {
+    "path": "tests/Ghostagram.Server.GraphWorkspace.Tests/Program.cs",
+    "sha256": "bf7d62dc7191d1924c2696333c9767d31eb4b70da419815f49a356af41cbbc0e"
+  }
+]

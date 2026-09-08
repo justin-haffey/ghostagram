@@ -1,0 +1,24 @@
+{
+  "status": "BaselineReady",
+  "sourceUnchanged": true,
+  "buildExitCode": 0,
+  "ordinaryPassed": 6,
+  "ordinaryFailed": 1,
+  "graphProfile": "Blocked before case execution by frozen boundaries.json byte digest mismatch; tests unhandled exception terminated after grace; runner exit2; no envelope produced",
+  "variableProfile": "12 cases: 8 pass, 4 explicit unsupported, 0 fail, 0 skipped; tests and runner exit0",
+  "semanticLinksProfile": "13 cases: 3 pass, 10 explicit unsupported, 0 fail, 0 skipped; tests and runner exit0",
+  "executionFailure": "Unhandled ArgumentException: DiagramNode rejected as a semantic value; exact owned process23432 terminated after diagnostic capture",
+  "ownedHarnessProcessIds": [
+    23432,
+    9624,
+    30084,
+    16856,
+    27384,
+    35168,
+    32220
+  ],
+  "liveOwnedHarnessProcesses": [],
+  "recordedAt": "2026-09-07T01:18:51.0007910+00:00",
+  "slotReleased": true,
+  "contextCorrection": "Initial context.json System git fields were unavailable due per-command safe.directory protection; source-fingerprints.json records verified System HEAD/status with exact per-command safe.directory, no persistent config change"
+}

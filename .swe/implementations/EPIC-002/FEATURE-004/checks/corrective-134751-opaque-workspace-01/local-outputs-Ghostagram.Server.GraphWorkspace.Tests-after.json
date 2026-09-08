@@ -1,0 +1,38 @@
+[
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostagram.Blazor.dll",
+    "sha256": "9229c219138eeb19e86d101494da7d39d229ed31a2681ccfc358f8079a2a4511"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostagram.Bridge.dll",
+    "sha256": "d337c226d25aab775c7033c162f7214fac02a1c14f3951909b4ceff648c17194"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostagram.Contracts.dll",
+    "sha256": "3b61c98de5a7c0e888f3671969a54a519ebfafdb960ebc793e24d1fd730e79a1"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostagram.Core.dll",
+    "sha256": "695396dfdc47839fd285914417bbc7e8ce28675e6bf64726ede190868395c2a5"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostagram.Execution.dll",
+    "sha256": "fc9b941305f51340e94f7f5b52c3d26556f1ef8812bed4dc6f1a9774ea95b07e"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostagram.NodeSets.Maf.dll",
+    "sha256": "c274ad1b5dc1bddade9017f8c421a576f0e231da33403e76c58b477e5ab2fae6"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostagram.NodeSets.UML.dll",
+    "sha256": "87935eb1d3f881290686d662d0ea0c82d2162c94e08f5a4669fb1c3a157119ca"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostagram.Server.dll",
+    "sha256": "4a4395ecc18f91d8869c5e153e418831114d52da7cda4e5cc4aa8f5d6d2c6060"
+  },
+  {
+    "path": "tests\\Ghostagram.Server.GraphWorkspace.Tests\\bin\\Release\\net10.0\\Ghostagram.Server.GraphWorkspace.Tests.dll",
+    "sha256": "de68e68183fca8252bc906db3675ab41773a26f54558e0ba8a4db1f762e05698"
+  }
+]

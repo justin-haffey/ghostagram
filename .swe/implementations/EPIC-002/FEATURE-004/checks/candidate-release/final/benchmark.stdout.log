@@ -1,0 +1,6 @@
+Ghostagram Bridge projection benchmark (Release recommended; no pass/fail threshold)
+Nodes	Edges	Repetitions	Full total ms	Full mean ms	Incremental total ms	Incremental mean ms
+100	99	1	0.773	0.773	0.365	0.365
+500	499	1	2.632	2.632	0.425	0.425
+1000	999	1	5.561	5.561	0.784	0.784
+JSON {"schema":"ghostagram.bridge.benchmark.v1","runtime":"10.0.10","measurements":[{"nodes":100,"edges":99,"repetitions":1,"fullTotalMilliseconds":0.7729,"fullMeanMilliseconds":0.7729,"incrementalTotalMilliseconds":0.3646,"incrementalMeanMilliseconds":0.3646},{"nodes":500,"edges":499,"repetitions":1,"fullTotalMilliseconds":2.6322,"fullMeanMilliseconds":2.6322,"incrementalTotalMilliseconds":0.4253,"incrementalMeanMilliseconds":0.4253},{"nodes":1000,"edges":999,"repetitions":1,"fullTotalMilliseconds":5.5609,"fullMeanMilliseconds":5.5609,"incrementalTotalMilliseconds":0.7839,"incrementalMeanMilliseconds":0.7839}]}

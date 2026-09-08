@@ -1,0 +1,313 @@
+[
+  {
+    "name": "build-Ghostagram.Contracts",
+    "command": [
+      "dotnet",
+      "build",
+      "src\\Ghostagram.Contracts\\Ghostagram.Contracts.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 2.609,
+    "stdout": "build-Ghostagram.Contracts.stdout.log",
+    "stderr": "build-Ghostagram.Contracts.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Core",
+    "command": [
+      "dotnet",
+      "build",
+      "src\\Ghostagram.Core\\Ghostagram.Core.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.485,
+    "stdout": "build-Ghostagram.Core.stdout.log",
+    "stderr": "build-Ghostagram.Core.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Execution",
+    "command": [
+      "dotnet",
+      "build",
+      "src\\Ghostagram.Execution\\Ghostagram.Execution.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 3.375,
+    "stdout": "build-Ghostagram.Execution.stdout.log",
+    "stderr": "build-Ghostagram.Execution.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Bridge",
+    "command": [
+      "dotnet",
+      "build",
+      "src\\Ghostagram.Bridge\\Ghostagram.Bridge.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 3.515,
+    "stdout": "build-Ghostagram.Bridge.stdout.log",
+    "stderr": "build-Ghostagram.Bridge.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Server",
+    "command": [
+      "dotnet",
+      "build",
+      "src\\Ghostagram.Server\\Ghostagram.Server.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 6.578,
+    "stdout": "build-Ghostagram.Server.stdout.log",
+    "stderr": "build-Ghostagram.Server.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Execution.Tests",
+    "command": [
+      "dotnet",
+      "build",
+      "tests\\Ghostagram.Execution.Tests\\Ghostagram.Execution.Tests.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 6.672,
+    "stdout": "build-Ghostagram.Execution.Tests.stdout.log",
+    "stderr": "build-Ghostagram.Execution.Tests.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Graph.Conformance",
+    "command": [
+      "dotnet",
+      "build",
+      "tests\\Ghostagram.Graph.Conformance\\Ghostagram.Graph.Conformance.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 4.703,
+    "stdout": "build-Ghostagram.Graph.Conformance.stdout.log",
+    "stderr": "build-Ghostagram.Graph.Conformance.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Graph.Conformance.Tests",
+    "command": [
+      "dotnet",
+      "build",
+      "tests\\Ghostagram.Graph.Conformance.Tests\\Ghostagram.Graph.Conformance.Tests.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 3.953,
+    "stdout": "build-Ghostagram.Graph.Conformance.Tests.stdout.log",
+    "stderr": "build-Ghostagram.Graph.Conformance.Tests.stderr.log"
+  },
+  {
+    "name": "build-Ghostagram.Server.GraphWorkspace.Tests",
+    "command": [
+      "dotnet",
+      "build",
+      "tests\\Ghostagram.Server.GraphWorkspace.Tests\\Ghostagram.Server.GraphWorkspace.Tests.csproj",
+      "-c",
+      "Release",
+      "--no-restore",
+      "-p:BuildProjectReferences=false",
+      "-p:ShouldUnsetParentConfigurationAndPlatform=false"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 3.594,
+    "stdout": "build-Ghostagram.Server.GraphWorkspace.Tests.stdout.log",
+    "stderr": "build-Ghostagram.Server.GraphWorkspace.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Execution.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Execution.Tests/bin/Release/net10.0/Ghostagram.Execution.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.422,
+    "stdout": "Ghostagram.Execution.Tests.stdout.log",
+    "stderr": "Ghostagram.Execution.Tests.stderr.log"
+  },
+  {
+    "name": "Ghostagram.Server.GraphWorkspace.Tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Server.GraphWorkspace.Tests/bin/Release/net10.0/Ghostagram.Server.GraphWorkspace.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 3.953,
+    "stdout": "Ghostagram.Server.GraphWorkspace.Tests.stdout.log",
+    "stderr": "Ghostagram.Server.GraphWorkspace.Tests.stderr.log"
+  },
+  {
+    "name": "graph-conformance-tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 2.969,
+    "stdout": "graph-conformance-tests.stdout.log",
+    "stderr": "graph-conformance-tests.stderr.log"
+  },
+  {
+    "name": "graph-envelope",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+      "--corpus",
+      "../ghostworx-system/tests/Ghostworx.System.Graph.Conformance/Fixtures/semantic-graph/v1",
+      "--schema",
+      "../ghostworx-system/tests/Ghostworx.System.Graph.Conformance/Schemas/conformance-result.schema.json",
+      "--output",
+      "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\implementations\\EPIC-002\\FEATURE-004\\checks\\corrective-132448-build-test-01\\graph-result.json",
+      "--participant-version",
+      "corrective-586af1e2eb633a88"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 3.844,
+    "stdout": "graph-envelope.stdout.log",
+    "stderr": "graph-envelope.stderr.log"
+  },
+  {
+    "name": "variable-conformance-tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll",
+      "--feature",
+      "feature-002",
+      "--fixtures",
+      "../ghostworx-system/tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 2.094,
+    "stdout": "variable-conformance-tests.stdout.log",
+    "stderr": "variable-conformance-tests.stderr.log"
+  },
+  {
+    "name": "variable-envelope",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+      "--feature",
+      "feature-002",
+      "--fixtures",
+      "../ghostworx-system/tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1",
+      "--result",
+      "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\implementations\\EPIC-002\\FEATURE-004\\checks\\corrective-132448-build-test-01\\variable-result.json",
+      "--participant-version",
+      "corrective-586af1e2eb633a88"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 4.985,
+    "stdout": "variable-envelope.stdout.log",
+    "stderr": "variable-envelope.stderr.log"
+  },
+  {
+    "name": "links-conformance-tests",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll",
+      "--feature",
+      "feature-003",
+      "--corpus",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1",
+      "--profile",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Profiles/semantic-link-conformance-v1.json"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.859,
+    "stdout": "links-conformance-tests.stdout.log",
+    "stderr": "links-conformance-tests.stderr.log"
+  },
+  {
+    "name": "links-envelope",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance/bin/Release/net10.0/Ghostagram.Graph.Conformance.dll",
+      "--feature",
+      "feature-003",
+      "--corpus",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1",
+      "--profile",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Profiles/semantic-link-conformance-v1.json",
+      "--result",
+      "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\implementations\\EPIC-002\\FEATURE-004\\checks\\corrective-132448-build-test-01\\links-result.json",
+      "--participant-version",
+      "corrective-586af1e2eb633a88"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 2.531,
+    "stdout": "links-envelope.stdout.log",
+    "stderr": "links-envelope.stderr.log"
+  }
+]

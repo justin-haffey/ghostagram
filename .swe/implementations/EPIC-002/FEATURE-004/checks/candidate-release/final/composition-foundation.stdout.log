@@ -1,0 +1,2 @@
+PASS composition foundation: immutable sidecars, exact bounds, cancellation, identity and freshness
+Composition foundation tests passed; projector and consumer-envelope coverage is not included.

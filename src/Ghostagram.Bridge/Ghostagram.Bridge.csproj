@@ -9,5 +9,8 @@
     <ProjectReference Include="..\Ghostagram.Core\Ghostagram.Core.csproj" />
     <ProjectReference Include="..\Ghostagram.Execution\Ghostagram.Execution.csproj" />
     <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Core\Ghostworx.System.Core.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Graph.Runtime\Ghostworx.System.Graph.Runtime.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Graph.Serialization\Ghostworx.System.Graph.Serialization.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
+    <ProjectReference Include="..\..\..\ghostworx-system\src\Ghostworx.System.Composition\Ghostworx.System.Composition.csproj" AdditionalProperties="Configuration=$(Configuration)" SetConfiguration="Configuration=$(Configuration)" />
   </ItemGroup>
 </Project>

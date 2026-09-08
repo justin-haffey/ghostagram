@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Ghostworx.System.Graph.Runtime;
 using System.Collections.Immutable;
 using Ghostagram.Bridge;
 using Ghostagram.Core;
@@ -15,7 +17,11 @@ var descriptor = new NodeTypeDescriptor(
     "Server tests",
     width: 220,
     height: 100,
-    properties: [new("owner", "Owner", DiagramPropertyTypes.String)]);
+    properties:
+    [
+        new("owner", "Owner", DiagramPropertyTypes.String),
+        new("future", "Future", DiagramPropertyTypes.Json)
+    ]);
 var nodeTypes = new NodeTypeRegistry([new NodeSetDescriptor("server-tests", "Server tests", [descriptor])]);
 var storageDirectory = Path.Combine(Path.GetTempPath(), "ghostagram-graph-workspace-tests", Guid.NewGuid().ToString("N"));
 
@@ -89,6 +95,18 @@ AssertThrows<ArgumentException>(() => workspaces.Create("invalid/workspace"),
 var saved = await workspaces.SaveAsync("orders") ?? throw new InvalidOperationException("The live orders workspace was not saved.");
 Assert(File.Exists(Path.Combine(storageDirectory, "orders.json")),
     "Saving a workspace must atomically persist graph and presentation state.");
+var persistedOrders = await provider.GetRequiredService<IGraphWorkspaceRepository>().LoadAsync("orders")
+    ?? throw new InvalidOperationException("The persisted workspace is missing.");
+using (var persistedGraph = JsonDocument.Parse(persistedOrders.GraphJson))
+{
+    var root = persistedGraph.RootElement;
+    Assert(root.GetProperty("schemaVersion").GetInt32() == 1 && root.GetProperty("changes").GetArrayLength() > 0,
+        "Saving preserves schema 1 and complete retained graph history when available.");
+    Assert(new[] { "contractVersion", "profileId", "profileVersion", "originAuthority", "graphAddress", "extensionPolicy" }
+        .All(name => root.GetProperty(name).ValueKind == JsonValueKind.Null) &&
+        root.GetProperty("vocabularies").GetArrayLength() == 0 && root.GetProperty("federationReferences").GetArrayLength() == 0,
+        "The historical schema-1 null governance fields and empty vocabulary/reference arrays are preserved without invented admission.");
+}
 Assert(workspaces.Remove("orders"), "The live workspace must be removable without deleting its durable file.");
 
 var restartedServices = new ServiceCollection();
@@ -98,7 +116,7 @@ await using var restartedProvider = restartedServices.BuildServiceProvider();
 var restartedWorkspaces = restartedProvider.GetRequiredService<IGraphWorkspaceService>();
 var reloaded = await restartedWorkspaces.LoadAsync("orders") ?? throw new InvalidOperationException("The persisted orders workspace was not loaded.");
 Assert(reloaded.GraphVersion == saved.GraphVersion && reloaded.DiagramRevision == saved.DiagramRevision &&
-       reloaded.Document.Nodes.Any(node => node.Id == first.Id && node.X == 80) &&
+       reloaded.Document.Nodes.Any(node => node.Id == first.Id && node.X == 80 && node.TypeId == descriptor.TypeId && node.TypeVersion == descriptor.Version) &&
        reloaded.Document.Selection.SequenceEqual([first.Id]) &&
        reloaded.Document.Edges.Any(item => item.Id == connected.Id.ToString()),
     "A new service provider must reload stable semantics and presentation from the durable repository.");
@@ -108,6 +126,87 @@ Assert(restartedWorkspaces.TryApply("orders", restartedConflict, out var recover
        recoveredAfterRestart is { Accepted: false, Code: "GRAPH_VERSION_CONFLICT" } &&
        recoveredAfterRestart.AuthoritativeDocument.Selection.SequenceEqual([first.Id]),
     "Reloaded workspaces must retain authoritative conflict recovery.");
+
+// Fixed schema-v1 graph shape used by the pre-F004 host serializer.
+const string legacyGraph = """
+{ "schemaVersion": 1, "documentType": "ghostworx.graph.snapshot", "graphId": "41414141-4141-4141-4141-414141414141", "version": 1,
+  "nodes": [
+    { "id": "41414141-4141-4141-4141-414141414141", "kind": { "namespace": "Ghostworx.System.Graph", "name": "Graph" }, "name": "legacy", "metadata": {} },
+    { "id": "42424242-4242-4242-4242-424242424242", "kind": { "namespace": "Ghostagram.NodeType", "name": "server.task@1" }, "name": "legacy task",
+      "metadata": { "future": { "codec": "future.codec", "codecVersion": "1.0.0", "value": { "x": 1 }, "futureField": { "retained": true } } },
+      "fixtureNodeExtension": { "retained": true } }
+  ],
+  "relationships": [], "changes": [], "fixtureDocumentExtension": { "retained": true } }
+""";
+var repository = restartedProvider.GetRequiredService<IGraphWorkspaceRepository>();
+await repository.SaveAsync(new("legacy", legacyGraph,
+    new GraphPresentationJsonSerializer().Serialize(new GraphPresentationStore().Capture())));
+var legacyWorkspace = await restartedWorkspaces.LoadAsync("legacy") ?? throw new InvalidOperationException("The legacy workspace did not load.");
+var legacyTask = legacyWorkspace.Document.Nodes.Single(node => node.Id == "42424242424242424242424242424242");
+Assert(legacyTask.TypeId == descriptor.TypeId && legacyTask.TypeVersion == descriptor.Version && legacyTask.Properties.Any(property => property.Id == "owner"),
+    "Schema-v1 custom kinds retain exact descriptor identity and editable properties after reload.");
+var replacement = JsonSerializer.SerializeToElement(new Dictionary<string, bool> { ["changed"] = true });
+var replacementProperties = legacyTask.Properties.Select(property => property.Id == "future"
+    ? property with { Value = replacement }
+    : property).ToArray();
+Assert(restartedWorkspaces.TryApply("legacy", new(legacyWorkspace.GraphVersion, legacyWorkspace.DiagramRevision,
+    [DiagramOperations.Upsert(legacyTask with { Label = "Edited legacy task", Properties = replacementProperties })]), out var legacyEdit) &&
+    legacyEdit is { Accepted: true },
+    "A reloaded legacy custom kind can replace imported opaque metadata through its registered descriptor.");
+await restartedWorkspaces.SaveAsync("legacy");
+var persistedLegacy = await repository.LoadAsync("legacy") ?? throw new InvalidOperationException("The legacy workspace was not saved.");
+using (var legacyDocument = JsonDocument.Parse(persistedLegacy.GraphJson))
+{
+    var root = legacyDocument.RootElement;
+    var node = root.GetProperty("nodes").EnumerateArray()
+        .Single(item => item.GetProperty("id").GetGuid() == Guid.Parse("42424242-4242-4242-4242-424242424242"));
+    var future = node.GetProperty("metadata").GetProperty("future");
+    var historyEdit = root.GetProperty("changes").EnumerateArray()
+        .SelectMany(batch => batch.GetProperty("changes").EnumerateArray())
+        .Single(change => change.TryGetProperty("metadataKey", out var key) && key.GetString() == "future");
+    Assert(root.GetProperty("schemaVersion").GetInt32() == 1 &&
+           root.GetProperty("fixtureDocumentExtension").GetProperty("retained").GetBoolean() &&
+           node.GetProperty("fixtureNodeExtension").GetProperty("retained").GetBoolean(),
+        "Legacy save preserves schema 1 and document/node extensions after an edit.");
+    Assert(future.GetProperty("codec").GetString() == "semantic-value" &&
+           future.GetProperty("value").GetProperty("changed").GetBoolean() &&
+           historyEdit.GetProperty("oldValue").GetProperty("codec").GetString() == "future.codec" &&
+           historyEdit.GetProperty("oldValue").GetProperty("futureField").GetProperty("retained").GetBoolean() &&
+           historyEdit.GetProperty("newValue").GetProperty("codec").GetString() == "semantic-value" &&
+           historyEdit.GetProperty("newValue").GetProperty("value").GetProperty("changed").GetBoolean(),
+        "Replacing imported opaque metadata remains authoritative through capture and preserves exact old/new history meaning.");
+}
+Assert(restartedWorkspaces.Remove("legacy"), "The edited legacy workspace must leave memory without deleting its durable file.");
+var reloadedLegacy = await restartedWorkspaces.LoadAsync("legacy")
+    ?? throw new InvalidOperationException("The edited legacy workspace did not reload.");
+var reloadedFuture = reloadedLegacy.Document.Nodes.Single(node => node.Id == "42424242424242424242424242424242")
+    .Properties.Single(property => property.Id == "future").Value;
+Assert(reloadedFuture is { ValueKind: JsonValueKind.Object } && reloadedFuture.Value.GetProperty("changed").GetBoolean(),
+    "A service restart path reloads the accepted replacement instead of the imported opaque predecessor.");
+Assert(await restartedWorkspaces.DeleteAsync("legacy"), "Legacy regression fixture is removed after verification.");
+
+// The host historically saved snapshots even after its bounded history ring expired.
+var ringServices = new ServiceCollection();
+ringServices.AddSingleton<INodeTypeRegistry>(nodeTypes);
+ringServices.AddGraphWorkspaceBridge(options => { options.ChangeHistoryCapacity = 1; options.StorageDirectory = storageDirectory; });
+await using var ringProvider = ringServices.BuildServiceProvider();
+var ringWorkspaces = ringProvider.GetRequiredService<IGraphWorkspaceService>();
+var ringSnapshot = ringWorkspaces.Create("ring");
+for (var update = 0; update < 3; update++)
+{
+    Assert(ringWorkspaces.TryApply("ring", new(ringSnapshot.GraphVersion, ringSnapshot.DiagramRevision,
+        [DiagramOperations.Upsert(first with { Label = $"Ring update {update}" })]), out var ringResult) && ringResult is { Accepted: true },
+        $"History-ring fixture update {update} is accepted: {ringResult?.Code} {ringResult?.Message}.");
+    ringSnapshot = new("ring", ringResult!.GraphVersion, ringResult.DiagramRevision, ringResult.AuthoritativeDocument);
+}
+await ringWorkspaces.SaveAsync("ring");
+var persistedRing = await ringProvider.GetRequiredService<IGraphWorkspaceRepository>().LoadAsync("ring")
+    ?? throw new InvalidOperationException("The history-ring workspace did not save.");
+using (var ringDocument = JsonDocument.Parse(persistedRing.GraphJson))
+    Assert(ringDocument.RootElement.GetProperty("changes").GetArrayLength() == 0 &&
+           ringDocument.RootElement.GetProperty("version").GetInt64() == ringSnapshot.GraphVersion,
+        "Only unavailable complete history is omitted; the current semantic snapshot is still saved.");
+Assert(await ringWorkspaces.DeleteAsync("ring"), "History-ring regression fixture is removed after verification.");
 
 var webBuilder = WebApplication.CreateBuilder();
 webBuilder.Services.AddSingleton<INodeTypeRegistry>(nodeTypes);

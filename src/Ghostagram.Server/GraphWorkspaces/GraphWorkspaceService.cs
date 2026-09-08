@@ -1,3 +1,5 @@
+using System.Text;
+using Ghostworx.System.Graph.Runtime;
 using System.Collections.Concurrent;
 using Ghostagram.Bridge;
 using Ghostagram.Core;
@@ -46,7 +48,7 @@ public sealed class GraphWorkspaceService : IGraphWorkspaceService
     private readonly IGraphDiagramProjection _projection;
     private readonly INodeKindDescriptorRegistry _descriptors;
     private readonly IGraphWorkspaceRepository _repository;
-    private readonly GraphJsonSerializer _graphSerializer;
+    private readonly IGraphLocalDocumentCodec _graphSerializer;
     private readonly GraphPresentationJsonSerializer _presentationSerializer;
     private readonly int _maximumWorkspaces;
     private readonly int _changeHistoryCapacity;
@@ -140,7 +142,14 @@ public sealed class GraphWorkspaceService : IGraphWorkspaceService
         if (_workspaces.TryGetValue(workspaceId, out var current)) return current.Capture();
         var persisted = await _repository.LoadAsync(workspaceId, cancellationToken);
         if (persisted is null) return null;
-        var graph = _graphSerializer.DeserializeGraph(persisted.GraphJson, StoreOptions());
+        var exchange = Exchange(cancellationToken);
+        var decoded = _graphSerializer.DecodeLocal(new(Encoding.UTF8.GetBytes(persisted.GraphJson), exchange));
+        if (!decoded.IsSuccess) throw new InvalidOperationException($"Graph decode failed: {decoded.Outcome?.Code.Value}.");
+        var target = new GraphStore(null, null, StoreOptions());
+        var materialized = GraphStoreMaterializer.MaterializeLocal(decoded.Value,
+            new GraphLocalStoreMaterializationContext(exchange, target, static context => new SerializedGraphNode(context)));
+        if (!materialized.IsSuccess) throw new InvalidOperationException($"Graph materialization failed: {materialized.Outcome?.Code.Value}.");
+        var graph = materialized.Value;
         var presentation = new GraphPresentationStore(_presentationSerializer.Deserialize(persisted.PresentationJson));
         if (_presentationOrphansOnLoad == OrphanHandling.Remove)
             presentation.Reconcile(graph.CaptureSnapshot(), OrphanHandling.Remove, presentation.Revision);
@@ -161,7 +170,7 @@ public sealed class GraphWorkspaceService : IGraphWorkspaceService
     {
         workspaceId = GraphWorkspaceIds.Require(workspaceId);
         if (!_workspaces.TryGetValue(workspaceId, out var workspace)) return null;
-        var persisted = workspace.Persist(_graphSerializer, _presentationSerializer);
+        var persisted = workspace.Persist(_graphSerializer, _presentationSerializer, Exchange(cancellationToken));
         await _repository.SaveAsync(persisted.State, cancellationToken);
         return persisted.Snapshot;
     }
@@ -177,8 +186,13 @@ public sealed class GraphWorkspaceService : IGraphWorkspaceService
     private GraphStoreOptions StoreOptions() => new()
     {
         NodeRetention = GraphNodeRetentionMode.Strong,
-        ChangeHistoryCapacity = _changeHistoryCapacity
+        ChangeHistoryCapacity = _changeHistoryCapacity,
+        Authority = GraphBuiltInVocabulary.Authority
     };
+
+    private static GraphLocalExchangeContext Exchange(CancellationToken cancellationToken) => new(
+        GraphBuiltInVocabulary.Authority,
+        new GraphLocalOperationContext(GraphLocalLimits.PersistenceV1, DateTimeOffset.UtcNow.AddSeconds(30), cancellationToken));
 
     private sealed class Workspace(
         string id,
@@ -205,15 +219,21 @@ public sealed class GraphWorkspaceService : IGraphWorkspaceService
         }
 
         public (GraphWorkspacePersistedState State, GraphWorkspaceSnapshot Snapshot) Persist(
-            GraphJsonSerializer graphSerializer,
-            GraphPresentationJsonSerializer presentationSerializer)
+            IGraphLocalDocumentCodec graphSerializer,
+            GraphPresentationJsonSerializer presentationSerializer,
+            GraphLocalExchangeContext exchange)
         {
             lock (_gate)
             {
                 var graphSnapshot = graph.CaptureSnapshot();
                 var presentationSnapshot = presentation.Capture();
+                var captured = GraphStoreDocumentMapper.CaptureLocal(graph, new GraphLocalStoreExportContext(
+                    exchange, IncludeHistory: true, HistoryPolicy: GraphHistoryExportPolicy.AllowUnavailableSnapshotFallback));
+                if (!captured.IsSuccess) throw new InvalidOperationException($"Graph capture failed: {captured.Outcome?.Code.Value}.");
+                var encoded = graphSerializer.EncodeLocal(new(captured.Value, exchange));
+                if (!encoded.IsSuccess) throw new InvalidOperationException($"Graph encode failed: {encoded.Outcome?.Code.Value}.");
                 return (
-                    new(id, graphSerializer.SerializeGraph(graph), presentationSerializer.Serialize(presentationSnapshot)),
+                    new(id, Encoding.UTF8.GetString(encoded.Value.Span), presentationSerializer.Serialize(presentationSnapshot)),
                     new(id, graphSnapshot.Version, presentationSnapshot.Revision, projection.Project(graphSnapshot, presentationSnapshot)));
             }
         }

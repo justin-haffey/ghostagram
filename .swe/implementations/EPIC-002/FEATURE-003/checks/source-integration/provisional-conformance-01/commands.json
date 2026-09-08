@@ -1,0 +1,51 @@
+[
+  {
+    "name": "graph-conformance",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 0.875,
+    "stdout": "graph-conformance.stdout.log",
+    "stderr": "graph-conformance.stderr.log"
+  },
+  {
+    "name": "variable-conformance",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll",
+      "--feature",
+      "feature-002",
+      "--fixtures",
+      "../ghostworx-system/tests/Ghostworx.System.Variable.Conformance/Fixtures/variable/v1"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 1.39,
+    "stdout": "variable-conformance.stdout.log",
+    "stderr": "variable-conformance.stderr.log"
+  },
+  {
+    "name": "links-conformance",
+    "command": [
+      "dotnet",
+      "tests/Ghostagram.Graph.Conformance.Tests/bin/Release/net10.0/Ghostagram.Graph.Conformance.Tests.dll",
+      "--feature",
+      "feature-003",
+      "--corpus",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Corpus/V1",
+      "--profile",
+      "../ghostworx-system/tests/Ghostworx.System.SemanticLinks.Conformance/Profiles/semantic-link-conformance-v1.json"
+    ],
+    "exitCode": 0,
+    "ownedProcessExitCode": 0,
+    "forcedTermination": null,
+    "seconds": 2.188,
+    "stdout": "links-conformance.stdout.log",
+    "stderr": "links-conformance.stderr.log"
+  }
+]
