@@ -1,0 +1,41 @@
+{
+    "check_id":  "solution-scaffold-structure",
+    "attempt":  1,
+    "executable":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "arguments":  [
+                      "-NoProfile",
+                      "-ExecutionPolicy",
+                      "Bypass",
+                      "-File",
+                      ".swe/checks/scaffold-verification-command.ps1"
+                  ],
+    "working_directory":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram",
+    "criteria":  [
+                     "SCAFFOLD/COPIER-BYTE-PARITY",
+                     "SCAFFOLD/REGISTRY-ROSTER",
+                     "SCAFFOLD/ENGINEERING-DIRS",
+                     "SCAFFOLD/GIT-DIFF-CHECK"
+                 ],
+    "started_utc":  "2026-09-08T06:56:53.0503891Z",
+    "finished_utc":  "2026-09-08T06:56:53.2878106Z",
+    "timeout_seconds":  120,
+    "timed_out":  false,
+    "exit_code":  1,
+    "outcome":  "Failed",
+    "failure_excerpt":  "At C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-command.ps1:10 char:459\r\n+ ... \\[agents\\.$([regex]::Escape($name))\\].*?^config_file\\s*=\\s*\\\"([^\\\"]+) ...\r\n+                                                                  ~\r\nMissing \u0027)\u0027 in method call.\r\nAt C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-command.ps1:10 char:459\r\n+ ... [agents\\.$([regex]::Escape($name))\\].*?^config_file\\s*=\\s*\\\"([^\\\"]+)\\ ...\r\n+                                                                 ~\r\nUnexpected token \u0027(\u0027 in expression or statement.\r\nAt C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-command.ps1:10 char:461\r\n+ ... agents\\.$([regex]::Escape($name))\\].*?^config_file\\s*=\\s*\\\"([^\\\"]+)\\\" ...\r\n+                                                                  ~\r\nMissing type name after \u0027[\u0027.\r\nAt C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-command.ps1:12 c",
+    "launch_error":  null,
+    "transient_launch_failure":  false,
+    "stdout":  {
+                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-results\\0ac9dead-0710-405e-935e-4fe5f8aba049\\solution-scaffold-structure-1.stdout.log",
+                   "digest":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+               },
+    "stderr":  {
+                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-results\\0ac9dead-0710-405e-935e-4fe5f8aba049\\solution-scaffold-structure-1.stderr.log",
+                   "digest":  "ee198bf6668d7cf97337c7c174c36ad61e6b072cc639fff160274650a8e1c103"
+               },
+    "counts":  null,
+    "cases":  [
+
+              ],
+    "observation":  null
+}

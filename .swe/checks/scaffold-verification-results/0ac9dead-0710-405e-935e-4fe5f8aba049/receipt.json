@@ -1,0 +1,1627 @@
+{
+    "schema":  "swe-check-receipt/v1",
+    "execution_id":  "0ac9dead-0710-405e-935e-4fe5f8aba049",
+    "request_digest":  "b778a1533ad96edfa423b670f774a460d7304848a70316a2533654f8528d9abe",
+    "repository":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram",
+    "assignment":  {
+                       "repository":  "ghostagram",
+                       "artifact_id":  "PROTOTYPE-RUN-20260907T094049Z",
+                       "path":  ".swe/prototype/runs/PROTOTYPE-RUN-20260907T094049Z/PROTOTYPE.md"
+                   },
+    "executor":  {
+                     "role":  "test-runner",
+                     "model":  "gpt-5.6-luna",
+                     "reasoning_effort":  "medium",
+                     "session_id":  "current-test-runner-session"
+                 },
+    "started_utc":  "2026-09-08T06:56:52.7273077Z",
+    "finished_utc":  "2026-09-08T06:56:53.5150668Z",
+    "risk":  "Standard",
+    "timing":  "Prototype scaffold verification",
+    "prerequisites":  [
+
+                      ],
+    "shared_outputs":  [
+
+                       ],
+    "before":  {
+                   "source":  {
+                                  "digest":  "7b6dea4b7f9dfaa0cf762208c4f2fedf4a5d4c27c35eb957dbc2d8d804a506e8",
+                                  "files":  [
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\codex\\01-prompt-engineering-standards.md",
+                                                    "digest":  "388dd665be9c981ccacca8f41c9ffc714651ac01eeb27df59acf3b9fce6b0826",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\codex\\02-openai-platform-notes.md",
+                                                    "digest":  "f06964a313c662d5cb6baf9b880c6730395d80183bac4326333e11574c15a564",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\codex\\03-codex-extension-project-taxonomy.md",
+                                                    "digest":  "06e3d1f0046f9542ba2812b14754e35f376320adce3c14056c9102e638c804dc",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\codex\\codex-engineer.toml",
+                                                    "digest":  "d3d455ccfb48426d9dc534d0cabb20972a84ce1151a632b98350d89cb98b7875",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\gram\\diagram-developer.toml",
+                                                    "digest":  "85e093ca9ba3062949793c5913e59845fc546fab5b25e1d5985ff285044b1390",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\gram\\diagram-developer2.toml",
+                                                    "digest":  "c51990766f4bfe2ecd72c9eedce804909352c26228731bc870ee0be02968b25c",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\architecture-reviewer.toml",
+                                                    "digest":  "e06c99d4c9c513ef965f04579c1ca1e7d60a68ac063bdcbc4aca404510aaaf65",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\azure-db-developer.toml",
+                                                    "digest":  "1306772cd8decf97fc664c39de1de839d5394a8df95404ff3d84bb7d1b86b420",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\azure-engineer.toml",
+                                                    "digest":  "1e03c2f7d4ab578a158d1dc22d89872acb9cb61f3c0bda9dd51f70c3ec23b911",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\code-commenter.toml",
+                                                    "digest":  "992a419da93007e2b9ee8ffa78adc95bb3e93f9263bd853d36eaf1abf81e1586",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\csharp-developer.toml",
+                                                    "digest":  "e7f38645b069f0bd1acfd3472828c856c91e4f9d5f543f083930c0715de80f6a",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\full-stack-developer.toml",
+                                                    "digest":  "44dbcb87b7ab751a62198014a1385f36eee60abb73f5194271ba2fd7509562a6",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\integration-engineer.toml",
+                                                    "digest":  "f860cb47b424a557c329a62c17e61b36db8e4443c3462d830fd2ac224f559ccc",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\maf-developer.toml",
+                                                    "digest":  "10f16a849db511039565275b3a2abe7a8ec7176509eef8ffd93c2f71d9be9fcc",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\module-architect.toml",
+                                                    "digest":  "27637eeb3b5299620c87d0b2dec2b34f9ab1136bda76acb30ca7573487fac816",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\module-developer.toml",
+                                                    "digest":  "40c8aa0174682ec20bac521fdd9a9ee851990fc8579dba288c5565c12e8b0a47",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\package-architect.toml",
+                                                    "digest":  "ee701877f970d55dffc604d99a92ca74d38b037bbbc8a6123ee80497389e0ff8",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\package-developer.toml",
+                                                    "digest":  "ee283d5abe34587d2d17dc7b5e1a23c2b2a35c60d22f81b629eed9fcbcd50d8c",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\repo-author.toml",
+                                                    "digest":  "de1505336e3446e1fe92e1fc262881ba965efdbaf58adeb00f910f280d3195d8",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\solution-architect.toml",
+                                                    "digest":  "a186794c5ad31d764270457c07fb251a7fa3e687666ae594b6356399c7f214fa",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\solution-developer.toml",
+                                                    "digest":  "909287ea0bc29b568f8edc84cbf076219c21134f7a453a73bbcf00e8fe9f1512",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\solution-validator.toml",
+                                                    "digest":  "ad0b76fb1b87fcc28be865747900d53880e48ff97e6a66ac90c6097be2c05868",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\test-runner.toml",
+                                                    "digest":  "772b6865312f0d9338d0a1225fc3139490859c95650e1317c890a8dcbb3cbe4d",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\ui-designer.toml",
+                                                    "digest":  "0882c8db45b2f69041dac29248f5a659c428415a197a84716a53ae25d91c496d",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\config.toml",
+                                                    "digest":  "1898649fa1351aea6ede26aa623cc20e0c3f61be8f0852891acd268362ab242e",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\config_old.toml",
+                                                    "digest":  "426732bd5685c7ff9de83be329082dd7331eaa4351ef2e0abf14d5df31616dbd",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\ACCESS.md",
+                                                    "digest":  "ab3a1b8de0d77bb69fb6af5677dacf30c064d290b9529c167ee3a1777da154dd",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\evaluation-and-monitoring.mmd",
+                                                    "digest":  "aa9bbef90c2501c317f27e22427fa51d0fd3e918b551fffe2fe89151f87bd599",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\exception-handling-and-recovery.mmd",
+                                                    "digest":  "020f899769129f5cbeba6aa94ecc983cd360f64bece0542fbaf0bf5a6ecf0696",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\exploration-and-discovery.mmd",
+                                                    "digest":  "b2c5aaa29b20783b8e18a81cc1f4aaa3cd8053ccfda48f15c55678d6baf2190f",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\goal-setting-and-monitoring.mmd",
+                                                    "digest":  "718c710343c9d5c8d6aae09e0a1f5e98637ca7d38dba5fae038bf5af06cf6c7f",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\guardrails-safety-patterns.mmd",
+                                                    "digest":  "019401fbb660801c7c5e05e3e19b3ddcc0364861f5283b9d9907bd6962c51410",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\human-in-the-loop.mmd",
+                                                    "digest":  "ca945e7902bd1cd70636b3ebd0089aff8a22461ef910b997b58cc7e2956d917d",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\inter-agent-communication-a2a.mmd",
+                                                    "digest":  "e87c3beb4538bb7d0ff6e0d5d09b76975fe5b35d81f39ede18842170e70c0212",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\knowledge-retrieval-rag.mmd",
+                                                    "digest":  "4252255516f86b75090766435ee4154d70bc844e87c13d257283b5f713e8689f",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\learning-and-adaptation.mmd",
+                                                    "digest":  "e882643b2adc72e32949c85a0ee085067904556ccced350592cf5d9d7a6900ec",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\memory-management.mmd",
+                                                    "digest":  "fe6df1da08118c8cdc33eaf5fb8da0e9fbeb7eb4888643e51b65541f4d6f8a8a",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\model-context-protocol.mmd",
+                                                    "digest":  "086feb09a30bd546dfe2a2ef27cfe975c49ec7d1ff85daae3011f4f0431e5bd5",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\multi-agent-collaboration.mmd",
+                                                    "digest":  "932e8419467f3f9b51faf75d39399c44606aa27c2e8a822b562477821e51795c",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\parallelization.mmd",
+                                                    "digest":  "a35dbf70a6a4adf88e319e557735c0be0ac50c2a11797efcd8df77c590cd97ea",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\planning.mmd",
+                                                    "digest":  "2e176a04cc6855a8e3e606496afab0f5c01c1f74beec0fc456d00472d6a26dd7",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\prioritization.mmd",
+                                                    "digest":  "81d10c9c43f64cc05ecee1c60558ae1b750612c974b0b63c6c749dfc165f0c5b",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\prompt-chaining.mmd",
+                                                    "digest":  "0e8f2051beeeca3e4a11bd947de04ffbec9ec3d32b56002bbb90323f7a5cf61d",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\reasoning-techniques.mmd",
+                                                    "digest":  "5ce7f9774b9d5d522fdfccbf40b9fad37b74e69831dca0b1cd28aa01810c2610",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\reflection.mmd",
+                                                    "digest":  "f8a314ab0742639773eb3b8a57828a048711f45d0296adadd06ba62ec4d9579c",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\resource-aware-optimization.mmd",
+                                                    "digest":  "3ca6112e4d3cf4b4b90614843de9ff69b9e4f81dcaa4c0635109a21f35432907",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\routing.mmd",
+                                                    "digest":  "a8f41912ffc55bba33c3a1cb280ff7b1aac7c46dde418f61680b865d43491f95",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\tool-use.mmd",
+                                                    "digest":  "8e244be0192867bda44581b3db6c247867b3565ea97a20416e3b1d74c61b6203",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\evaluation-and-monitoring.md",
+                                                    "digest":  "98b0eee80047d4c95d67dc46f726e759174cffb108895c73a8d4b66e48f2b23c",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\exception-handling-and-recovery.md",
+                                                    "digest":  "106230588729e5a1b309a17e6c865785981061d7286376a7a884e1daa777055b",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\exploration-and-discovery.md",
+                                                    "digest":  "6117bd9152ea91a673754720f53ef5652601b038cabaa1f67f25d8b670d5fa39",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\goal-setting-and-monitoring.md",
+                                                    "digest":  "f6f9a660dc7019bf53ddb5fa22f57b6ede09f89ac22b6e016906989446a733f9",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\guardrails-safety-patterns.md",
+                                                    "digest":  "7c594e4ada59c0f1a2680dc6267fb552bd626323be976c97532004ef8cebf957",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\human-in-the-loop.md",
+                                                    "digest":  "a4e24972674b732d7a746b73242aed22d36016f1481e31c394b5f3aad246da9e",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\inter-agent-communication-a2a.md",
+                                                    "digest":  "7514dfc1f333b1ccfbacf7f410d022bbc51a7b8ebcc5c21005eabc17035768f5",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\knowledge-retrieval-rag.md",
+                                                    "digest":  "6111591e84f4a862e462174d558d3c9f6239d248adb0d68d61b9ad6c49d2e179",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\learning-and-adaptation.md",
+                                                    "digest":  "724f23a9e336bc023a85a2cea9b43913aeabc82003baa8ad7d78063f4c9f24b5",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\memory-management.md",
+                                                    "digest":  "7228206c8054979af4a67469e22467461be0ae0d4f18094c10d0ae8dd0ed3d6d",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\model-context-protocol.md",
+                                                    "digest":  "842d0008dc2bcd9e0187778a643e17388a8a3bdd103b13e8b6e3c09b3fadd36a",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\multi-agent-collaboration.md",
+                                                    "digest":  "76f0496fbe40236fa626bf33bb1fc3d96259c36bd0379d41a56ef3d47f324504",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\parallelization.md",
+                                                    "digest":  "191fbcef24a0a082dff4ffb30dd5bb3df78f3c5eabdc471da3d0feb6aeb4a9f3",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\planning.md",
+                                                    "digest":  "f81c4e3a08fc844a1296bbef2d22583119dc25d9e3f7af5b5ed134941c9d590f",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\prioritization.md",
+                                                    "digest":  "2e4ec4993eaf64f7443483f4498e8b7b7c0f4d81e72b01e584999eb4180388c3",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\prompt-chaining.md",
+                                                    "digest":  "8bea11d00ded0e43a9e9c388d156620acd66c7ccd9daeefb75cdcc067e4b2197",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\reasoning-techniques.md",
+                                                    "digest":  "7d0d11941d554c1b9513e9fccc229c4bf1b4805ae96ad2a91ea3be0237489aa1",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\reflection.md",
+                                                    "digest":  "d36f60ea265b56190e16345dfdbfc65d15df5c862979a69be1374b873d717b0a",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\resource-aware-optimization.md",
+                                                    "digest":  "26684e32e7747332302a899ba8462a649b569b67da1fcbdf00fb28ce4ba7762d",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\routing.md",
+                                                    "digest":  "cd2dbdd34dbd1ad3b546f57d220ef45de1421486121931790c4cdce30529f89d",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\tool-use.md",
+                                                    "digest":  "1f0c4f0dc498f83b4f6b5b2c9e1365c49a509febfb95f933b2fb1ac70682c3ba",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\context-minimization-pattern_.md",
+                                                    "digest":  "05f76ed33d5cba313ed6e05b442fa2304136a17a405f4281caab5bef89037d22",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\context-window-anxiety-management_.md",
+                                                    "digest":  "adee12f820689d799b1c4c2d25a23eb563bb306a038e5dcdcd2ac05416551d8a",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\curated-code-context-window_.md",
+                                                    "digest":  "1e2c3fba25cd0920a560de18ecb61e4a6ca9bc498ebe63bdb03e8bbd97e525f0",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\curated-file-context-window_.md",
+                                                    "digest":  "cd98e12af4f065ab31677107ab3be5d0fa61767e953a9acb3913d6f7334801a3",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\dynamic-context-injection_.md",
+                                                    "digest":  "b98d0ab33402efaeb01b04b011ee688505a6971554ab1ee907ffec458763bc7c",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\episodic-memory-retrieval-injection_.md",
+                                                    "digest":  "6b4c63b994441b48ec42533534fffcc5871216a7e7edf2890a645963f2df9f61",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\layered-configuration-context_.md",
+                                                    "digest":  "8c0aa721e4df0f4500eec225093054e674856ee18223a372cfe85433b8ba5271",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\proactive-agent-state-externalization_.md",
+                                                    "digest":  "973e42964cdb123410f6ffd4d6d017c1b1ec7ba226fd0abe00f03e04b9cded36",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\background-agent-ci_.md",
+                                                    "digest":  "12b65d594cf0d266294e0e15ed47d0af20db2ae7cd49b648da94e5cb61c7467d",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\coding-agent-ci-feedback-loop_.md",
+                                                    "digest":  "c9c01a0226d2c9a6a321eb81faff23740ef62b8bc08edccb14c5bc0e029772e7",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\dogfooding-with-rapid-iteration-for-agent-improvement_.md",
+                                                    "digest":  "45c2a01bb735d946f56db16cff1291c457b5c63dd9d33dcaffee9da9042978df",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\graph-of-thoughts_.md",
+                                                    "digest":  "1c8216f4121fb2ef016785f7ca804b80bc0a48b4e322dd99bc9d7dfe1accba15",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\inference-healed-code-review-reward_.md",
+                                                    "digest":  "7260ff222fc976a000360206e7398e9ded411341870083589d20bb69d88b8081",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\reflection_.md",
+                                                    "digest":  "95b8f8dac5690faa8d1edb062c2d651ae15ae79a6d0175d0a09e5745c868f226",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\rich-feedback-loops_.md",
+                                                    "digest":  "be30493058e897f3803fe8e8a67e387b5a03275d7bb5f451258febadef812ec2",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\self-critique-evaluator-loop_.md",
+                                                    "digest":  "9b151d5ec55d53260f5d6097d26fe8eb5de02862f00ab682850f1fa22b441c06",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\self-discover-reasoning-structures_.md",
+                                                    "digest":  "6afc96ce392a78e4b9ef8f5ec3e510b2f49151e915c6c2b2bf59d1faa45a2f31",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\spec-as-test-feedback-loop_.md",
+                                                    "digest":  "be3c1fc3f59335039c39788cf4bb1ad6b9a240531be2357cb30bcf7823ad1c5a",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\tool-use-incentivization-via-reward-shaping_.md",
+                                                    "digest":  "559a39580fdec0031c694c40c8a2718157c530f7aff909b2cd169e262059a997",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\action-selector-pattern_.md",
+                                                    "digest":  "d5b3dabb0b2b3427e693286a36945eaf6fea67fbd5eb73b2a765c22190395cba",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\agent-driven-research_.md",
+                                                    "digest":  "e5eee7628ada4702b56e29880ee41b5448c8f3b3f05a7c821767cf18a4d5505c",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\autonomous-workflow-agent-architecture_.md",
+                                                    "digest":  "075cf88f44a6167eaf1193bf1c0e892420fe86228f222e7f14a705b93b2396e9",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\continuous-autonomous-task-loop-pattern_.md",
+                                                    "digest":  "125951c164913e6b6f06b9879c6b4a8e5c856a822e7749f25499f3c9c29c721b",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\disposable-scaffolding-over-durable-features_.md",
+                                                    "digest":  "59fb4e8eeb66847b2719df109c74bd0cfa2c34061e3a1afa27479d2be159fdb1",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\dual-llm-pattern_.md",
+                                                    "digest":  "dafe3a6be2f929ad32894ff3e935d11246e84ce7e87862f589a75004e1158077",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\explicit-posterior-sampling-planner_.md",
+                                                    "digest":  "b644324582ab419d756d66ce4cca66825271e6436768001b08859bd3e6649471",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\inference-time-scaling_.md",
+                                                    "digest":  "67ae9f5600267a842f735d3cbda18a66d09e0ba7c8588c95eeb35a5fdd4d1270",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\inversion-of-control_.md",
+                                                    "digest":  "0012315affacfc1d50c662f0053ab7d8355947f959d5a91aec9cb2a864d545b8",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\iterative-multi-agent-brainstorming_.md",
+                                                    "digest":  "7474cfa396b6c045575fcd90d80b05d1944152961eed3bd51c2c9c8fc0522d65",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\language-agent-tree-search-lats_.md",
+                                                    "digest":  "c3de9b0ab5c0140658644b5ebe1b99494f187143d71ff06e29b1cb2567021585",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\llm-map-reduce-pattern_.md",
+                                                    "digest":  "77b518b2a64e23ce19eeefef9dcd0c92e97247c092929861316dc7ac8817a06e",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\multi-model-orchestration-for-complex-edits_.md",
+                                                    "digest":  "876acfec3ed4a24c111278ad57313a36f5cb8a2ed2c2e5e462f20953d45e423c",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\oracle-and-worker-multi-model_.md",
+                                                    "digest":  "5ce1b1240145ba225b55a0983fb4dfd77f75b3119fff040e4bee684917a57cca",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\parallel-tool-execution_.md",
+                                                    "digest":  "c1b3ece402ec284ba68b66e518326ce981fee941f68ca932477acbb932a1b37f",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\plan-then-execute-pattern_.md",
+                                                    "digest":  "d2a69f64882b89ebc86d947daa1bce9e02fb5b9eb720b346aeec6fc0dadc3f44",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\self-rewriting-meta-prompt-loop_.md",
+                                                    "digest":  "dfc5d769771a32dbe87d6aaf2fd56c68adf6211d7a6d0c137d83ce90b97d7a5b",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\specification-driven-agent-development_.md",
+                                                    "digest":  "4fb449c33b77b83098d5c0db31210d30abde1a03782041262043b3a6c08ac7e3",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\sub-agent-spawning_.md",
+                                                    "digest":  "1a2832863398a357ee691401aa60bb3aa194a31fcbcd46d026b6526ac733aff0",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\three-stage-perception-architecture_.md",
+                                                    "digest":  "c6013365773c53f2e50d724e81ce4530a2bea25fa372af29c814a4d4d8446b37",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\tool-capability-compartmentalization_.md",
+                                                    "digest":  "4cfa0f8c3c0685bf02b29e8d88dd6394cbc07ce8706d9f3925f7c2db29fb94c4",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\tree-of-thought-reasoning_.md",
+                                                    "digest":  "94b247106e2b330efaf30f2019b737c9d647f14ae05b6aee95b1e5fa8bca9948",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\PATTERN-AGENTIC-TEMPLATE.md",
+                                                    "digest":  "3c9a0128ce382436b4ed2eb45093ab4eed2fb4a7202dfc689934dc275a0f6bda",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\asynchronous-coding-agent-pipeline_.md",
+                                                    "digest":  "4dae70badaa2e329d8bc0cff9add8d0c026b49ee5d5656e8eb49506b23655190",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\criticgpt-style-evaluation_.md",
+                                                    "digest":  "c6ddd5a7296c059d7302c4f86776f373d2d30416f06611b0e7b29e0ba0eeaa61",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\extended-coherence-work-sessions_.md",
+                                                    "digest":  "a6504744a8ed8fe0cd05190605cb8326e621e8fa55b77ebe2fba154c5c222255",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\lethal-trifecta-threat-model_.md",
+                                                    "digest":  "4650f1f985c31d5ba05be93dd62272d6d3e4b9969623f08f0336bc51dd09cf39",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\merged-code-language-skill-model_.md",
+                                                    "digest":  "e76886fc53403dded3b35edbc1cc09ce5bc083f2b36cc3a469b756c76ce91b09",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\no-token-limit-magic_.md",
+                                                    "digest":  "05e8bbbf9f302ca3ac7a8a2f359303fe60efd79859168a38f0302cd14bdc4a58",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\rlaif-reinforcement-learning-from-ai-feedback_.md",
+                                                    "digest":  "93bd61b3e8ae82c00361e9cbd0976b70792a4b53423754230195fc5252d36558",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\subagent-compilation-checker_.md",
+                                                    "digest":  "1f829c037601b7d9d5660ce7bfbaa21114da7651493cffe881a91fbab12c9547",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\versioned-constitution-governance_.md",
+                                                    "digest":  "d9afd1d51079aad3b96fb899c3725f6fb323adc62139c301935308323f66edf3",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Security \u0026 Safety\\deterministic-security-scanning-build-loop_.md",
+                                                    "digest":  "bba1c2399ee47c56c349142d3335978282d2886412e7b751a1b0b95c9b47a5ce",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\agent-first-tooling-and-logging_.md",
+                                                    "digest":  "68b82fbb7d1e9027163e98f8d24434a85ff2785de95a0534015dac8e112f0bf6",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\agent-sdk-for-programmatic-control_.md",
+                                                    "digest":  "32e858c4b1157406c8e6e5a815d159beaef217f19ac87cd8c3607b8a396baeee",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\cli-native-agent-orchestration_.md",
+                                                    "digest":  "991e1e7b983c0efefa5fe10b9c3ad8b32faa5ec123db3635f98688f29b965aa9",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\code-first-tool-interface-pattern_.md",
+                                                    "digest":  "af2840d44bfeb534360e41d88df92cfc668503b30bd878603e15c89320820168",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\code-then-execute-pattern_.md",
+                                                    "digest":  "2617359636c3434156750cb6c0356dab8772edf9ff74944ccf395ff642c26889",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\dynamic-code-injection-on-demand-file-fetch_.md",
+                                                    "digest":  "81388731bda41cba998e276404bdbb5626dd25ea09a6c725162da00e44e109e6",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\egress-lockdown-no-exfiltration-channel_.md",
+                                                    "digest":  "2ac8fc6588135bad2396ab3661727bcc9b6f52e516ede250392501f5d0710041",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\llm-friendly-api-design_.md",
+                                                    "digest":  "83ff4a95771f829202f45c417d721291236f1825405cdccf5f05b1e48b869455",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\patch-steering-via-prompted-tool-selection_.md",
+                                                    "digest":  "c9217cf3eed2505e6219255b63b6a94a5311c3d860e873033a4cc353e41a7134",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\shell-command-contextualization_.md",
+                                                    "digest":  "4f9070d9134917b2ae4f9e0213e3a0bccba35950e570c0112e538933a85d351b",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\tool-use-steering-via-prompting_.md",
+                                                    "digest":  "439fe547e7faf3095fb674a358337a9bd3e84257f935aed80f186b76ca5b7117",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\virtual-machine-operator-agent_.md",
+                                                    "digest":  "30e52f61e267009020ddf629e7fe7a9da414722e7dbe69040b2ef15afb11e812",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\visual-ai-multimodal-integration_.md",
+                                                    "digest":  "f64007b28e9170b29b251127d1dbcc87c00ad8c8dab4afed10b5e120633b8459",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\abstracted-code-representation-for-review_.md",
+                                                    "digest":  "388183fac2020b2ad44c0d0bd5430aa1be4b5565210565f51de67faf58818983",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\agent-assisted-scaffolding_.md",
+                                                    "digest":  "7ccdc9e29a738915a626ff905e48aa0caafb888da75dbd7ef3940e194b107c8c",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\agent-friendly-workflow-design_.md",
+                                                    "digest":  "903dc2e9bb2ce401fa2297a8c8e678d79a582b4c2536f54aad8fd4803f55f24d",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\seamless-background-to-foreground-handoff_.md",
+                                                    "digest":  "d89fdd3083112da24218a9f7adc158e646830dd51255e40a4ce8d53839257a42",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\spectrum-of-control-blended-initiative_.md",
+                                                    "digest":  "54c595ec5690ab5d00ba979a9310206a259c922dfb22dd995b22b5555f8613eb",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\verbose-reasoning-transparency_.md",
+                                                    "digest":  "a947017806123f71f697caeed1fe88951ed952ff073b6dbeefcd4f345ae8fae7",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-command.ps1",
+                                                    "digest":  "304deb8b20f1cc6513a33da4b90e4ff5a0f371dda1b6e94f32c440c6dcf8c17f",
+                                                    "state":  "Present"
+                                                },
+                                                {
+                                                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\AGENTS.md",
+                                                    "digest":  "21bd70ba4db95af454c3ccae58ada38dd079a806fd98e74156d3abbdb89ae181",
+                                                    "state":  "Present"
+                                                }
+                                            ]
+                              },
+                   "tests":  {
+                                 "digest":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                 "files":  [
+
+                                           ]
+                             },
+                   "configuration":  {
+                                         "digest":  "424572173d467154a1a33cd2e66039b497e96eff948cf07332a165afce7d8c83",
+                                         "files":  [
+                                                       {
+                                                           "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\config.toml",
+                                                           "digest":  "1898649fa1351aea6ede26aa623cc20e0c3f61be8f0852891acd268362ab242e",
+                                                           "state":  "Present"
+                                                       }
+                                                   ]
+                                     },
+                   "fixtures":  {
+                                    "digest":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                    "files":  [
+
+                                              ]
+                                },
+                   "dependencies":  {
+                                        "digest":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                        "files":  [
+
+                                                  ]
+                                    },
+                   "runtime":  {
+                                   "identity":  "Windows PowerShell and git; installed solution scaffold reference tree",
+                                   "powershell":  "5.1.26100.9168",
+                                   "os":  "Microsoft Windows NT 10.0.26200.0",
+                                   "path_digest":  "405627e64f5471b3bb74b653d8e76cbce462ad71eec13475cb502d72c93aaed1",
+                                   "environment":  {
+
+                                                   },
+                                   "files":  {
+                                                 "digest":  "2d6500baebcda1f32dacabfbd5cf2f56db8364dee5027ce48a3abfc770158e8f",
+                                                 "files":  [
+                                                               {
+                                                                   "path":  "C:\\Program Files\\Git\\cmd\\git.exe",
+                                                                   "digest":  "7b7971dd13f0c3a284e538601f2f9770b3a87dfaccb5fb52d68141c67ed22364",
+                                                                   "state":  "Present"
+                                                               },
+                                                               {
+                                                                   "path":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                                                                   "digest":  "7600ffe12da441fe89d035b13801e8e91d064bc544a27b19a5cf49f6ab8b18f5",
+                                                                   "state":  "Present"
+                                                               }
+                                                           ]
+                                             }
+                               },
+                   "digest":  "0f3e43bd483a347bc6124070ef17351fcfef06b8aea644fb9e007d18b36f5986"
+               },
+    "after":  {
+                  "source":  {
+                                 "digest":  "7b6dea4b7f9dfaa0cf762208c4f2fedf4a5d4c27c35eb957dbc2d8d804a506e8",
+                                 "files":  [
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\codex\\01-prompt-engineering-standards.md",
+                                                   "digest":  "388dd665be9c981ccacca8f41c9ffc714651ac01eeb27df59acf3b9fce6b0826",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\codex\\02-openai-platform-notes.md",
+                                                   "digest":  "f06964a313c662d5cb6baf9b880c6730395d80183bac4326333e11574c15a564",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\codex\\03-codex-extension-project-taxonomy.md",
+                                                   "digest":  "06e3d1f0046f9542ba2812b14754e35f376320adce3c14056c9102e638c804dc",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\codex\\codex-engineer.toml",
+                                                   "digest":  "d3d455ccfb48426d9dc534d0cabb20972a84ce1151a632b98350d89cb98b7875",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\gram\\diagram-developer.toml",
+                                                   "digest":  "85e093ca9ba3062949793c5913e59845fc546fab5b25e1d5985ff285044b1390",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\gram\\diagram-developer2.toml",
+                                                   "digest":  "c51990766f4bfe2ecd72c9eedce804909352c26228731bc870ee0be02968b25c",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\architecture-reviewer.toml",
+                                                   "digest":  "e06c99d4c9c513ef965f04579c1ca1e7d60a68ac063bdcbc4aca404510aaaf65",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\azure-db-developer.toml",
+                                                   "digest":  "1306772cd8decf97fc664c39de1de839d5394a8df95404ff3d84bb7d1b86b420",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\azure-engineer.toml",
+                                                   "digest":  "1e03c2f7d4ab578a158d1dc22d89872acb9cb61f3c0bda9dd51f70c3ec23b911",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\code-commenter.toml",
+                                                   "digest":  "992a419da93007e2b9ee8ffa78adc95bb3e93f9263bd853d36eaf1abf81e1586",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\csharp-developer.toml",
+                                                   "digest":  "e7f38645b069f0bd1acfd3472828c856c91e4f9d5f543f083930c0715de80f6a",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\full-stack-developer.toml",
+                                                   "digest":  "44dbcb87b7ab751a62198014a1385f36eee60abb73f5194271ba2fd7509562a6",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\integration-engineer.toml",
+                                                   "digest":  "f860cb47b424a557c329a62c17e61b36db8e4443c3462d830fd2ac224f559ccc",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\maf-developer.toml",
+                                                   "digest":  "10f16a849db511039565275b3a2abe7a8ec7176509eef8ffd93c2f71d9be9fcc",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\module-architect.toml",
+                                                   "digest":  "27637eeb3b5299620c87d0b2dec2b34f9ab1136bda76acb30ca7573487fac816",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\module-developer.toml",
+                                                   "digest":  "40c8aa0174682ec20bac521fdd9a9ee851990fc8579dba288c5565c12e8b0a47",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\package-architect.toml",
+                                                   "digest":  "ee701877f970d55dffc604d99a92ca74d38b037bbbc8a6123ee80497389e0ff8",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\package-developer.toml",
+                                                   "digest":  "ee283d5abe34587d2d17dc7b5e1a23c2b2a35c60d22f81b629eed9fcbcd50d8c",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\repo-author.toml",
+                                                   "digest":  "de1505336e3446e1fe92e1fc262881ba965efdbaf58adeb00f910f280d3195d8",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\solution-architect.toml",
+                                                   "digest":  "a186794c5ad31d764270457c07fb251a7fa3e687666ae594b6356399c7f214fa",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\solution-developer.toml",
+                                                   "digest":  "909287ea0bc29b568f8edc84cbf076219c21134f7a453a73bbcf00e8fe9f1512",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\solution-validator.toml",
+                                                   "digest":  "ad0b76fb1b87fcc28be865747900d53880e48ff97e6a66ac90c6097be2c05868",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\test-runner.toml",
+                                                   "digest":  "772b6865312f0d9338d0a1225fc3139490859c95650e1317c890a8dcbb3cbe4d",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\agents\\swe\\ui-designer.toml",
+                                                   "digest":  "0882c8db45b2f69041dac29248f5a659c428415a197a84716a53ae25d91c496d",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\config.toml",
+                                                   "digest":  "1898649fa1351aea6ede26aa623cc20e0c3f61be8f0852891acd268362ab242e",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\config_old.toml",
+                                                   "digest":  "426732bd5685c7ff9de83be329082dd7331eaa4351ef2e0abf14d5df31616dbd",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\ACCESS.md",
+                                                   "digest":  "ab3a1b8de0d77bb69fb6af5677dacf30c064d290b9529c167ee3a1777da154dd",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\evaluation-and-monitoring.mmd",
+                                                   "digest":  "aa9bbef90c2501c317f27e22427fa51d0fd3e918b551fffe2fe89151f87bd599",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\exception-handling-and-recovery.mmd",
+                                                   "digest":  "020f899769129f5cbeba6aa94ecc983cd360f64bece0542fbaf0bf5a6ecf0696",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\exploration-and-discovery.mmd",
+                                                   "digest":  "b2c5aaa29b20783b8e18a81cc1f4aaa3cd8053ccfda48f15c55678d6baf2190f",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\goal-setting-and-monitoring.mmd",
+                                                   "digest":  "718c710343c9d5c8d6aae09e0a1f5e98637ca7d38dba5fae038bf5af06cf6c7f",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\guardrails-safety-patterns.mmd",
+                                                   "digest":  "019401fbb660801c7c5e05e3e19b3ddcc0364861f5283b9d9907bd6962c51410",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\human-in-the-loop.mmd",
+                                                   "digest":  "ca945e7902bd1cd70636b3ebd0089aff8a22461ef910b997b58cc7e2956d917d",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\inter-agent-communication-a2a.mmd",
+                                                   "digest":  "e87c3beb4538bb7d0ff6e0d5d09b76975fe5b35d81f39ede18842170e70c0212",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\knowledge-retrieval-rag.mmd",
+                                                   "digest":  "4252255516f86b75090766435ee4154d70bc844e87c13d257283b5f713e8689f",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\learning-and-adaptation.mmd",
+                                                   "digest":  "e882643b2adc72e32949c85a0ee085067904556ccced350592cf5d9d7a6900ec",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\memory-management.mmd",
+                                                   "digest":  "fe6df1da08118c8cdc33eaf5fb8da0e9fbeb7eb4888643e51b65541f4d6f8a8a",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\model-context-protocol.mmd",
+                                                   "digest":  "086feb09a30bd546dfe2a2ef27cfe975c49ec7d1ff85daae3011f4f0431e5bd5",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\multi-agent-collaboration.mmd",
+                                                   "digest":  "932e8419467f3f9b51faf75d39399c44606aa27c2e8a822b562477821e51795c",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\parallelization.mmd",
+                                                   "digest":  "a35dbf70a6a4adf88e319e557735c0be0ac50c2a11797efcd8df77c590cd97ea",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\planning.mmd",
+                                                   "digest":  "2e176a04cc6855a8e3e606496afab0f5c01c1f74beec0fc456d00472d6a26dd7",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\prioritization.mmd",
+                                                   "digest":  "81d10c9c43f64cc05ecee1c60558ae1b750612c974b0b63c6c749dfc165f0c5b",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\prompt-chaining.mmd",
+                                                   "digest":  "0e8f2051beeeca3e4a11bd947de04ffbec9ec3d32b56002bbb90323f7a5cf61d",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\reasoning-techniques.mmd",
+                                                   "digest":  "5ce7f9774b9d5d522fdfccbf40b9fad37b74e69831dca0b1cd28aa01810c2610",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\reflection.mmd",
+                                                   "digest":  "f8a314ab0742639773eb3b8a57828a048711f45d0296adadd06ba62ec4d9579c",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\resource-aware-optimization.mmd",
+                                                   "digest":  "3ca6112e4d3cf4b4b90614843de9ff69b9e4f81dcaa4c0635109a21f35432907",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\routing.mmd",
+                                                   "digest":  "a8f41912ffc55bba33c3a1cb280ff7b1aac7c46dde418f61680b865d43491f95",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\diagrams\\tool-use.mmd",
+                                                   "digest":  "8e244be0192867bda44581b3db6c247867b3565ea97a20416e3b1d74c61b6203",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\evaluation-and-monitoring.md",
+                                                   "digest":  "98b0eee80047d4c95d67dc46f726e759174cffb108895c73a8d4b66e48f2b23c",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\exception-handling-and-recovery.md",
+                                                   "digest":  "106230588729e5a1b309a17e6c865785981061d7286376a7a884e1daa777055b",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\exploration-and-discovery.md",
+                                                   "digest":  "6117bd9152ea91a673754720f53ef5652601b038cabaa1f67f25d8b670d5fa39",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\goal-setting-and-monitoring.md",
+                                                   "digest":  "f6f9a660dc7019bf53ddb5fa22f57b6ede09f89ac22b6e016906989446a733f9",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\guardrails-safety-patterns.md",
+                                                   "digest":  "7c594e4ada59c0f1a2680dc6267fb552bd626323be976c97532004ef8cebf957",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\human-in-the-loop.md",
+                                                   "digest":  "a4e24972674b732d7a746b73242aed22d36016f1481e31c394b5f3aad246da9e",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\inter-agent-communication-a2a.md",
+                                                   "digest":  "7514dfc1f333b1ccfbacf7f410d022bbc51a7b8ebcc5c21005eabc17035768f5",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\knowledge-retrieval-rag.md",
+                                                   "digest":  "6111591e84f4a862e462174d558d3c9f6239d248adb0d68d61b9ad6c49d2e179",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\learning-and-adaptation.md",
+                                                   "digest":  "724f23a9e336bc023a85a2cea9b43913aeabc82003baa8ad7d78063f4c9f24b5",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\memory-management.md",
+                                                   "digest":  "7228206c8054979af4a67469e22467461be0ae0d4f18094c10d0ae8dd0ed3d6d",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\model-context-protocol.md",
+                                                   "digest":  "842d0008dc2bcd9e0187778a643e17388a8a3bdd103b13e8b6e3c09b3fadd36a",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\multi-agent-collaboration.md",
+                                                   "digest":  "76f0496fbe40236fa626bf33bb1fc3d96259c36bd0379d41a56ef3d47f324504",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\parallelization.md",
+                                                   "digest":  "191fbcef24a0a082dff4ffb30dd5bb3df78f3c5eabdc471da3d0feb6aeb4a9f3",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\planning.md",
+                                                   "digest":  "f81c4e3a08fc844a1296bbef2d22583119dc25d9e3f7af5b5ed134941c9d590f",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\prioritization.md",
+                                                   "digest":  "2e4ec4993eaf64f7443483f4498e8b7b7c0f4d81e72b01e584999eb4180388c3",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\prompt-chaining.md",
+                                                   "digest":  "8bea11d00ded0e43a9e9c388d156620acd66c7ccd9daeefb75cdcc067e4b2197",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\reasoning-techniques.md",
+                                                   "digest":  "7d0d11941d554c1b9513e9fccc229c4bf1b4805ae96ad2a91ea3be0237489aa1",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\reflection.md",
+                                                   "digest":  "d36f60ea265b56190e16345dfdbfc65d15df5c862979a69be1374b873d717b0a",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\resource-aware-optimization.md",
+                                                   "digest":  "26684e32e7747332302a899ba8462a649b569b67da1fcbdf00fb28ce4ba7762d",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\routing.md",
+                                                   "digest":  "cd2dbdd34dbd1ad3b546f57d220ef45de1421486121931790c4cdce30529f89d",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Common\\tool-use.md",
+                                                   "digest":  "1f0c4f0dc498f83b4f6b5b2c9e1365c49a509febfb95f933b2fb1ac70682c3ba",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\context-minimization-pattern_.md",
+                                                   "digest":  "05f76ed33d5cba313ed6e05b442fa2304136a17a405f4281caab5bef89037d22",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\context-window-anxiety-management_.md",
+                                                   "digest":  "adee12f820689d799b1c4c2d25a23eb563bb306a038e5dcdcd2ac05416551d8a",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\curated-code-context-window_.md",
+                                                   "digest":  "1e2c3fba25cd0920a560de18ecb61e4a6ca9bc498ebe63bdb03e8bbd97e525f0",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\curated-file-context-window_.md",
+                                                   "digest":  "cd98e12af4f065ab31677107ab3be5d0fa61767e953a9acb3913d6f7334801a3",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\dynamic-context-injection_.md",
+                                                   "digest":  "b98d0ab33402efaeb01b04b011ee688505a6971554ab1ee907ffec458763bc7c",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\episodic-memory-retrieval-injection_.md",
+                                                   "digest":  "6b4c63b994441b48ec42533534fffcc5871216a7e7edf2890a645963f2df9f61",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\layered-configuration-context_.md",
+                                                   "digest":  "8c0aa721e4df0f4500eec225093054e674856ee18223a372cfe85433b8ba5271",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Context \u0026 Memory\\proactive-agent-state-externalization_.md",
+                                                   "digest":  "973e42964cdb123410f6ffd4d6d017c1b1ec7ba226fd0abe00f03e04b9cded36",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\background-agent-ci_.md",
+                                                   "digest":  "12b65d594cf0d266294e0e15ed47d0af20db2ae7cd49b648da94e5cb61c7467d",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\coding-agent-ci-feedback-loop_.md",
+                                                   "digest":  "c9c01a0226d2c9a6a321eb81faff23740ef62b8bc08edccb14c5bc0e029772e7",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\dogfooding-with-rapid-iteration-for-agent-improvement_.md",
+                                                   "digest":  "45c2a01bb735d946f56db16cff1291c457b5c63dd9d33dcaffee9da9042978df",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\graph-of-thoughts_.md",
+                                                   "digest":  "1c8216f4121fb2ef016785f7ca804b80bc0a48b4e322dd99bc9d7dfe1accba15",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\inference-healed-code-review-reward_.md",
+                                                   "digest":  "7260ff222fc976a000360206e7398e9ded411341870083589d20bb69d88b8081",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\reflection_.md",
+                                                   "digest":  "95b8f8dac5690faa8d1edb062c2d651ae15ae79a6d0175d0a09e5745c868f226",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\rich-feedback-loops_.md",
+                                                   "digest":  "be30493058e897f3803fe8e8a67e387b5a03275d7bb5f451258febadef812ec2",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\self-critique-evaluator-loop_.md",
+                                                   "digest":  "9b151d5ec55d53260f5d6097d26fe8eb5de02862f00ab682850f1fa22b441c06",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\self-discover-reasoning-structures_.md",
+                                                   "digest":  "6afc96ce392a78e4b9ef8f5ec3e510b2f49151e915c6c2b2bf59d1faa45a2f31",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\spec-as-test-feedback-loop_.md",
+                                                   "digest":  "be3c1fc3f59335039c39788cf4bb1ad6b9a240531be2357cb30bcf7823ad1c5a",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Feedback Loops\\tool-use-incentivization-via-reward-shaping_.md",
+                                                   "digest":  "559a39580fdec0031c694c40c8a2718157c530f7aff909b2cd169e262059a997",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\action-selector-pattern_.md",
+                                                   "digest":  "d5b3dabb0b2b3427e693286a36945eaf6fea67fbd5eb73b2a765c22190395cba",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\agent-driven-research_.md",
+                                                   "digest":  "e5eee7628ada4702b56e29880ee41b5448c8f3b3f05a7c821767cf18a4d5505c",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\autonomous-workflow-agent-architecture_.md",
+                                                   "digest":  "075cf88f44a6167eaf1193bf1c0e892420fe86228f222e7f14a705b93b2396e9",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\continuous-autonomous-task-loop-pattern_.md",
+                                                   "digest":  "125951c164913e6b6f06b9879c6b4a8e5c856a822e7749f25499f3c9c29c721b",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\disposable-scaffolding-over-durable-features_.md",
+                                                   "digest":  "59fb4e8eeb66847b2719df109c74bd0cfa2c34061e3a1afa27479d2be159fdb1",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\dual-llm-pattern_.md",
+                                                   "digest":  "dafe3a6be2f929ad32894ff3e935d11246e84ce7e87862f589a75004e1158077",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\explicit-posterior-sampling-planner_.md",
+                                                   "digest":  "b644324582ab419d756d66ce4cca66825271e6436768001b08859bd3e6649471",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\inference-time-scaling_.md",
+                                                   "digest":  "67ae9f5600267a842f735d3cbda18a66d09e0ba7c8588c95eeb35a5fdd4d1270",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\inversion-of-control_.md",
+                                                   "digest":  "0012315affacfc1d50c662f0053ab7d8355947f959d5a91aec9cb2a864d545b8",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\iterative-multi-agent-brainstorming_.md",
+                                                   "digest":  "7474cfa396b6c045575fcd90d80b05d1944152961eed3bd51c2c9c8fc0522d65",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\language-agent-tree-search-lats_.md",
+                                                   "digest":  "c3de9b0ab5c0140658644b5ebe1b99494f187143d71ff06e29b1cb2567021585",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\llm-map-reduce-pattern_.md",
+                                                   "digest":  "77b518b2a64e23ce19eeefef9dcd0c92e97247c092929861316dc7ac8817a06e",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\multi-model-orchestration-for-complex-edits_.md",
+                                                   "digest":  "876acfec3ed4a24c111278ad57313a36f5cb8a2ed2c2e5e462f20953d45e423c",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\oracle-and-worker-multi-model_.md",
+                                                   "digest":  "5ce1b1240145ba225b55a0983fb4dfd77f75b3119fff040e4bee684917a57cca",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\parallel-tool-execution_.md",
+                                                   "digest":  "c1b3ece402ec284ba68b66e518326ce981fee941f68ca932477acbb932a1b37f",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\plan-then-execute-pattern_.md",
+                                                   "digest":  "d2a69f64882b89ebc86d947daa1bce9e02fb5b9eb720b346aeec6fc0dadc3f44",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\self-rewriting-meta-prompt-loop_.md",
+                                                   "digest":  "dfc5d769771a32dbe87d6aaf2fd56c68adf6211d7a6d0c137d83ce90b97d7a5b",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\specification-driven-agent-development_.md",
+                                                   "digest":  "4fb449c33b77b83098d5c0db31210d30abde1a03782041262043b3a6c08ac7e3",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\sub-agent-spawning_.md",
+                                                   "digest":  "1a2832863398a357ee691401aa60bb3aa194a31fcbcd46d026b6526ac733aff0",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\three-stage-perception-architecture_.md",
+                                                   "digest":  "c6013365773c53f2e50d724e81ce4530a2bea25fa372af29c814a4d4d8446b37",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\tool-capability-compartmentalization_.md",
+                                                   "digest":  "4cfa0f8c3c0685bf02b29e8d88dd6394cbc07ce8706d9f3925f7c2db29fb94c4",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Orchestration \u0026 Control\\tree-of-thought-reasoning_.md",
+                                                   "digest":  "94b247106e2b330efaf30f2019b737c9d647f14ae05b6aee95b1e5fa8bca9948",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\PATTERN-AGENTIC-TEMPLATE.md",
+                                                   "digest":  "3c9a0128ce382436b4ed2eb45093ab4eed2fb4a7202dfc689934dc275a0f6bda",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\asynchronous-coding-agent-pipeline_.md",
+                                                   "digest":  "4dae70badaa2e329d8bc0cff9add8d0c026b49ee5d5656e8eb49506b23655190",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\criticgpt-style-evaluation_.md",
+                                                   "digest":  "c6ddd5a7296c059d7302c4f86776f373d2d30416f06611b0e7b29e0ba0eeaa61",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\extended-coherence-work-sessions_.md",
+                                                   "digest":  "a6504744a8ed8fe0cd05190605cb8326e621e8fa55b77ebe2fba154c5c222255",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\lethal-trifecta-threat-model_.md",
+                                                   "digest":  "4650f1f985c31d5ba05be93dd62272d6d3e4b9969623f08f0336bc51dd09cf39",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\merged-code-language-skill-model_.md",
+                                                   "digest":  "e76886fc53403dded3b35edbc1cc09ce5bc083f2b36cc3a469b756c76ce91b09",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\no-token-limit-magic_.md",
+                                                   "digest":  "05e8bbbf9f302ca3ac7a8a2f359303fe60efd79859168a38f0302cd14bdc4a58",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\rlaif-reinforcement-learning-from-ai-feedback_.md",
+                                                   "digest":  "93bd61b3e8ae82c00361e9cbd0976b70792a4b53423754230195fc5252d36558",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\subagent-compilation-checker_.md",
+                                                   "digest":  "1f829c037601b7d9d5660ce7bfbaa21114da7651493cffe881a91fbab12c9547",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Reliability \u0026 Eval\\versioned-constitution-governance_.md",
+                                                   "digest":  "d9afd1d51079aad3b96fb899c3725f6fb323adc62139c301935308323f66edf3",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Security \u0026 Safety\\deterministic-security-scanning-build-loop_.md",
+                                                   "digest":  "bba1c2399ee47c56c349142d3335978282d2886412e7b751a1b0b95c9b47a5ce",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\agent-first-tooling-and-logging_.md",
+                                                   "digest":  "68b82fbb7d1e9027163e98f8d24434a85ff2785de95a0534015dac8e112f0bf6",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\agent-sdk-for-programmatic-control_.md",
+                                                   "digest":  "32e858c4b1157406c8e6e5a815d159beaef217f19ac87cd8c3607b8a396baeee",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\cli-native-agent-orchestration_.md",
+                                                   "digest":  "991e1e7b983c0efefa5fe10b9c3ad8b32faa5ec123db3635f98688f29b965aa9",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\code-first-tool-interface-pattern_.md",
+                                                   "digest":  "af2840d44bfeb534360e41d88df92cfc668503b30bd878603e15c89320820168",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\code-then-execute-pattern_.md",
+                                                   "digest":  "2617359636c3434156750cb6c0356dab8772edf9ff74944ccf395ff642c26889",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\dynamic-code-injection-on-demand-file-fetch_.md",
+                                                   "digest":  "81388731bda41cba998e276404bdbb5626dd25ea09a6c725162da00e44e109e6",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\egress-lockdown-no-exfiltration-channel_.md",
+                                                   "digest":  "2ac8fc6588135bad2396ab3661727bcc9b6f52e516ede250392501f5d0710041",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\llm-friendly-api-design_.md",
+                                                   "digest":  "83ff4a95771f829202f45c417d721291236f1825405cdccf5f05b1e48b869455",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\patch-steering-via-prompted-tool-selection_.md",
+                                                   "digest":  "c9217cf3eed2505e6219255b63b6a94a5311c3d860e873033a4cc353e41a7134",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\shell-command-contextualization_.md",
+                                                   "digest":  "4f9070d9134917b2ae4f9e0213e3a0bccba35950e570c0112e538933a85d351b",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\tool-use-steering-via-prompting_.md",
+                                                   "digest":  "439fe547e7faf3095fb674a358337a9bd3e84257f935aed80f186b76ca5b7117",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\virtual-machine-operator-agent_.md",
+                                                   "digest":  "30e52f61e267009020ddf629e7fe7a9da414722e7dbe69040b2ef15afb11e812",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\Tool Use \u0026 Environment\\visual-ai-multimodal-integration_.md",
+                                                   "digest":  "f64007b28e9170b29b251127d1dbcc87c00ad8c8dab4afed10b5e120633b8459",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\abstracted-code-representation-for-review_.md",
+                                                   "digest":  "388183fac2020b2ad44c0d0bd5430aa1be4b5565210565f51de67faf58818983",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\agent-assisted-scaffolding_.md",
+                                                   "digest":  "7ccdc9e29a738915a626ff905e48aa0caafb888da75dbd7ef3940e194b107c8c",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\agent-friendly-workflow-design_.md",
+                                                   "digest":  "903dc2e9bb2ce401fa2297a8c8e678d79a582b4c2536f54aad8fd4803f55f24d",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\seamless-background-to-foreground-handoff_.md",
+                                                   "digest":  "d89fdd3083112da24218a9f7adc158e646830dd51255e40a4ce8d53839257a42",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\spectrum-of-control-blended-initiative_.md",
+                                                   "digest":  "54c595ec5690ab5d00ba979a9310206a259c922dfb22dd995b22b5555f8613eb",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\patterns\\UX \u0026 Collaboration\\verbose-reasoning-transparency_.md",
+                                                   "digest":  "a947017806123f71f697caeed1fe88951ed952ff073b6dbeefcd4f345ae8fae7",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-command.ps1",
+                                                   "digest":  "304deb8b20f1cc6513a33da4b90e4ff5a0f371dda1b6e94f32c440c6dcf8c17f",
+                                                   "state":  "Present"
+                                               },
+                                               {
+                                                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\AGENTS.md",
+                                                   "digest":  "21bd70ba4db95af454c3ccae58ada38dd079a806fd98e74156d3abbdb89ae181",
+                                                   "state":  "Present"
+                                               }
+                                           ]
+                             },
+                  "tests":  {
+                                "digest":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                "files":  [
+
+                                          ]
+                            },
+                  "configuration":  {
+                                        "digest":  "424572173d467154a1a33cd2e66039b497e96eff948cf07332a165afce7d8c83",
+                                        "files":  [
+                                                      {
+                                                          "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.codex\\config.toml",
+                                                          "digest":  "1898649fa1351aea6ede26aa623cc20e0c3f61be8f0852891acd268362ab242e",
+                                                          "state":  "Present"
+                                                      }
+                                                  ]
+                                    },
+                  "fixtures":  {
+                                   "digest":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                   "files":  [
+
+                                             ]
+                               },
+                  "dependencies":  {
+                                       "digest":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                       "files":  [
+
+                                                 ]
+                                   },
+                  "runtime":  {
+                                  "identity":  "Windows PowerShell and git; installed solution scaffold reference tree",
+                                  "powershell":  "5.1.26100.9168",
+                                  "os":  "Microsoft Windows NT 10.0.26200.0",
+                                  "path_digest":  "405627e64f5471b3bb74b653d8e76cbce462ad71eec13475cb502d72c93aaed1",
+                                  "environment":  {
+
+                                                  },
+                                  "files":  {
+                                                "digest":  "2d6500baebcda1f32dacabfbd5cf2f56db8364dee5027ce48a3abfc770158e8f",
+                                                "files":  [
+                                                              {
+                                                                  "path":  "C:\\Program Files\\Git\\cmd\\git.exe",
+                                                                  "digest":  "7b7971dd13f0c3a284e538601f2f9770b3a87dfaccb5fb52d68141c67ed22364",
+                                                                  "state":  "Present"
+                                                              },
+                                                              {
+                                                                  "path":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                                                                  "digest":  "7600ffe12da441fe89d035b13801e8e91d064bc544a27b19a5cf49f6ab8b18f5",
+                                                                  "state":  "Present"
+                                                              }
+                                                          ]
+                                            }
+                              },
+                  "digest":  "0f3e43bd483a347bc6124070ef17351fcfef06b8aea644fb9e007d18b36f5986"
+              },
+    "changed_during_run":  false,
+    "reusable":  false,
+    "outcome":  "Failed",
+    "attempts":  [
+                     {
+                         "check_id":  "solution-scaffold-structure",
+                         "attempt":  1,
+                         "executable":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                         "arguments":  [
+                                           "-NoProfile",
+                                           "-ExecutionPolicy",
+                                           "Bypass",
+                                           "-File",
+                                           ".swe/checks/scaffold-verification-command.ps1"
+                                       ],
+                         "working_directory":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram",
+                         "criteria":  [
+                                          "SCAFFOLD/COPIER-BYTE-PARITY",
+                                          "SCAFFOLD/REGISTRY-ROSTER",
+                                          "SCAFFOLD/ENGINEERING-DIRS",
+                                          "SCAFFOLD/GIT-DIFF-CHECK"
+                                      ],
+                         "started_utc":  "2026-09-08T06:56:53.0503891Z",
+                         "finished_utc":  "2026-09-08T06:56:53.2878106Z",
+                         "timeout_seconds":  120,
+                         "timed_out":  false,
+                         "exit_code":  1,
+                         "outcome":  "Failed",
+                         "failure_excerpt":  "At C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-command.ps1:10 char:459\r\n+ ... \\[agents\\.$([regex]::Escape($name))\\].*?^config_file\\s*=\\s*\\\"([^\\\"]+) ...\r\n+                                                                  ~\r\nMissing \u0027)\u0027 in method call.\r\nAt C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-command.ps1:10 char:459\r\n+ ... [agents\\.$([regex]::Escape($name))\\].*?^config_file\\s*=\\s*\\\"([^\\\"]+)\\ ...\r\n+                                                                 ~\r\nUnexpected token \u0027(\u0027 in expression or statement.\r\nAt C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-command.ps1:10 char:461\r\n+ ... agents\\.$([regex]::Escape($name))\\].*?^config_file\\s*=\\s*\\\"([^\\\"]+)\\\" ...\r\n+                                                                  ~\r\nMissing type name after \u0027[\u0027.\r\nAt C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-command.ps1:12 c",
+                         "launch_error":  null,
+                         "transient_launch_failure":  false,
+                         "stdout":  {
+                                        "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-results\\0ac9dead-0710-405e-935e-4fe5f8aba049\\solution-scaffold-structure-1.stdout.log",
+                                        "digest":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                    },
+                         "stderr":  {
+                                        "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-results\\0ac9dead-0710-405e-935e-4fe5f8aba049\\solution-scaffold-structure-1.stderr.log",
+                                        "digest":  "ee198bf6668d7cf97337c7c174c36ad61e6b072cc639fff160274650a8e1c103"
+                                    },
+                         "counts":  null,
+                         "cases":  [
+
+                                   ],
+                         "observation":  null
+                     }
+                 ],
+    "missing_coverage":  [
+                             "SCAFFOLD/COPIER-BYTE-PARITY",
+                             "SCAFFOLD/ENGINEERING-DIRS",
+                             "SCAFFOLD/GIT-DIFF-CHECK",
+                             "SCAFFOLD/REGISTRY-ROSTER"
+                         ],
+    "blockers":  [
+
+                 ],
+    "result_directory":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-results\\0ac9dead-0710-405e-935e-4fe5f8aba049",
+    "request":  {
+                    "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-results\\0ac9dead-0710-405e-935e-4fe5f8aba049\\request.json",
+                    "digest":  "7341b33c756f8bf0c208d2100ba9430397fee6273429d1f27539653278bcead8"
+                }
+}

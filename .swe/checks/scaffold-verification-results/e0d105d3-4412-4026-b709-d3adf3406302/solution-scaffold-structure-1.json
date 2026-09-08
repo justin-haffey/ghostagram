@@ -1,0 +1,41 @@
+{
+    "check_id":  "solution-scaffold-structure",
+    "attempt":  1,
+    "executable":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "arguments":  [
+                      "-NoProfile",
+                      "-ExecutionPolicy",
+                      "Bypass",
+                      "-File",
+                      ".swe/checks/scaffold-verification-command.ps1"
+                  ],
+    "working_directory":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram",
+    "criteria":  [
+                     "SCAFFOLD/COPIER-BYTE-PARITY",
+                     "SCAFFOLD/REGISTRY-ROSTER",
+                     "SCAFFOLD/ENGINEERING-DIRS",
+                     "SCAFFOLD/GIT-DIFF-CHECK"
+                 ],
+    "started_utc":  "2026-09-08T06:57:31.4187694Z",
+    "finished_utc":  "2026-09-08T06:57:32.8228829Z",
+    "timeout_seconds":  120,
+    "timed_out":  false,
+    "exit_code":  0,
+    "outcome":  "Passed",
+    "failure_excerpt":  "",
+    "launch_error":  null,
+    "transient_launch_failure":  false,
+    "stdout":  {
+                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-results\\e0d105d3-4412-4026-b709-d3adf3406302\\solution-scaffold-structure-1.stdout.log",
+                   "digest":  "50501d2133bda3ec8c7d110fe5185cf8b3303b77cb43d49a66c2f22e7a2ed3e2"
+               },
+    "stderr":  {
+                   "path":  "C:\\Users\\justin\\Source\\ghostworx\\repos\\ghostagram\\.swe\\checks\\scaffold-verification-results\\e0d105d3-4412-4026-b709-d3adf3406302\\solution-scaffold-structure-1.stderr.log",
+                   "digest":  "9a13ba1d64e1d40aa77435e0df8e5f587d59b292373161d15149c4b06e35c749"
+               },
+    "counts":  null,
+    "cases":  [
+
+              ],
+    "observation":  null
+}

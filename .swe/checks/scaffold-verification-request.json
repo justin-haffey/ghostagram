@@ -1,0 +1,13 @@
+{
+  "schema": "swe-check-request/v1",
+  "execution_role": "test-runner",
+  "executor": {"role":"test-runner","model":"gpt-5.6-luna","reasoning_effort":"medium","session_id":"current-test-runner-session"},
+  "repository": "C:/Users/justin/Source/ghostworx/repos/ghostagram",
+  "assignment": {"repository":"ghostagram","artifact_id":"PROTOTYPE-RUN-20260907T094049Z","path":".swe/prototype/runs/PROTOTYPE-RUN-20260907T094049Z/PROTOTYPE.md"},
+  "criteria": ["SCAFFOLD/COPIER-BYTE-PARITY","SCAFFOLD/REGISTRY-ROSTER","SCAFFOLD/ENGINEERING-DIRS","SCAFFOLD/GIT-DIFF-CHECK"],
+  "scope": {"source":[".codex","AGENTS.md",".swe/checks/scaffold-verification-command.ps1"],"tests":[],"configuration":[".codex/config.toml"],"fixtures":[],"dependencies":[]},
+  "scope_rationale":"Read-only scaffold governance verification; no application source, tests, fixtures, or dependencies apply.",
+  "runtime": {"identity":"Windows PowerShell and git; installed solution scaffold reference tree","paths":["C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe","C:/Program Files/Git/cmd/git.exe"]},
+  "risk":"Standard","timing":"Prototype scaffold verification","prerequisites":[],"result_directory":".swe/checks/scaffold-verification-results","shared_outputs":[],
+  "checks":[{"id":"solution-scaffold-structure","executable":"C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe","arguments":["-NoProfile","-ExecutionPolicy","Bypass","-File",".swe/checks/scaffold-verification-command.ps1"],"working_directory":".","timeout_seconds":120,"criteria":["SCAFFOLD/COPIER-BYTE-PARITY","SCAFFOLD/REGISTRY-ROSTER","SCAFFOLD/ENGINEERING-DIRS","SCAFFOLD/GIT-DIFF-CHECK"]}]
+}

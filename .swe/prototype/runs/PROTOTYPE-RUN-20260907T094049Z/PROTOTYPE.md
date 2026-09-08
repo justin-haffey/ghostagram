@@ -2,7 +2,7 @@
 title: "EPIC-002 prototype implementation"
 artifact_type: "prototype_run"
 id: "PROTOTYPE-RUN-20260907T094049Z"
-status: "Active"
+status: "Reconciling"
 authority: "solution"
 scope:
   repository: "ghostagram"
@@ -10,8 +10,8 @@ scope:
 source_revision: "d3f2542c28acfed7ecf04f9c37a4e47241138f29; dirty activation baseline in activation-worktree-status.txt"
 created_by: "justin via primary Codex coordinator"
 created: "2026-09-07T09:40:49Z"
-updated: "2026-09-07T09:40:49Z"
-backtracking_status: "Pending"
+updated: "2026-09-08T06:57:42Z"
+backtracking_status: "InProgress"
 template_version: "2.0"
 ---
 # EPIC-002 prototype implementation
@@ -110,6 +110,72 @@ Formal frozen-generation local validation is now underway independently for Ghos
 Ghostagram exact independent local Validation and confirmed-upstream-defect addendum were mechanically recorded at .swe/implementations/EPIC-002/FEATURE-004/VALIDATION.md, SHA25679df10793ce7231ed1c29ffcdd764522a5c80ed54a7813fd414a4cedb7e83c7c (Ghostagram-relative). Original local decision2026-09-07T10:36:58Z; addendum2026-09-07T10:40:01Z. Recorder verified exact reviewer text including final newline. Local generation-specific acceptance does not waive System defect or approve integrated F004.
 
 An automatic review initially rejected transmission of this Accepted record for perceived missing authority. Primary verified the user's explicit swe-max invocation and named elon approver against swe-max lines23/79 and applicable governance, then retried the SAME scoped action with that evidence. The retry was allowed; no alternate write path or bypass was used.
+
+## Solution Scaffold Request — 2026-09-08
+
+### Developer Instruction
+
+```plaintext
+[$swe-process:swe-scaffold](C:\Users\justin\\.codex\plugins\cache\ghostworx-plugin-marketplace\swe-process\3.1.0\skills\swe-scaffold\SKILL.md) -solution
+```
+
+### Intended Scope and Outcome
+
+- Repository scope: `C:\Users\justin\Source\ghostworx\repos\ghostagram` only.
+- Intended outcome: merge the installed V3.1 additive solution scaffold into the active solution repository; preserve every existing file and unrelated dirty-worktree change.
+- Explicit exclusions: no source implementation, dependency changes, external mutation, deployment, destructive action, Git operation, or adoption-policy activation.
+
+### Execution Record
+
+| Recorded | Agent or role | Action | Result |
+| --- | --- | --- | --- |
+| 2026-09-08 | primary coordinator | Ran `Invoke-SweScaffold.ps1 -Solution -Destination <repository> -AsJson` with process-scoped PowerShell bypass | Completed after one sandbox-protection block; elevated retry completed the official additive copier. |
+
+### Changed Paths
+
+The copier reported these created files:
+
+- `.codex/agents/codex/01-prompt-engineering-standards.md`
+- `.codex/agents/codex/02-openai-platform-notes.md`
+- `.codex/agents/codex/03-codex-extension-project-taxonomy.md`
+- `.codex/agents/codex/codex-engineer.toml`
+- `.codex/agents/swe/architecture-reviewer.toml`
+- `.codex/agents/swe/azure-db-developer.toml`
+- `.codex/agents/swe/azure-engineer.toml`
+- `.codex/agents/swe/code-commenter.toml`
+- `.codex/agents/swe/csharp-developer.toml`
+- `.codex/agents/swe/full-stack-developer.toml`
+- `.codex/agents/swe/integration-engineer.toml`
+- `.codex/agents/swe/maf-developer.toml`
+- `.codex/agents/swe/module-architect.toml`
+- `.codex/agents/swe/module-developer.toml`
+- `.codex/agents/swe/package-architect.toml`
+- `.codex/agents/swe/package-developer.toml`
+- `.codex/agents/swe/repo-author.toml`
+- `.codex/agents/swe/solution-architect.toml`
+- `.codex/agents/swe/solution-developer.toml`
+- `.codex/agents/swe/solution-validator.toml`
+- `.codex/agents/swe/test-runner.toml`
+- `.codex/agents/swe/ui-designer.toml`
+- `.codex/config.toml`
+- `AGENTS.md`
+
+The copier created `.codex/agents/codex` and `.codex/agents/swe`, and reported 11 existing files skipped: `.swe/changes/bugs/README.md`, `.swe/changes/enhancements/README.md`, `.swe/implementations/README.md`, `.swe/README.md`, `architecture/decisions/README.md`, `architecture/packages/README.md`, `architecture/README.md`, `architecture/views/systems/README.md`, `CONTEXT.md`, `README.md`, and `VERSION.md`. Existing untracked `AGENTS_old.md` and `.codex/config_old.toml` were preserved.
+
+### Verification Evidence
+
+| Check | Result | Evidence or limitation |
+| --- | --- | --- |
+| Official copier | Passed | `SchemaVersion 2.0`, scaffold `solution`, 24 created files, 11 skipped existing files, 2 created directories, 35 source files, no type collision. |
+| Adoption preflight | Blocked | Read-only preflight found no accepted adoption policy, no host smoke evidence, and initially no tester routing; it also identified customized existing `CONTEXT.md`, `README.md`, and `VERSION.md`. Installing the additive scaffold does not adopt V3 governance. |
+| Test-runner validation | Pending | Dispatched to `test-runner` at `gpt-5.6-luna` / `medium`; receipt and actual result will be appended when returned. |
+
+### Backtracking
+
+- Route: solution scaffold/adoption preflight; no application behavior or accepted architecture changed.
+- Status: InProgress pending the bounded test-runner result and final worktree/byte-parity review.
+- Artifacts created or updated: scaffold-created governance and registry files listed above; this prototype run record is being updated with execution evidence.
+- Reviews and validation: no adoption policy, architecture approval, delivery evidence, or independent acceptance is claimed.
 
 ## Human authorization for one additional F004 cycle
 

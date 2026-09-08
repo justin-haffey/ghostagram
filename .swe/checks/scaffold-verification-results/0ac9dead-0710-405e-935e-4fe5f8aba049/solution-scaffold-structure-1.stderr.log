@@ -1,0 +1,26 @@
+At C:\Users\justin\Source\ghostworx\repos\ghostagram\.swe\checks\scaffold-verification-command.ps1:10 char:459
++ ... \[agents\.$([regex]::Escape($name))\].*?^config_file\s*=\s*\"([^\"]+) ...
++                                                                  ~
+Missing ')' in method call.
+At C:\Users\justin\Source\ghostworx\repos\ghostagram\.swe\checks\scaffold-verification-command.ps1:10 char:459
++ ... [agents\.$([regex]::Escape($name))\].*?^config_file\s*=\s*\"([^\"]+)\ ...
++                                                                 ~
+Unexpected token '(' in expression or statement.
+At C:\Users\justin\Source\ghostworx\repos\ghostagram\.swe\checks\scaffold-verification-command.ps1:10 char:461
++ ... agents\.$([regex]::Escape($name))\].*?^config_file\s*=\s*\"([^\"]+)\" ...
++                                                                  ~
+Missing type name after '['.
+At C:\Users\justin\Source\ghostworx\repos\ghostagram\.swe\checks\scaffold-verification-command.ps1:12 char:331
++ ... Object { Write-Output "FAIL: $_" }; if($failures.Count -gt 0){exit 1}
++                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The string is missing the terminator: ".
+At C:\Users\justin\Source\ghostworx\repos\ghostagram\.swe\checks\scaffold-verification-command.ps1:13 char:1
++ 
+Missing closing ')' in expression.
+At C:\Users\justin\Source\ghostworx\repos\ghostagram\.swe\checks\scaffold-verification-command.ps1:10 char:363
++ ... ner or solution_validator') }; foreach ($name in $sections) { $m=[reg ...
++                                                                 ~
+Missing closing '}' in statement block or type definition.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingEndParenthesisInMethodCall
+ 
