@@ -4,6 +4,7 @@ using Ghostagram.Bridge.DeclarativeCompositionProjection;
 using Ghostagram.Bridge.Tests.DeclarativeComposition;
 using Ghostworx.System.Composition;
 using Ghostworx.System.Composition.Compiler;
+using Ghostworx.System.Composition.Conformance;
 using Ghostworx.System.Composition.Conformance.Support;
 using Ghostworx.System.Composition.Exchange;
 
@@ -26,12 +27,19 @@ public static class ProducerProjectionCases
 
     public static ProducerProjectionInventory Inventory(CompositionProducerInputs inputs)
     {
+        ArgumentNullException.ThrowIfNull(inputs);
+        ConformancePurposeRegistry.RequireNormative(inputs.Corpus.Purpose);
+        ConformancePurposeRegistry.RequireNormative(inputs.Producer.Purpose);
         if (inputs.Corpus.Fixtures.Count == 0)
             throw new InvalidDataException("The admitted corpus has no realized request catalog; recipes cannot be replayed as consumer cases.");
-        var anchors = inputs.Corpus.Fixtures.Values.Select(item => item.Anchor).OrderBy(item => item.CaseIdentity, StringComparer.Ordinal).ToArray();
-        if (!anchors.Select(item => item.CaseIdentity).Order(StringComparer.Ordinal)
+        var allAnchors = inputs.Corpus.Fixtures.Values.Select(item => item.Anchor).OrderBy(item => item.CaseIdentity, StringComparer.Ordinal).ToArray();
+        if (!allAnchors.Select(item => item.CaseIdentity).Order(StringComparer.Ordinal)
             .SequenceEqual(inputs.Corpus.RetainedCaseIds.Order(StringComparer.Ordinal)))
             throw new InvalidDataException("Realized fixture anchors do not cover every admitted producer case exactly once.");
+        var representativeCases = new HashSet<string>(["CASE-S02-O1-C1-F1-A1", "CASE-S02-O2-C1-F1-A1"], StringComparer.Ordinal);
+        var anchors = allAnchors.Where(item => representativeCases.Contains(item.CaseIdentity)).ToArray();
+        if (anchors.Length != representativeCases.Count)
+            throw new InvalidDataException("The admitted corpus lacks a required representative Ghostagram producer case.");
         using var catalog = JsonDocument.Parse(inputs.Catalog.Require(CatalogIdentity).Bytes);
         var paths = catalog.RootElement.GetProperty("fixtures").EnumerateArray().ToDictionary(
             item => item.GetProperty("fixtureIdentity").GetString()!, item =>

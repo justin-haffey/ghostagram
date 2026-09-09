@@ -40,8 +40,8 @@ traceability:
 owners:
   - "ghostagram child implementation coordinator"
 created: "2026-09-06"
-updated: "2026-09-08"
-revision: "3"
+updated: "2026-09-07"
+revision: "2"
 template_version: "2.0.0"
 ---
 
@@ -49,7 +49,7 @@ template_version: "2.0.0"
 
 ## Revision 2 Prototype Backtracking
 
-This revision records the prototype-closure simplification authorized by the portfolio coordinator for `PROTOTYPE-RUN-20260907T094049Z`. [Accepted revision 1](DESIGN-REVISION-001.md) and [accepted revision 2](DESIGN-REVISION-002.md) are preserved byte-for-byte. Revision 2 was independently Accepted by the user-named `elon-musk` at 2026-09-07T12:01:36Z. Feature and Implementation Plan revision 2 intent and criteria remain authoritative.
+This Accepted successor records the concrete F003 source interface and applicability clarification authorized by the portfolio coordinator for `PROTOTYPE-RUN-20260907T094049Z`. [Accepted revision 1](DESIGN-REVISION-001.md) is preserved byte-for-byte; its approval applies only to that historical revision. Revision 2 was independently Accepted by the user-named `elon-musk` at 2026-09-07T12:01:36Z, cycle 0 with no conditions. The exact reviewed bytes and independent decision are preserved in the review packet. Feature and Implementation Plan revision 2 intent and criteria remain authoritative.
 
 The delivered-source work is in progress. Provisional checks do not establish final owner generation compatibility. Portfolio coordination reports independent final FEATURE-004 owner repair rejection with the automatic repair budget exhausted; integrated delivery is blocked pending human disposition. No additional Graph repair or consumer workaround is authorized by this Design. The frozen local F004 Validation is unchanged and does not accept a corrected or current owner generation.
 
@@ -120,7 +120,7 @@ Use the distinct System-owned ConsumerCaseManifest/ConsumerResultEnvelope schema
 
 Prepare source operations explicitly, then materialize the concrete manifest before any consumer Project/Refresh case execution. The test-only System CompositionFixtureExecutionDriver constructs actual owner ports and applies the exact raw fixture profile/context and real owner checkpoint schedule. The portable module has no dependency on this driver. Replay explicit Compile/Decode prerequisites with exact fixture/output anchors, bounded dependency traversal and cycle rejection; bind actual accepted records through the owner prerequisite APIs. Do not infer operations from case names or substitute a normal profile/context, entry cancellation or alternate operation for declared controls. Retain ordered owner operations, prerequisite receipts and observed checkpoints separately from consumer calls.
 
-Materialize a concrete manifest before running. Bind one accepted (`CASE-S02-O1-C1-F1-A1`) and one rejected (`CASE-S02-O2-C1-F1-A1`) final16 Compile result to actual `DeclarativeCompositionProjection.Project` calls, with originating IDs/digests and required public fields. These representative producer-linked cases prove the final System generation reaches the real consumer seam without replaying the producer's complete 470-case owner test suite inside Ghostagram. Add exact consumer entries `GRAM-NESTED-OPAQUE`, `GRAM-PUBLIC-EXPORTS`, `GRAM-DIAGNOSTICS`, `GRAM-IR-ANCHOR`, `GRAM-INERT-SURFACES`, `GRAM-SAME-SOURCE-DELTA`, `GRAM-SOURCE-STALE`, `GRAM-UNSUPPORTED`, `GRAM-SKEWED`, `GRAM-COLLISION`, `GRAM-PRIVATE-LEAK`, `GRAM-CANCEL`, `GRAM-DEADLINE`, `GRAM-NONMUTATION`, and `GRAM-NO-RELABEL`. Together these local real-seam cases cover every projection result arm, source continuity, public/private boundaries, finite profile/context failure, no partial output, and nonmutation. The consumer envelope remains bound to the complete admitted final16 producer corpus, manifest, and envelope digests; System's accepted 470/470 producer evidence remains the exhaustive owner-operation proof.
+Materialize a concrete manifest before running. For every admitted producer fixture exposing an accepted public view or an explicit rejected public result, create `GRAM:{producerCaseId}:PROJECT` with originating IDs/digests and required public fields; producer tooling-only fixtures lacking such a source are explicitly inapplicable. Separately record actual matching semantic successes without a PublicView as non-projectable, with exact owner result evidence. Neither category counts as a consumer pass. A rejection, incomplete owner observation, mismatch, unavailable variant or unreached checkpoint remains required and cannot be filtered out. Add exact consumer entries `GRAM-NESTED-OPAQUE`, `GRAM-PUBLIC-EXPORTS`, `GRAM-DIAGNOSTICS`, `GRAM-IR-ANCHOR`, `GRAM-INERT-SURFACES`, `GRAM-SAME-SOURCE-DELTA`, `GRAM-SOURCE-STALE`, `GRAM-UNSUPPORTED`, `GRAM-SKEWED`, `GRAM-COLLISION`, `GRAM-PRIVATE-LEAK`, `GRAM-CANCEL`, `GRAM-DEADLINE`, `GRAM-NONMUTATION`, and `GRAM-NO-RELABEL`. Add named exact/max-plus-one/invalid cases for each applicable local dimension and System profile/context admission; realize all fixture data rather than shipping patterns alone.
 
 Evidence and independent Validation freeze the concrete manifest digest outside the runner. `ConsumerEnvelopeAdmissionRequest` binds it to admitted producer inputs and the raw consumer candidate. System admission validates full disjoint passed/failed/missing/unsupported coverage and exact producer/compiler/profile/schema/fixture anchors. Publish only an admitted envelope; invalid/missing/failed/unsupported cases fail conformance. No child schema or approval claim enters the output.
 
@@ -148,7 +148,7 @@ Use the accepted v1 contract/compiler/profile and predecessor exchange support s
 
 ## Risks and Remaining Delivery Duties
 
-The typed diagnostic-only input and result-based applicability clarification received independent revision 2 acceptance; revision 3 narrows only duplicated producer replay at the consumer boundary. Implementation and delivery validation remain separate. The implementation must use accepted delivered fingerprints, realize every revision-3 manifest entry, exercise the real consumer operations, and produce independent local Validation before portfolio acceptance. Any failed required case or missing output remains explicit.
+The typed diagnostic-only input and result-based applicability clarification above received independent revision 2 acceptance; implementation and delivery validation remain separate. The producer artifacts do not yet prove delivered behavior; implementation must use the accepted delivered fingerprints, realize every concrete fixture/case-manifest entry, exercise real consumer operations, and produce independent local Validation before portfolio acceptance. Any unimplemented verification, failed case, missing output or unavailable visible check remains explicit and cannot be reported as passed.
 
 ## Approval Record
 
@@ -163,14 +163,3 @@ The typed diagnostic-only input and result-based applicability clarification rec
 | Bypass reason | None for this decision; prototype entry deferral remains separately recorded. |
 
 The prior submission timestamp and Pending record remain byte-exact in DESIGN-REVIEWED.md. The independent decision was transcribed mechanically from the portfolio coordinator's reviewer-authored record; it is not the implementation author's approval.
-
-### Revision 3 Approval
-
-| Field | Value |
-|---|---|
-| Mode | User-named independent approver |
-| Approver | elon-musk (`/root/migration_l26_disposition`) |
-| Decision | Accepted; APPROVED WITH CONDITIONS, condition satisfied in current source |
-| Recorded | `2026-09-08T23:03:16Z` |
-| Evidence | Revision 3 retains two representative final16 producer-linked Project calls, all 15 local projection scenarios, boundary/output-size cases, and complete producer corpus/envelope binding. `CompositionConsumerSession.LoadProducer` now reads the already admitted normative aggregate under the approved 4,194,304-byte transport cap while ordinary projection limits remain unchanged. |
-| Bypass reason | None |

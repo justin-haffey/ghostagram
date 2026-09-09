@@ -349,6 +349,7 @@ public static class CompositionOwnerReplay
     {
         CompositionExchangeStatus.Accepted => CompositionResultStatus.Accepted,
         CompositionExchangeStatus.Rejected => CompositionResultStatus.Rejected,
+        CompositionExchangeStatus.Unsupported => CompositionResultStatus.Unsupported,
         CompositionExchangeStatus.Cancelled => CompositionResultStatus.Cancelled,
         CompositionExchangeStatus.DeadlineExpired => CompositionResultStatus.DeadlineExpired,
         CompositionExchangeStatus.InternalFailure => CompositionResultStatus.InternalFailure,

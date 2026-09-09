@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Ghostagram.Core;
 using Ghostworx.System.Graph.Runtime.Algorithms;
-using Ghostworx.System.Graph.Runtime.Features;
+using Ghostworx.System.Graph.Runtime.Constraints;
 using Ghostworx.System.Graph.Runtime.Validation;
 using SystemGraph = Ghostworx.System.Graph;
 
@@ -133,7 +133,7 @@ public sealed class GraphCompiler(INodeTypeRegistry registry, LocalGraph.GraphLo
     private const string DiagramEdgeTypeMetadata = "ghostagram.edgeType";
     private static readonly SystemGraph.NodeKind DiagramNodeKind = SystemGraph.NodeKind.Define("Ghostagram.Execution", "DiagramNode");
     private static readonly SystemGraph.RelationshipKind DependencyKind = SystemGraph.RelationshipKind.Define("Ghostagram.Execution", "Dependency");
-    private static readonly GraphProfile DagProfile = new([new DagFeature()]);
+    private static readonly GraphProfile DagProfile = new([new DagConstraint()]);
 
     private sealed record CompilationPort(string Id, string Direction, string Scope,
         int MaxConnections, bool Enabled, string? PropertyId, int Order);

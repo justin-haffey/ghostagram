@@ -368,8 +368,8 @@ public sealed class GraphDiagramDeltaProjector(IGraphDiagramProjection projectio
                     break;
                 case GraphChangeKind.RelationshipMetadataSet:
                 case GraphChangeKind.RelationshipMetadataRemoved:
-                case GraphChangeKind.FeatureAdded:
-                case GraphChangeKind.FeatureRemoved:
+                case GraphChangeKind.ExtensionAdded:
+                case GraphChangeKind.ExtensionRemoved:
                 case GraphChangeKind.BatchCommitted:
                     break;
                 default:

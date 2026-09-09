@@ -67,8 +67,10 @@ public static class CompositionConsumerProtocol
     public static ConsumerEnvelopeCandidate CreateCandidate(AdmittedCorpusSnapshot corpus,
         ProducerResultEnvelope producer, ConsumerCaseManifest manifest,
         IReadOnlyList<CompositionConsumerObservation> observations, IReadOnlyList<string> missing,
-        DateTimeOffset startedUtc, DateTimeOffset endedUtc, string correlationId, string? sourceRevision)
+        DateTimeOffset startedUtc, DateTimeOffset endedUtc, string correlationId, string sourceRevision)
     {
+        if (string.IsNullOrWhiteSpace(sourceRevision))
+            throw new ArgumentException("An attributable consumer source revision is required.", nameof(sourceRevision));
         using var producerJson = JsonDocument.Parse(producer.CanonicalBytes);
         var candidate = new
         {

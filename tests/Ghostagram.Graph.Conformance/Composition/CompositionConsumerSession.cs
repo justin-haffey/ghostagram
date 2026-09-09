@@ -18,22 +18,29 @@ public static class CompositionConsumerSession
     public static IReadOnlyList<string> ProjectionFields { get; } = Array.AsReadOnly(new[]
     { "assertion", "assertionSatisfied", "localObservation", "projectionStatus", "projectionSha256", "sourceDigest", "diagnosticCodes" });
 
-    public static CompositionProducerInputs LoadProducer(string corpusRoot, string producerEnvelopePath)
+    public static CompositionProducerInputs LoadProducer(string corpusRoot, string producerEnvelopePath,
+        ICorpusPublishedResultSource? publishedResultSource = null)
     {
         var profiles = new CompositionProfileAdmission();
         var contexts = new CompositionOperationContextAdmission();
-        var catalog = CorpusArtifactCatalog.Load(corpusRoot);
-        using var manifest = JsonDocument.Parse(catalog.Manifest);
-        var request = new CorpusAdmissionRequest(manifest.RootElement.GetProperty("corpusId").GetString()!, catalog.Manifest.Span,
-            catalog.Artifacts.Select(item => KeyValuePair.Create(item.RelativePath, item.Bytes)));
+        publishedResultSource?.RequireAvailable();
+        var catalog = publishedResultSource is null
+            ? CorpusArtifactCatalog.Load(corpusRoot)
+            : CorpusArtifactCatalog.Load(corpusRoot, publishedResultSource);
+        var request = catalog.CreateAdmissionRequest();
         var admitted = new CorpusAdmission(profiles, contexts, new AdmittedCorpusAdmissionCore())
             .Admit(request, ProjectionFixtures.Profile(), ProjectionFixtures.Context(correlationId: "ghostagram-corpus-import"));
         if (!admitted.IsAccepted) throw new InvalidDataException("System rejected the producer corpus: " + Codes(admitted.Diagnostics));
-        var limit = CompositionLimitProfile.ConformanceV1.MaxProjectionResultBytes;
+        publishedResultSource?.RequireAvailable();
+        ConformancePurposeRegistry.RequireNormative(admitted.Snapshot!.Purpose);
+        const long normativeEnvelopeBytes = 4_194_304;
+        var limit = normativeEnvelopeBytes;
         var bytes = ReadBounded(producerEnvelopePath, limit);
         var producer = new ProducerEnvelopeReader(profiles, contexts, new AdmittedProducerEnvelopeAdmissionCore())
             .Admit(bytes, admitted.Snapshot!, ProjectionFixtures.Profile(), ProjectionFixtures.Context(correlationId: "ghostagram-producer-import"));
         if (!producer.IsAccepted) throw new InvalidDataException("System rejected the persisted producer envelope: " + Codes(producer.Diagnostics));
+        publishedResultSource?.RequireAvailable();
+        ConformancePurposeRegistry.RequireNormative(producer.Envelope!.Purpose);
         return new(catalog, admitted.Snapshot!, producer.Envelope!);
     }
 
@@ -75,8 +82,13 @@ public static class CompositionConsumerSession
 
     public static int Run(CompositionProducerInputs inputs, IReadOnlyList<CompositionExecutableCase> cases,
         IReadOnlyList<KeyValuePair<string, ReadOnlyMemory<byte>>> artifacts, string manifestPath,
-        string expectedManifestDigest, string outputDirectory, string? sourceRevision)
+        string expectedManifestDigest, string outputDirectory, string sourceRevision)
     {
+        ArgumentNullException.ThrowIfNull(inputs);
+        ConformancePurposeRegistry.RequireNormative(inputs.Corpus.Purpose);
+        ConformancePurposeRegistry.RequireNormative(inputs.Producer.Purpose);
+        if (string.IsNullOrWhiteSpace(sourceRevision))
+            throw new ArgumentException("An attributable consumer source revision is required.", nameof(sourceRevision));
         var manifest = CompositionConsumerProtocol.ReadManifest(ReadBounded(manifestPath, CompositionLimitProfile.ConformanceV1.MaxDocumentBytes));
         if (string.IsNullOrWhiteSpace(expectedManifestDigest) || manifest.Digest != expectedManifestDigest)
             throw new InvalidDataException("Consumer manifest differs from the externally supplied frozen digest.");
@@ -151,6 +163,7 @@ public static class CompositionConsumerSession
             Console.Error.WriteLine("System rejected consumer envelope admission: " + Codes(admitted.Diagnostics));
             return 1;
         }
+        ConformancePurposeRegistry.RequireNormative(admitted.Envelope!.Purpose);
         WriteNew(Path.Combine(outputDirectory, "consumer-envelope.json"), admitted.Envelope!.CanonicalBytes.Span);
         var passed = observations.Count(item => item.Passed && !item.Unsupported);
         Console.WriteLine($"Actual composition consumer cases: {passed}/{observations.Count} passed; admitted envelope {admitted.Envelope.EnvelopeDigest}.");

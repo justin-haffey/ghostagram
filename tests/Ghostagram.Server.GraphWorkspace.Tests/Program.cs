@@ -16,7 +16,7 @@ var descriptor = new NodeTypeDescriptor(
     "Task",
     "Server tests",
     width: 220,
-    height: 100,
+    height: 107,
     properties:
     [
         new("owner", "Owner", DiagramPropertyTypes.String),
@@ -38,9 +38,9 @@ Assert(created.GraphVersion == 0 && created.DiagramRevision == 0 && created.Docu
 
 var firstId = NodeId.New();
 var secondId = NodeId.New();
-var first = new DiagramNode(firstId.ToString(), 80, 100, 220, 100, "Receive order", TypeId: descriptor.TypeId,
+var first = new DiagramNode(firstId.ToString(), 80, 100, 220, 107, "Receive order", TypeId: descriptor.TypeId,
     TypeVersion: descriptor.Version, Properties: [new("owner", "Owner", Value: System.Text.Json.JsonSerializer.SerializeToElement("operations"))]);
-var second = new DiagramNode(secondId.ToString(), 420, 100, 220, 100, "Approve order", TypeId: descriptor.TypeId,
+var second = new DiagramNode(secondId.ToString(), 420, 100, 220, 107, "Approve order", TypeId: descriptor.TypeId,
     TypeVersion: descriptor.Version);
 var nodeCommand = new GraphDiagramCommand(
     created.GraphVersion,

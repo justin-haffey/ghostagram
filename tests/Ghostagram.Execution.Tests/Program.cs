@@ -5,7 +5,7 @@ using Ghostagram.Core;
 using Ghostagram.Execution;
 using Ghostagram.NodeSets.Maf;
 using Ghostagram.NodeSets.UML;
-using Ghostworx.System.Graph.Runtime.Features;
+using Ghostworx.System.Graph.Runtime.Constraints;
 using Ghostworx.System.Graph.Runtime.Validation;
 using SystemGraph = Ghostworx.System.Graph;
 
@@ -130,7 +130,7 @@ var compilerAlgorithms = typeof(GraphCompiler).GetMethods(BindingFlags.Static | 
 Assert(!compilerAlgorithms.Contains("StronglyConnectedComponents") && !compilerAlgorithms.Contains("TopologicalSort") && !compilerAlgorithms.Contains("FindCyclePath"),
     "Ghostagram retains no private SCC, topological-sort, or cycle-member traversal implementation.");
 var dagProfile = (GraphProfile?)typeof(GraphCompiler).GetField("DagProfile", BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null);
-Assert(dagProfile?.Features is [DagFeature],
+Assert(dagProfile?.Constraints is [DagConstraint],
     "DAG rejection delegates to the System graph profile.");
 var dag = Document(
     ["a", "b", "c"],

@@ -13,3 +13,7 @@ vendor/
 
 .codebase-memory/
 
+# Prototyping mess that needs to be cleaned up later
+.swe/f003r*
+.swe/implementations/**/checks/**
+

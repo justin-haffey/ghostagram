@@ -36,15 +36,19 @@ public static class CompositionPreview
             var status = result.GetProperty("status").GetString();
             if (status is not ("Fresh" or "Stale" or "Unsupported" or "Skewed" or "Failed"))
                 throw new InvalidDataException("Unknown or missing closed projection status.");
-            var revision = result.GetProperty("presentationRevision").GetInt64();
-            if (revision < 0) throw new InvalidDataException("A presentation revision is required.");
-            var sourceDigest = Convert.ToHexStringLower(SHA256.HashData(bytes));
+            var resultRevision = result.GetProperty("presentationRevision").GetInt64();
+            if (resultRevision < 0) throw new InvalidDataException("A presentation revision is required.");
+            var resultDigest = Convert.ToHexStringLower(SHA256.HashData(bytes));
             JsonElement? diagram = null;
             var diagramLabel = "No accepted diagram";
+            long? renderedRevision = null;
+            string? renderedContentDigest = null;
             if (status == "Fresh")
             {
                 diagram = result.GetProperty("document");
                 diagramLabel = "Fresh definition projection";
+                renderedRevision = resultRevision;
+                renderedContentDigest = ContentDigest(result);
             }
             else
             {
@@ -52,8 +56,12 @@ public static class CompositionPreview
                     throw new InvalidDataException("Only Fresh may carry a newly accepted diagram.");
                 if (status == "Stale" && result.TryGetProperty("lastKnown", out var previous) && previous.ValueKind == JsonValueKind.Object)
                 {
+                    if (previous.GetProperty("status").GetString() != "Fresh")
+                        throw new InvalidDataException("A stale last-known diagram must be an exact prior Fresh result.");
                     diagram = previous.GetProperty("document");
-                    revision = previous.GetProperty("presentationRevision").GetInt64();
+                    renderedRevision = previous.GetProperty("presentationRevision").GetInt64();
+                    if (renderedRevision < 0) throw new InvalidDataException("The last-known presentation revision is invalid.");
+                    renderedContentDigest = ContentDigest(previous);
                     diagramLabel = "Stale: last-known definition projection; full reprojection required";
                 }
             }
@@ -63,7 +71,7 @@ public static class CompositionPreview
             {
                 var documentId = model.GetProperty("documentId").GetString();
                 if (string.IsNullOrWhiteSpace(documentId)) throw new InvalidDataException("The projected document identity is missing.");
-                svg = new SvgDiagramExporter().Export(new DiagramSnapshot(documentId, revision, model.Clone())).Content;
+                svg = new SvgDiagramExporter().Export(new DiagramSnapshot(documentId, renderedRevision!.Value, model.Clone())).Content;
                 var viewBox = XDocument.Parse(svg).Root?.Attribute("viewBox")?.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (viewBox is not { Length: 4 } || !double.TryParse(viewBox[2], CultureInfo.InvariantCulture, out var w) ||
                     !double.TryParse(viewBox[3], CultureInfo.InvariantCulture, out var h) || !double.IsFinite(w) || !double.IsFinite(h) || w <= 0 || h <= 0)
@@ -76,8 +84,12 @@ public static class CompositionPreview
             var panel = new StringBuilder("<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>Composition definition projection</title>")
                 .Append("<style>body{font:16px system-ui,sans-serif;margin:24px;color:#172033}h1{font-size:24px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f5f8;padding:12px}object{display:block;border:1px solid #cbd2dd}dt{font-weight:600}dd{margin:4px 0 16px}</style>")
                 .Append("<h1>").Append(E(diagramLabel)).Append("</h1><dl><dt>Result status</dt><dd>").Append(E(status))
-                .Append("</dd><dt>Public result SHA-256</dt><dd>").Append(E(sourceDigest)).Append("</dd><dt>Presentation revision</dt><dd>")
-                .Append(result.GetProperty("presentationRevision").GetInt64().ToString(CultureInfo.InvariantCulture)).Append("</dd></dl>");
+                .Append("</dd><dt>Public result SHA-256</dt><dd>").Append(E(resultDigest)).Append("</dd><dt>Result presentation revision</dt><dd>")
+                .Append(resultRevision.ToString(CultureInfo.InvariantCulture)).Append("</dd>");
+            if (renderedRevision is { } actualRevision)
+                panel.Append("<dt>Rendered presentation revision</dt><dd>").Append(actualRevision.ToString(CultureInfo.InvariantCulture))
+                    .Append("</dd><dt>Rendered source content digest</dt><dd>").Append(E(renderedContentDigest)).Append("</dd>");
+            panel.Append("</dl>");
             foreach (var field in new[] { "sourceAnchor", "sourceDiagnostics", "diagnostics" })
                 if (result.TryGetProperty(field, out var value))
                     panel.Append("<h2>").Append(E(field)).Append("</h2><pre>")
@@ -91,7 +103,9 @@ public static class CompositionPreview
             File.WriteAllText(Path.Combine(output, "index.html"), panel.ToString(), new UTF8Encoding(false));
             File.WriteAllText(Path.Combine(output, "preview-provenance.json"), JsonSerializer.Serialize(new
             {
-                inputFile = sourcePath, resultSha256 = sourceDigest, status, diagramDisposition = diagramLabel,
+                inputFile = sourcePath, resultSha256 = resultDigest, status, resultPresentationRevision = resultRevision,
+                renderedPresentationRevision = renderedRevision, renderedSourceContentDigest = renderedContentDigest,
+                diagramDisposition = diagramLabel,
                 svgSha256 = svg is null ? null : Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(svg))),
                 renderer = "Ghostagram.Server.Export.SvgDiagramExporter", visibleInspection = "Pending"
             }, new JsonSerializerOptions { WriteIndented = true }), new UTF8Encoding(false));
@@ -104,6 +118,10 @@ public static class CompositionPreview
             return 2;
         }
     }
+
+    private static string? ContentDigest(JsonElement result) =>
+        result.TryGetProperty("sourceAnchor", out var anchor) && anchor.ValueKind == JsonValueKind.Object &&
+        anchor.TryGetProperty("contentDigest", out var digest) ? digest.GetString() : null;
 
     private static string E(string? value) => WebUtility.HtmlEncode(value ?? "");
 }

@@ -182,3 +182,9 @@ After the original decision, the parent relayed `/root/elon_f004_validation`’s
 Ghostagram’s original **Accepted** local AC-007/AC-009 decision stands solely for its captured generation and demonstrated assignment. Inspection of that archive found no affected destination-admission call; ordinary persistence uses local candidates and compilation uses one-way governed-to-local inspection. This conclusion does not waive the confirmed System defect or establish integrated F004 acceptance.
 
 The corrected System generation requires independent System revalidation and affected-consumer compatibility checks with evidence bound to its exact outputs before integrated F004 acceptance. No architecture promotion follows from this addendum. The original decision timestamp, evidence and review-cycle history remain unchanged; no new runtime check was executed.
+
+## Prototype Closure Addendum — 2026-09-08
+
+At `2026-09-08T23:44:33Z`, the user-named independent `elon-musk` reviewer approved portfolio F004 closure using the accepted System, SDK, Server, and Ghostagram local validations plus their broader corrective evidence. The prior Ghostagram acceptance remains generation-specific and is not relabeled as a passing corrective validation.
+
+The remaining 107px opaque replacement/capture/persist/reload/history attempt timed out after 120 seconds with no attributable result. Justin's explicit finish-and-approve direction owner-waives that focused observation for this prototype generation. The timeout remains unresolved compatibility-verification risk and is not reported as passing. No production-readiness, deployment, migration, release, or architecture-promotion conclusion follows.

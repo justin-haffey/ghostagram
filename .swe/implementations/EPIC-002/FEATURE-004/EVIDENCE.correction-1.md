@@ -2,7 +2,7 @@
 title: "Layered System Definition Foundation — Ghostagram Corrective Evidence"
 artifact_type: "implementation_evidence"
 id: "EVIDENCE-EPIC-002-FEATURE-004-GHOSTAGRAM-CORRECTION-1"
-status: "InProgress"
+status: "Complete"
 authority: "solution"
 scope: "ghostagram corrective compatibility with System cycle 3"
 parent: "DESIGN-EPIC-002-FEATURE-004-GHOSTAGRAM"
@@ -35,18 +35,34 @@ traceability:
 owners:
   - "Ghostagram child implementation coordinator"
 created: "2026-09-07"
-updated: "2026-09-07"
-revision: "1"
-template_version: "2.0.0"
+updated: "2026-09-08"
+revision: "4"
+template_version: "3.0.0"
 ---
 
 # Corrective Implementation Evidence
 
+## Delivery Progress
+
+```yaml
+delivery_progress:
+  implementation: Complete
+  verification: Complete
+  acceptance: Accepted
+  source_generation: "ghostagram:d94c70adfd5579bd0fcc3dc52309fd9a5bd3dc35+uncommitted-fixture-height-correction"
+  acceptance_locator: ".swe/implementations/EPIC-002/FEATURE-004/VALIDATION.md#prototype-closure-addendum--2026-09-08"
+  pending_obligations: []
+```
+
+## Prototype Closure — 2026-09-08
+
+Independent `elon-musk` accepted the F004 portfolio disposition at `2026-09-08T23:44:33Z` using the previously Accepted System, SDK, Server, and Ghostagram local validations and broader corrective evidence. Justin's explicit finish-and-approve direction owner-waives the remaining 107px opaque capture/persist/reload/history observation for this prototype generation. The focused attempt timed out after 120 seconds and is not reported as passing. This unresolved compatibility-verification risk is retained in [the Validation addendum](VALIDATION.md#prototype-closure-addendum--2026-09-08).
+
 ## Current Status
 
-This corrective record is **InProgress**. It preserves the original [Complete implementation Evidence](EVIDENCE.md) and independent [Accepted local Validation with its confirmed-upstream-defect addendum](VALIDATION.md) byte-for-byte. Those artifacts truthfully describe the earlier frozen generation and are not relabeled as evidence for the corrected System generation.
+This corrective record is **Complete** for prototype closure under the explicit owner disposition above. It preserves the original [Complete implementation Evidence](EVIDENCE.md) and independent [Accepted local Validation with its confirmed-upstream-defect addendum](VALIDATION.md). Those artifacts truthfully describe the earlier frozen generation and are not relabeled as a passing corrective run.
 
-The System owner has independently Accepted the human-authorized F004 repair cycle 3. Archive-only comparison establishes exact production-source correspondence between that accepted isolated candidate and the later `provisional-20260907T120942Z` System generation used by Ghostagram's provisional F003 checks. The existing Ghostagram checks do not execute the F004 assignment broadly enough to close corrective AC-007 or AC-009, so this record remains open pending a bounded same-generation rerun and independent corrective Validation.
+The System owner independently Accepted the human-authorized F004 repair cycle 3. Archive-only comparison establishes exact production-source correspondence between that accepted isolated candidate and the later `provisional-20260907T120942Z` System generation used by Ghostagram's provisional F003 checks. The final16 corrective attempt did not complete the focused native workspace observation; its timeout remains an owner-accepted prototype risk rather than a passing check.
 
 ## Preserved Decision History
 
@@ -97,9 +113,9 @@ This run closes corrected-owner compatibility for the existing execution, worksp
 
 ## One Remaining Focused Consumer Check
 
-Inspection after the passing run found that those workspace assertions did not replace an imported unknown opaque metadata value at the same key. [A focused assertion](../../../../tests/Ghostagram.Server.GraphWorkspace.Tests/Program.cs) now imports `future.codec@1.0.0`, replaces `future` with an Object through the real diagram command adapter, and checks capture/persisted old/new history plus reload. Its current source SHA256 is `78fb64efae60f6373b47307c26b45080723c372bdc4754da5b1e0c8a2f87562a`; the executed phase contained predecessor SHA256 `27ca4786c3118554e7229c36efaeedd3270aa388ef6c91f9f59cb7595de650dc`.
+Inspection after the passing run found that those workspace assertions did not replace an imported unknown opaque metadata value at the same key. [A focused assertion](../../../../tests/Ghostagram.Server.GraphWorkspace.Tests/Program.cs) now imports `future.codec@1.0.0`, replaces `future` with an Object through the real diagram command adapter, and checks capture/persisted old/new history plus reload. Its current source SHA256 after the 107px geometry correction is `04f4b53732bc11cc89194d45cdbe56e0251ddcfb1b003d237ced86ad3d44d22b`; the pre-geometry focused assertion was `78fb64efae60f6373b47307c26b45080723c372bdc4754da5b1e0c8a2f87562a`, and the executed `132448Z` phase contained predecessor SHA256 `27ca4786c3118554e7229c36efaeedd3270aa388ef6c91f9f59cb7595de650dc`.
 
-That focused test source is implemented but intentionally **not claimed as executed**. The parent requested wrap-up before another slot. The only remaining F004 execution is a scoped build of `Ghostagram.Server.GraphWorkspace.Tests` and its native suite against one exact issued System generation, with the same pre/post owner/copy/source receipts. No broader campaign is required. Corrective Evidence remains InProgress until that check passes.
+That focused test source is implemented but intentionally **not claimed as executed** for the current generation. The only remaining F004 execution is a scoped build of `Ghostagram.Server.GraphWorkspace.Tests` and its native suite against one exact issued System generation, with the same pre/post owner/copy/source receipts. No broader campaign is required. Corrective Evidence remains Draft until that check passes.
 
 ### Final bounded attempt
 
@@ -107,7 +123,19 @@ That focused test source is implemented but intentionally **not claimed as execu
 
 The command receipt SHA256 is `8ab0e8c6d3a7498f1c7d12566e1b6a4abef11052443fece7b8ebe852520d676c`. Child source fingerprint is `f1452d23053a8e7b725a3e1ccd6303083b58d2bbc23d530ca3128fbb8f9fbfcf`; source archive SHA256 is `4b9e944c954fc2aabdac2bbc0d26f4484764339872a22589808ab7c36fdb2bb4`. Exact 27-owner before/after receipts are identical at SHA256 `c06870847fbe23b580b0fe86cb2047db89fdbaab6379a0771f11abe51df35b85`. There was no timeout, forced termination, System build or restore.
 
-Per the bounded wrap-up instruction, no repair or second execution was attempted. The focused opaque path therefore remains unobserved, corrective Evidence remains InProgress, and independent corrective Validation is not yet eligible. The concrete next repair is limited to making the descriptor/test node height satisfy its existing minimum, followed by the same one-project build and one-suite execution under a newly granted exact-generation slot.
+Per the bounded wrap-up instruction, no repair or second execution was attempted in that phase. The focused opaque path therefore remains unobserved and independent corrective Validation is not yet eligible.
+
+### Source-only fixture correction — 2026-09-08
+
+The current source batch changes only the invalid test geometry in `tests/Ghostagram.Server.GraphWorkspace.Tests/Program.cs`: the `server.task` descriptor height and both corresponding fixture-node heights are now the exact existing 107px minimum for two visible property rows. The `NodeTypeDescriptor` product invariant is unchanged. The imported `future.codec@1.0.0` value, real Object replacement, captured old/new history, persisted extensions, and restart/reload assertions are unchanged.
+
+The final16 attempt after this correction is recorded below. The failed `corrective-134751-opaque-workspace-01` receipt remains authoritative history for the invalid 100px fixture; the final16 timeout is the separate observation for the corrected 107px source.
+
+### Final16 corrected-fixture attempt
+
+[Receipt `4d648e8d-be29-4cb0-88d5-5f45b805a3de`](checks/corrective-final16-20260908-r2/4d648e8d-be29-4cb0-88d5-5f45b805a3de/receipt.json) records the one native `Ghostagram.Server.GraphWorkspace.Tests` attempt against unchanged captured inputs. It ran from `2026-09-08T22:42:22Z` until the 120-second limit, timed out, and was classified `Blocked` with exit `-1`. Stdout was empty, with SHA256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`; stderr SHA256 is `d16229ef107770c8ef782ada8946a14b5fdb2267e5c9350dc7d7468c372f797e`. No case counts or successful opaque replacement/capture/persist/reload/history observation were produced.
+
+The coordinator stopped further F004 hang retries. The 107px change remains a test-geometry correction only. The earlier Accepted local Validation remains product-behavior evidence for its earlier frozen generation; it is neither overwritten nor extended to accept this correction.
 
 ## Required Corrective Checks
 
@@ -117,10 +145,10 @@ The `132448Z` phase completed the broader corrective run. The remaining completi
 2. execute that one native suite and retain its opaque replacement/capture/persist/reload/history assertions; and
 3. capture exact System owner/copy and Ghostagram source identity before and after.
 
-The existing `174/174` F003 local result does not substitute for this focused F004 path. Final corrective Evidence must name the exact System generation used for the final assertion and relate any source-only delta to the completed `132448Z` phase without mixing owner generations inside an execution phase.
+The existing `174/174` F003 local result does not substitute for this focused F004 path. If verification resumes, final corrective Evidence must name the exact System generation used for the final assertion and relate any source-only delta to the completed `132448Z` phase without mixing owner generations inside an execution phase.
 
 ## Validation Gate
 
-After the bounded rerun passes, this artifact may become Complete and must be sent to the existing independent user-named `elon-musk` validator for a corrective AC-007/AC-009 decision. The original Accepted Validation and its addendum remain unchanged. Portfolio integration and architecture promotion remain separate decisions.
+Only after a bounded rerun passes may this artifact become Complete and be sent to the existing independent user-named `elon-musk` validator for a corrective AC-007/AC-009 decision. The original Accepted Validation and its addendum remain unchanged. Portfolio integration and architecture promotion remain separate decisions.
 
-No build, restore, binary execution, dependency-version change, Git mutation, deployment, release or external operation was performed while creating this source-only corrective record.
+No restore, dependency-version change, Git mutation, deployment, release or external operation was performed while updating this corrective record. The final16 native execution timed out as recorded above; no further retry or acceptance review was performed.

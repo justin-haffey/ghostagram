@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using Ghostworx.System.Composition.Conformance.Runner;
 
 namespace Ghostagram.Graph.Conformance.Composition;
 
@@ -29,7 +30,8 @@ public static class CompositionRunner
                     continue;
                 }
                 if (name is not ("--profile" or "--output" or "--corpus" or "--producer-envelope" or
-                    "--consumer-manifest" or "--manifest-digest" or "--source-root" or "--source-revision") ||
+                    "--consumer-manifest" or "--manifest-digest" or "--source-root" or "--source-revision" or
+                    "--e0-source" or "--e0-corpus") ||
                     ++index >= args.Count || !options.TryAdd(name, args[index]))
                     throw new ArgumentException("Unknown, duplicate or missing composition option.");
             }
@@ -40,8 +42,17 @@ public static class CompositionRunner
                     throw new ArgumentException("Local projection mode cannot be combined with producer-linked conformance options.");
                 return RunLocal(Require("--output"));
             }
-            var inputs = CompositionConsumerSession.LoadProducer(Require("--corpus"), Require("--producer-envelope"));
+            var hasE0Source = options.ContainsKey("--e0-source");
+            var hasE0Corpus = options.ContainsKey("--e0-corpus");
+            if (hasE0Source != hasE0Corpus)
+                throw new ArgumentException("--e0-source and --e0-corpus must be supplied together.");
+            using var e0Source = hasE0Source
+                ? AcquiredDiagnosticResultSource.Acquire(Require("--e0-source"), Require("--e0-corpus"))
+                : null;
+            var inputs = CompositionConsumerSession.LoadProducer(Require("--corpus"), Require("--producer-envelope"), e0Source);
+            e0Source?.RequireAvailable();
             var producer = ProducerProjectionCases.Inventory(inputs);
+            e0Source?.RequireAvailable();
             var bundle = SourceFixtureBundle(Require("--source-root"));
             const string bundleIdentity = "ghostagram.projection.source-fixture-bundle/1";
             var digests = new Dictionary<string, string>
@@ -55,10 +66,13 @@ public static class CompositionRunner
                 if (options.ContainsKey("--manifest-digest") || options.ContainsKey("--output"))
                     throw new ArgumentException("Manifest materialization is separate from execution and its externally frozen digest.");
                 CompositionConsumerSession.Materialize(cases, artifacts, manifestPath);
+                e0Source?.RequireAvailable();
                 return 0;
             }
-            return CompositionConsumerSession.Run(inputs, cases, artifacts, manifestPath, Require("--manifest-digest"),
-                Require("--output"), options.GetValueOrDefault("--source-revision"));
+            var result = CompositionConsumerSession.Run(inputs, cases, artifacts, manifestPath, Require("--manifest-digest"),
+                Require("--output"), Require("--source-revision"));
+            e0Source?.RequireAvailable();
+            return result;
 
             string Require(string key) => options.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
                 ? value : throw new ArgumentException("Missing " + key + ".");
