@@ -1,0 +1,77 @@
+{
+  "replacements": {
+    "FEATURE_TITLE": "Reproducible Composition Integration",
+    "SOLUTION_NAME": "Ghostagram"
+  },
+  "metadata": {
+    "updated": "2026-09-09",
+    "artifact_type": "design",
+    "owners": [
+      "Ghostagram Design author (/root/ghostagram_f006_design)"
+    ],
+    "title": "Reproducible Composition Integration — Ghostagram Design",
+    "parent": "IMPL-PLAN-EPIC-002-FEATURE-006",
+    "created": "2026-09-09",
+    "authority": "solution",
+    "id": "DESIGN-GHOSTAGRAM-F006",
+    "scope": "GHOSTAGRAM-F006-PROJECTION-AND-METADATA"
+  },
+  "schema_version": 1,
+  "traceability": {
+    "epic": {
+      "path": ".swe/epics/002-declarative-composition-model/EPIC.md",
+      "repository": "ghostworx",
+      "artifact_id": "EPIC-002",
+      "revision": "3"
+    },
+    "implementation_plan": {
+      "path": ".swe/epics/002-declarative-composition-model/features/006-reproducible-composition-integration/IMPLEMENTATION-PLAN.md",
+      "repository": "ghostworx",
+      "artifact_id": "IMPL-PLAN-EPIC-002-FEATURE-006"
+    },
+    "feature": {
+      "path": ".swe/epics/002-declarative-composition-model/features/006-reproducible-composition-integration/FEATURE.md",
+      "repository": "ghostworx",
+      "artifact_id": "FEATURE-006",
+      "revision": "1"
+    }
+  },
+  "links": [
+    {
+      "target": "../../../../../../.swe/epics/002-declarative-composition-model/features/006-reproducible-composition-integration/FEATURE.md",
+      "label": "Accepted Feature"
+    },
+    {
+      "target": "../../../../../../.swe/epics/002-declarative-composition-model/features/006-reproducible-composition-integration/IMPLEMENTATION-PLAN.md",
+      "label": "Accepted Plan"
+    }
+  ],
+  "upstream": {
+    "path": ".swe/epics/002-declarative-composition-model/features/006-reproducible-composition-integration/IMPLEMENTATION-PLAN.md",
+    "repository": "ghostworx",
+    "artifact_id": "IMPL-PLAN-EPIC-002-FEATURE-006"
+  },
+  "criteria": [
+    {
+      "owner": "GHOSTAGRAM-F006-PROJECTION-AND-METADATA",
+      "evidence": ".swe/implementations/EPIC-002/FEATURE-006/EVIDENCE.md",
+      "id": "AC-001"
+    },
+    {
+      "owner": "GHOSTAGRAM-F006-PROJECTION-AND-METADATA",
+      "evidence": ".swe/implementations/EPIC-002/FEATURE-006/EVIDENCE.md",
+      "id": "AC-002"
+    },
+    {
+      "owner": "GHOSTAGRAM-F006-PROJECTION-AND-METADATA",
+      "evidence": ".swe/implementations/EPIC-002/FEATURE-006/EVIDENCE.md",
+      "id": "AC-006"
+    },
+    {
+      "owner": "GHOSTAGRAM-F006-PROJECTION-AND-METADATA",
+      "evidence": ".swe/implementations/EPIC-002/FEATURE-006/EVIDENCE.md",
+      "id": "AC-007"
+    }
+  ],
+  "template": "skills/swe-design/references/DESIGN-TEMPLATE.md"
+}

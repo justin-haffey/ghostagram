@@ -1,0 +1,9 @@
+{
+  "inputFile": "C:\\Users\\justin\\Source\\ghostworx\\.swe\\f006\\common-generation\\f006-common-current-20260910-r5\\current-child-20260913\\ghost-replay\\first\\replay-output.json\\projection-0003.json",
+  "resultSha256": "6fcf56812cff3e9bf5e2f93e149d8e5bf306f3a2d8a2ede772128c800dc0be30",
+  "status": "Fresh",
+  "diagramDisposition": "Fresh definition projection",
+  "svgSha256": "52879fd4d0385e9d986cd8411242456911cee78ccf9246540024cb67101bd7d2",
+  "renderer": "Ghostagram.Server.Export.SvgDiagramExporter",
+  "visibleInspection": "Pending"
+}

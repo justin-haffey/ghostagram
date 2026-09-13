@@ -88,7 +88,7 @@ public sealed class GraphWorkspaceService : IGraphWorkspaceService
 
             var graph = new GraphStore(
                 $"ghostagram:{workspaceId}",
-                features: null,
+                extensions: null,
                 options: StoreOptions());
             var presentation = new GraphPresentationStore();
             var workspace = new Workspace(
@@ -154,7 +154,7 @@ public sealed class GraphWorkspaceService : IGraphWorkspaceService
         if (_presentationOrphansOnLoad == OrphanHandling.Remove)
             presentation.Reconcile(graph.CaptureSnapshot(), OrphanHandling.Remove, presentation.Revision);
         var loaded = new Workspace(workspaceId, graph, presentation, _projection,
-            new GraphDiagramCommandAdapter(graph, presentation, _projection, _descriptors));
+            new GraphDiagramCommandAdapter(graph, presentation, _projection, _descriptors), decoded.Value);
         lock (_creationGate)
         {
             if (_workspaces.TryGetValue(workspaceId, out current)) return current.Capture();
@@ -199,7 +199,8 @@ public sealed class GraphWorkspaceService : IGraphWorkspaceService
         GraphStore graph,
         GraphPresentationStore presentation,
         IGraphDiagramProjection projection,
-        IGraphDiagramCommandAdapter adapter)
+        IGraphDiagramCommandAdapter adapter,
+        GraphLocalDocument? importedDocument = null)
     {
         private readonly object _gate = new();
 
@@ -230,7 +231,21 @@ public sealed class GraphWorkspaceService : IGraphWorkspaceService
                 var captured = GraphStoreDocumentMapper.CaptureLocal(graph, new GraphLocalStoreExportContext(
                     exchange, IncludeHistory: true, HistoryPolicy: GraphHistoryExportPolicy.AllowUnavailableSnapshotFallback));
                 if (!captured.IsSuccess) throw new InvalidOperationException($"Graph capture failed: {captured.Outcome?.Code.Value}.");
-                var encoded = graphSerializer.EncodeLocal(new(captured.Value, exchange));
+                var document = captured.Value;
+                if (importedDocument is not null && graphSnapshot.Version > 0 && document.History.Count == 0)
+                {
+                    try { graph.ReadChangesSince(0); }
+                    catch (GraphHistoryUnavailableException unavailable) when (unavailable.EarliestAvailableVersion < graphSnapshot.Version)
+                    {
+                        var available = graph.ReadChangesSince(unavailable.EarliestAvailableVersion);
+                        var withHistory = GraphLocalDocumentMapper.ToDocument(document.Snapshot, available, exchange);
+                        if (!withHistory.IsSuccess) throw new InvalidOperationException($"Graph history capture failed: {withHistory.Outcome?.Code.Value}.");
+                        var withExtensions = withHistory.Value.PreserveExtensionsFrom(importedDocument, exchange);
+                        if (!withExtensions.IsSuccess) throw new InvalidOperationException($"Graph extension preservation failed: {withExtensions.Outcome?.Code.Value}.");
+                        document = withExtensions.Value;
+                    }
+                }
+                var encoded = graphSerializer.EncodeLocal(new(document, exchange));
                 if (!encoded.IsSuccess) throw new InvalidOperationException($"Graph encode failed: {encoded.Outcome?.Code.Value}.");
                 return (
                     new(id, Encoding.UTF8.GetString(encoded.Value.Span), presentationSerializer.Serialize(presentationSnapshot)),

@@ -23,6 +23,10 @@ var descriptor = new NodeTypeDescriptor(
         new("future", "Future", DiagramPropertyTypes.Json)
     ]);
 var nodeTypes = new NodeTypeRegistry([new NodeSetDescriptor("server-tests", "Server tests", [descriptor])]);
+AssertThrows<ArgumentOutOfRangeException>(() => new NodeTypeDescriptor(
+    "server.task.too-short", 1, "Task", "Server tests", width: 220, height: 106,
+    properties: descriptor.Properties),
+    "The real descriptor rejects 106px for the text and JSON property rows; their minimum is 107px.");
 var storageDirectory = Path.Combine(Path.GetTempPath(), "ghostagram-graph-workspace-tests", Guid.NewGuid().ToString("N"));
 
 var services = new ServiceCollection();
@@ -153,6 +157,16 @@ Assert(restartedWorkspaces.TryApply("legacy", new(legacyWorkspace.GraphVersion, 
     [DiagramOperations.Upsert(legacyTask with { Label = "Edited legacy task", Properties = replacementProperties })]), out var legacyEdit) &&
     legacyEdit is { Accepted: true },
     "A reloaded legacy custom kind can replace imported opaque metadata through its registered descriptor.");
+Assert(restartedWorkspaces.TryGetSnapshot("legacy", out var capturedReplacement) && capturedReplacement is not null,
+    "The edited workspace exposes an authoritative capture before persistence.");
+var capturedTask = capturedReplacement!.Document.Nodes.Single(node => node.Id == legacyTask.Id);
+var capturedFuture = capturedTask.Properties.Single(property => property.Id == "future").Value;
+Assert(capturedFuture is { ValueKind: JsonValueKind.Object } && capturedFuture.Value.GetProperty("changed").GetBoolean(),
+    "Authoritative capture contains the accepted opaque metadata replacement before save.");
+Assert(capturedTask.Height == 107 && capturedTask.Properties.Count(property => property.Mode != DiagramPropertyModes.Hidden) == 2 &&
+       capturedTask.Properties.Single(property => property.Id == "owner").Type == DiagramPropertyTypes.String &&
+       capturedTask.Properties.Single(property => property.Id == "future").Type == DiagramPropertyTypes.Json,
+    "The captured node retains both visible text and JSON rows at the descriptor's accepted 107px minimum.");
 await restartedWorkspaces.SaveAsync("legacy");
 var persistedLegacy = await repository.LoadAsync("legacy") ?? throw new InvalidOperationException("The legacy workspace was not saved.");
 using (var legacyDocument = JsonDocument.Parse(persistedLegacy.GraphJson))
@@ -171,6 +185,7 @@ using (var legacyDocument = JsonDocument.Parse(persistedLegacy.GraphJson))
     Assert(future.GetProperty("codec").GetString() == "semantic-value" &&
            future.GetProperty("value").GetProperty("changed").GetBoolean() &&
            historyEdit.GetProperty("oldValue").GetProperty("codec").GetString() == "future.codec" &&
+           historyEdit.GetProperty("oldValue").GetProperty("value").GetProperty("x").GetInt32() == 1 &&
            historyEdit.GetProperty("oldValue").GetProperty("futureField").GetProperty("retained").GetBoolean() &&
            historyEdit.GetProperty("newValue").GetProperty("codec").GetString() == "semantic-value" &&
            historyEdit.GetProperty("newValue").GetProperty("value").GetProperty("changed").GetBoolean(),
@@ -185,6 +200,72 @@ Assert(reloadedFuture is { ValueKind: JsonValueKind.Object } && reloadedFuture.V
     "A service restart path reloads the accepted replacement instead of the imported opaque predecessor.");
 Assert(await restartedWorkspaces.DeleteAsync("legacy"), "Legacy regression fixture is removed after verification.");
 
+// JSON properties are ordinary bounded values, even when their keys resemble serialization markers.
+var jsonSnapshot = restartedWorkspaces.Create("json-ingress");
+var jsonNode = first with { Id = NodeId.New().ToString(), Label = "JSON ingress" };
+var jsonLimits = GraphLegacyMetadataPolicy.Default.Limits;
+JsonElement Json(string value) { using var document = JsonDocument.Parse(value); return document.RootElement.Clone(); }
+var mixedJson = Json("""{"array":[null,true,"2026-01-01T00:00:00Z","11111111-1111-1111-1111-111111111111",1,2147483648,1.25,1e100],"$opaque":{"value":true},"$bytes":"not-base64"}""");
+await CheckJson("create nested scalar and marker values", mixedJson, true);
+await CheckJson("replace nested scalar and marker values", mixedJson, true);
+foreach (var value in new[] { "null", "false", "\"plain\"", "-2147483648", "9223372036854775807", "1.25", "1e100" })
+    await CheckJson("scalar " + value, Json(value), true);
+string Nested(int depth) => new string('[', depth - 1) + "null" + new string(']', depth - 1);
+await CheckJson("depth exact", Json(Nested(jsonLimits.MaxSemanticValueDepth)), true);
+await CheckJson("depth next", Json(Nested(jsonLimits.MaxSemanticValueDepth + 1)), false);
+await CheckJson("items exact", JsonSerializer.SerializeToElement(new object?[jsonLimits.MaxSemanticValueItems]), true);
+await CheckJson("items next", JsonSerializer.SerializeToElement(new object?[jsonLimits.MaxSemanticValueItems + 1]), false);
+await CheckJson("key exact", JsonSerializer.SerializeToElement(new Dictionary<string, object?> { [new string('k', jsonLimits.MaxMetadataKeyUtf8Bytes)] = null }), true);
+await CheckJson("key next", JsonSerializer.SerializeToElement(new Dictionary<string, object?> { [new string('k', jsonLimits.MaxMetadataKeyUtf8Bytes + 1)] = null }), false);
+await CheckJson("scalar exact UTF8", JsonSerializer.SerializeToElement(new string('é', jsonLimits.MaxScalarValueUtf8Bytes / 2)), true);
+await CheckJson("scalar next UTF8", JsonSerializer.SerializeToElement(new string('é', jsonLimits.MaxScalarValueUtf8Bytes / 2) + "x"), false);
+JsonElement Aggregate(int bytes)
+{
+    var parts = new List<string>();
+    while (bytes > 0) { var length = Math.Min(bytes, jsonLimits.MaxScalarValueUtf8Bytes); parts.Add(new string('a', length)); bytes -= length; }
+    return JsonSerializer.SerializeToElement(parts);
+}
+await CheckJson("aggregate exact", Aggregate(jsonLimits.MaxSemanticValueUtf8Bytes), true);
+await CheckJson("aggregate next", Aggregate(jsonLimits.MaxSemanticValueUtf8Bytes + 1), false);
+await CheckJson("duplicate key", Json("{\"same\":1,\"same\":2}"), false);
+await CheckJson("blank key", Json("{\" \":1}"), false);
+await CheckJson("nonfinite numeric fallback", Json("1e999"), false);
+await CheckJson("undefined DOM", default, false, allowSerializationRejection: true);
+Assert(await restartedWorkspaces.DeleteAsync("json-ingress"), "JSON regression fixture is removed after verification.");
+Console.WriteLine("PASS current JSON ingress creation/replacement and exact/next semantic bounds with atomic rejection");
+
+async Task CheckJson(string name, JsonElement value, bool accepted, bool allowSerializationRejection = false)
+{
+    var before = jsonSnapshot;
+    var beforeJson = JsonSerializer.Serialize(before.Document);
+    try { await restartedWorkspaces.SaveAsync("json-ingress"); }
+    catch (Exception exception) { throw new InvalidOperationException($"{name}: save before command failed.", exception); }
+    var persistedBefore = await repository.LoadAsync("json-ingress");
+    var candidate = jsonNode with { Properties = [new("owner", "Owner", Value: JsonSerializer.SerializeToElement("operations")), new("future", "Future", DiagramPropertyTypes.Json, Value: value)] };
+    GraphDiagramCommandResult? result = null;
+    var serializationRejected = false;
+    Ghostagram.Contracts.GhostagramOperation? operation = null;
+    try { operation = DiagramOperations.Upsert(candidate); }
+    catch (InvalidOperationException) when (allowSerializationRejection) { serializationRejected = true; }
+    catch (ArgumentException) when (allowSerializationRejection) { serializationRejected = true; }
+    if (!serializationRejected)
+        Assert(restartedWorkspaces.TryApply("json-ingress", new(before.GraphVersion, before.DiagramRevision, [operation!]), out result), name + ": workspace exists.");
+    Assert(serializationRejected || result?.Accepted == accepted, $"{name}: expected Accepted={accepted}, actual {result?.Code}: {result?.Message}.");
+    Assert(restartedWorkspaces.TryGetSnapshot("json-ingress", out var after) && after is not null, name + ": capture exists.");
+    if (accepted)
+    {
+        var observed = after!.Document.Nodes.Single(node => node.Id == jsonNode.Id).Properties.Single(property => property.Id == "future").Value;
+        Assert(observed.HasValue && JsonElement.DeepEquals(value, observed.Value), name + ": authoritative JSON meaning is retained.");
+        jsonSnapshot = after;
+    }
+    else
+    {
+        Assert(after!.GraphVersion == before.GraphVersion && after.DiagramRevision == before.DiagramRevision && JsonSerializer.Serialize(after.Document) == beforeJson,
+            name + ": rejected input preserves revisions and authoritative metadata.");
+        var persistedAfter = await repository.LoadAsync("json-ingress");
+        Assert(persistedBefore == persistedAfter, name + ": rejection leaves prior persisted state unchanged.");
+    }
+}
 // The host historically saved snapshots even after its bounded history ring expired.
 var ringServices = new ServiceCollection();
 ringServices.AddSingleton<INodeTypeRegistry>(nodeTypes);

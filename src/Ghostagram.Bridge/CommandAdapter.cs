@@ -250,11 +250,81 @@ public sealed class GraphDiagramCommandAdapter : IGraphDiagramCommandAdapter
             DiagramPropertyTypes.Boolean when value.ValueKind is JsonValueKind.True or JsonValueKind.False => value.GetBoolean(),
             DiagramPropertyTypes.Integer when value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var integer) => integer,
             DiagramPropertyTypes.Decimal when value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out var number) => number,
-            DiagramPropertyTypes.Json when value.ValueKind != JsonValueKind.Undefined => value.Clone(),
+            DiagramPropertyTypes.Json when value.ValueKind != JsonValueKind.Undefined => JsonMetadata(value),
             _ => throw new ArgumentException($"Property '{property.Id}' value is incompatible with declared type '{property.Type}'.")
         };
     }
 
+    private static object? JsonMetadata(JsonElement value)
+    {
+        var limits = GraphLegacyMetadataPolicy.Default.Limits;
+        var items = 0;
+        long bytes = 0;
+        // Check the existing DOM before allocating a second tree; System remains final admission authority.
+        Preflight(value, 1);
+        return Convert(value);
+
+        void ChargeString(string text, int maximum)
+        {
+            var length = System.Text.Encoding.UTF8.GetByteCount(text);
+            bytes += length;
+            if (length > maximum || bytes > limits.MaxSemanticValueUtf8Bytes)
+                throw new ArgumentException("JSON metadata exceeds the semantic byte limit.");
+        }
+        void CountItem()
+        {
+            if (++items > limits.MaxSemanticValueItems)
+                throw new ArgumentException("JSON metadata exceeds the semantic item limit.");
+        }
+        void Preflight(JsonElement current, int depth)
+        {
+            if (depth > limits.MaxSemanticValueDepth)
+                throw new ArgumentException("JSON metadata exceeds the semantic depth limit.");
+            switch (current.ValueKind)
+            {
+                case JsonValueKind.Object:
+                    var keys = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (var property in current.EnumerateObject())
+                    {
+                        CountItem();
+                        if (string.IsNullOrWhiteSpace(property.Name) || !keys.Add(property.Name))
+                            throw new ArgumentException("JSON metadata object keys must be nonblank and unique.");
+                        ChargeString(property.Name, limits.MaxMetadataKeyUtf8Bytes);
+                        Preflight(property.Value, depth + 1);
+                    }
+                    break;
+                case JsonValueKind.Array:
+                    foreach (var item in current.EnumerateArray()) { CountItem(); Preflight(item, depth + 1); }
+                    break;
+                case JsonValueKind.String: ChargeString(current.GetString()!, limits.MaxScalarValueUtf8Bytes); break;
+                case JsonValueKind.Number: _ = Number(current); break;
+                case JsonValueKind.Null:
+                case JsonValueKind.True:
+                case JsonValueKind.False: break;
+                default: throw new ArgumentException("JSON metadata contains an undefined value.");
+            }
+        }
+        static object Number(JsonElement current)
+        {
+            if (current.TryGetInt32(out var small)) return small;
+            if (current.TryGetInt64(out var integer)) return integer;
+            if (current.TryGetDecimal(out var precise)) return precise;
+            if (current.TryGetDouble(out var number) && double.IsFinite(number)) return number;
+            throw new ArgumentException("JSON metadata numbers must be finite and supported.");
+        }
+        static object? Convert(JsonElement current) => current.ValueKind switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String => current.GetString(),
+            JsonValueKind.Number => Number(current),
+            JsonValueKind.Array => current.EnumerateArray().Select(Convert).ToArray(),
+            JsonValueKind.Object => current.EnumerateObject().ToDictionary(property => property.Name,
+                property => Convert(property.Value), StringComparer.Ordinal),
+            _ => throw new ArgumentException("JSON metadata contains an undefined value.")
+        };
+    }
     private static void ValidateProperties(IReadOnlyList<DiagramNodeProperty> properties)
     {
         if (properties.Any(property => string.IsNullOrWhiteSpace(property.Id))) throw new ArgumentException("Node property ids are required.");
